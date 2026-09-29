@@ -554,3 +554,46 @@ select:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 3px rg
   .wheel-editor { grid-template-columns: 1fr; justify-items: center; }
   .preview-table-7 { grid-template-columns: repeat(4, 1fr); }
 }
+
+/* ─── Payout ladders (Mines / Tower) ──────────────────────────── */
+.chip-row { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+.chip {
+  position: relative;
+  min-width: 36px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+}
+.chip small { font-weight: 600; color: var(--faint); margin-left: 3px; }
+.chip:hover { background: var(--bg); }
+.chip.is-active { background: var(--ink); border-color: var(--ink); color: #fff; }
+.chip.is-active small { color: rgba(255, 255, 255, 0.7); }
+.chip.is-custom::after { content: ''; position: absolute; top: -3px; right: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--violet); border: 2px solid var(--card); }
+.tag { margin-left: 6px; padding: 1px 6px; border-radius: 999px; font-size: 10.5px; font-weight: 700; background: #f3e8ff; color: var(--violet); }
+
+.ladder { display: flex; flex-direction: column; gap: 10px; }
+.ladder-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.ladder-mode { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: var(--muted); }
+.ladder-mode.is-custom { color: var(--violet); }
+.ladder-tools { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ladder-tools .input-sm { max-width: 130px; }
+
+.ladder-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; }
+.ladder-cell { display: flex; flex-direction: column; gap: 3px; padding: 8px; border-radius: 10px; background: var(--bg); border: 1px solid transparent; }
+.ladder-cell > span { font-size: 11px; font-weight: 700; color: var(--muted); }
+.ladder-input { display: flex; align-items: center; gap: 2px; padding: 0 8px; border-radius: 7px; border: 1px solid var(--line); background: var(--card); }
+.ladder-input:focus-within { border-color: var(--red); }
+.ladder-input input { width: 100%; min-width: 0; border: none; outline: none; background: transparent; padding: 6px 0; font: inherit; font-size: 13px; font-weight: 800; color: var(--ink); }
+.ladder-input em { font-style: normal; font-weight: 700; color: var(--faint); }
+.ladder-cell small { font-size: 10.5px; font-weight: 700; color: var(--green); }
+.ladder-cell .ladder-chance { color: var(--faint); font-weight: 600; }
+.ladder-cell.is-warn { border-color: #fcd34d; background: var(--amber-soft); }
+.ladder-cell.is-bad { border-color: #fecaca; background: var(--red-soft); }
+.ladder-cell.is-bad small:not(.ladder-chance) { color: var(--red); }
+.alert-warn { background: var(--amber-soft); color: var(--amber); }

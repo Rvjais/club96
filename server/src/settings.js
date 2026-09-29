@@ -30,6 +30,9 @@ export const DEFAULTS = {
     minBet: 10,
     maxBet: 10000,
     maxWin: 500000, // ₹ cap on any single payout
+    // Hand-set payouts: { [mine count]: [multiplier after 1 gem, 2 gems, …] }.
+    // Mine counts not listed here follow the house-edge formula.
+    custom: {},
   },
   tower: {
     enabled: true,
@@ -38,6 +41,8 @@ export const DEFAULTS = {
     minBet: 10,
     maxBet: 10000,
     maxWin: 500000,
+    // Hand-set payouts: { [difficulty]: [multiplier at level 1, 2, …] }; others follow the formula
+    custom: {},
   },
   plinko: {
     enabled: true,
@@ -90,6 +95,7 @@ export const GAMES = Object.keys(DEFAULTS)
 const COLOR_KEYS = ['red', 'green', 'violet']
 export const RISKS = ['low', 'medium', 'high']
 export const PLINKO_ROWS = [8, 12, 16]
+export const TOWER_MODE_KEYS = ['easy', 'medium', 'hard', 'expert']
 
 const cache = structuredClone(DEFAULTS)
 const listeners = new Map() // game → [fn]
@@ -182,15 +188,29 @@ export function validate(game, input) {
       maxMines: Math.round(num(input.maxMines, 'Most mines', 1, 24)),
     }
     if (s.maxMines < s.minMines) throw new HttpError(400, 'Most mines must be at least the fewest mines')
+    s.custom = {}
+    for (const [key, list] of Object.entries(input.custom ?? {})) {
+      const m = Number(key)
+      if (!Number.isInteger(m) || m < 1 || m > 24) throw new HttpError(400, `Invalid mine count ${key}`)
+      if (!Array.isArray(list) || list.length !== 25 - m) throw new HttpError(400, `${m}-mine payouts need ${25 - m} values`)
+      s.custom[m] = list.map((v, i) => num(v, `${m} mines, gem ${i + 1} payout`, 0.01, 1_000_000))
+    }
     return s
   }
 
   if (game === 'tower') {
-    return {
+    const s = {
       ...base,
       houseEdge: num(input.houseEdge, 'House edge', 0, 50),
       levels: Math.round(num(input.levels, 'Tower height', 3, 12)),
+      custom: {},
     }
+    for (const [mode, list] of Object.entries(input.custom ?? {})) {
+      if (!TOWER_MODE_KEYS.includes(mode)) throw new HttpError(400, `Unknown difficulty ${mode}`)
+      if (!Array.isArray(list) || list.length !== s.levels) throw new HttpError(400, `${mode} payouts need ${s.levels} levels`)
+      s.custom[mode] = list.map((v, i) => num(v, `${mode} level ${i + 1} payout`, 0.01, 1_000_000))
+    }
+    return s
   }
 
   if (game === 'dice') {

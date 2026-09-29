@@ -205,6 +205,10 @@ function fieldLabel(key) {
   if (FIELD_LABELS[key]) return FIELD_LABELS[key]
   let m = key.match(/^tables\.(\d+)\.(\w+)\.(\d+)$/)
   if (m) return `${m[1]}-row ${m[2]} bucket ${Number(m[3]) + 1}`
+  m = key.match(/^custom\.(\d+)\.(\d+)$/)
+  if (m) return `${m[1]} mines, gem ${Number(m[2]) + 1} payout`
+  m = key.match(/^custom\.([a-z]+)\.(\d+)$/)
+  if (m) return `${m[1]} level ${Number(m[2]) + 1} payout`
   m = key.match(/^risks\.(\w+)\.(\d+)\.(mult|count)$/)
   if (m) return `${m[1]} wheel group ${Number(m[2]) + 1} ${m[3] === 'mult' ? 'payout' : 'segments'}`
   return key
@@ -217,8 +221,10 @@ function changes(before, after) {
   const list = flatten(after)
     .filter(([k, v]) => b[k] !== v)
     .map(([k, v]) => `${fieldLabel(k)}: ${b[k] === undefined ? '—' : fmt(k, b[k])} → ${fmt(k, v)}`)
-  // Wheel groups that were removed
-  for (const [k, v] of flatten(before)) if (!(k in a) && k.startsWith('risks.')) list.push(`${fieldLabel(k)}: ${fmt(k, v)} → removed`)
+  // Wheel groups removed / custom payouts switched back to the formula
+  for (const [k, v] of flatten(before)) {
+    if (!(k in a) && (k.startsWith('risks.') || k.startsWith('custom.'))) list.push(`${fieldLabel(k)}: ${fmt(k, v)} → ${k.startsWith('custom.') ? 'formula' : 'removed'}`)
+  }
   return list
 }
 

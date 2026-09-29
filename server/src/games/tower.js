@@ -31,6 +31,14 @@ export function towerMultiplier(mode, level, edge) {
   return floor2((tiles / safe) ** level * (1 - edge / 100))
 }
 
+/** Payout at level 1, 2, … for a difficulty: the admin's table if set, else the formula. */
+export function towerLadder(cfg, mode) {
+  return cfg.custom?.[mode] ?? Array.from({ length: cfg.levels }, (_, i) => towerMultiplier(mode, i + 1, cfg.houseEdge))
+}
+
+// Rounds lock their ladder at the start; older rounds only stored the edge
+const ladderOf = (b) => (b.ladder?.length ? b.ladder : towerLadder({ houseEdge: b.houseEdge, levels: b.levels }, b.mode))
+
 function pickSafe(tiles, safe) {
   const cols = Array.from({ length: tiles }, (_, i) => i)
   for (let i = 0; i < safe; i++) {
@@ -51,7 +59,7 @@ function serialize(b) {
     status: b.status,
     multiplier: b.multiplier,
     win: toRupees(b.win),
-    next: active && b.picks.length < b.levels ? towerMultiplier(b.mode, b.picks.length + 1, b.houseEdge) : null,
+    next: active && b.picks.length < b.levels ? ladderOf(b)[b.picks.length] : null,
     board: active ? null : b.safe, // safe tiles per level, revealed after the round
     time: b.settledAt ?? b.createdAt,
   }
@@ -67,7 +75,7 @@ function publicRules() {
   const cfg = getSettings(GAME)
   const modes = Object.fromEntries(Object.entries(TOWER_MODES).map(([key, m]) => [
     key,
-    { ...m, ladder: Array.from({ length: cfg.levels }, (_, i) => towerMultiplier(key, i + 1, cfg.houseEdge)) },
+    { ...m, ladder: towerLadder(cfg, key) },
   ]))
   return { enabled: cfg.enabled, houseEdge: cfg.houseEdge, levels: cfg.levels, minBet: cfg.minBet, maxBet: cfg.maxBet, maxWin: cfg.maxWin, modes }
 }
@@ -126,7 +134,7 @@ towerRouter.post('/start', async (req, res) => {
       if (await TowerBet.exists({ user: req.userId, status: 'active' }).session(session)) throw new HttpError(409, 'Finish your current climb first')
       const balance = await debit(session, req.userId, paise, { type: 'bet', game: GAME, ref: _id })
       const [bet] = await TowerBet.create([{
-        _id, user: req.userId, amount: paise, mode, levels: cfg.levels, houseEdge: cfg.houseEdge, maxWin: cfg.maxWin,
+        _id, user: req.userId, amount: paise, mode, levels: cfg.levels, houseEdge: cfg.houseEdge, ladder: towerLadder(cfg, mode), maxWin: cfg.maxWin,
         safe: Array.from({ length: cfg.levels }, () => pickSafe(tiles, safe)), status: 'active',
       }], { session })
       return { bet: serialize(bet.toObject()), balance: toRupees(balance) }
@@ -155,7 +163,7 @@ towerRouter.post('/step', async (req, res) => {
     return res.json({ bet: serialize(upd), balance: toRupees(await balanceOf(req.userId)) })
   }
 
-  const multiplier = towerMultiplier(bet.mode, picks.length, bet.houseEdge)
+  const multiplier = ladderOf(bet)[picks.length - 1]
   // Reached the top → pay out automatically
   if (picks.length === bet.levels) return res.json(await cashOut(bet, picks, multiplier))
 

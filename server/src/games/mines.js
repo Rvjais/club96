@@ -26,6 +26,14 @@ export function minesMultiplier(mines, gems, edge) {
   return floor2(m * (1 - edge / 100))
 }
 
+/** Payout after 1, 2, … gems for a mine count: the admin's table if set, else the formula. */
+export function minesLadder(cfg, mines) {
+  return cfg.custom?.[mines] ?? Array.from({ length: GRID - mines }, (_, k) => minesMultiplier(mines, k + 1, cfg.houseEdge))
+}
+
+// Rounds lock their ladder at the start; older rounds only stored the edge
+const ladderOf = (b) => (b.ladder?.length ? b.ladder : minesLadder({ houseEdge: b.houseEdge }, b.mines))
+
 function placeMines(count) {
   const tiles = Array.from({ length: GRID }, (_, i) => i)
   for (let i = 0; i < count; i++) {
@@ -46,7 +54,7 @@ function serialize(b) {
     multiplier: b.multiplier,
     win: toRupees(b.win),
     // Multiplier for the next gem while the round is running
-    next: active && GRID - b.mines > b.picks.length ? minesMultiplier(b.mines, b.picks.length + 1, b.houseEdge) : null,
+    next: active && GRID - b.mines > b.picks.length ? ladderOf(b)[b.picks.length] : null,
     // The board is only revealed once the round is over
     board: active ? null : b.minePositions,
     hit: b.hit ?? null,
@@ -64,7 +72,7 @@ function publicRules() {
   const cfg = getSettings(GAME)
   const table = {}
   for (let m = cfg.minMines; m <= cfg.maxMines; m++) {
-    table[m] = Array.from({ length: GRID - m }, (_, k) => minesMultiplier(m, k + 1, cfg.houseEdge))
+    table[m] = minesLadder(cfg, m)
   }
   return {
     enabled: cfg.enabled, houseEdge: cfg.houseEdge, minMines: cfg.minMines, maxMines: cfg.maxMines,
@@ -128,7 +136,7 @@ minesRouter.post('/start', async (req, res) => {
       if (await MinesBet.exists({ user: req.userId, status: 'active' }).session(session)) throw new HttpError(409, 'Finish your current round first')
       const balance = await debit(session, req.userId, paise, { type: 'bet', game: GAME, ref: _id })
       const [bet] = await MinesBet.create([{
-        _id, user: req.userId, amount: paise, mines, houseEdge: cfg.houseEdge, maxWin: cfg.maxWin,
+        _id, user: req.userId, amount: paise, mines, houseEdge: cfg.houseEdge, ladder: minesLadder(cfg, mines), maxWin: cfg.maxWin,
         minePositions: placeMines(mines), status: 'active',
       }], { session })
       return { bet: serialize(bet.toObject()), balance: toRupees(balance) }
@@ -157,7 +165,7 @@ minesRouter.post('/reveal', async (req, res) => {
     return res.json({ bet: serialize(upd), balance: toRupees(await balanceOf(req.userId)) })
   }
 
-  const multiplier = minesMultiplier(bet.mines, picks.length, bet.houseEdge)
+  const multiplier = ladderOf(bet)[picks.length - 1]
   // Every gem found → pay out automatically
   if (picks.length === GRID - bet.mines) return res.json(await cashOut(bet, picks, multiplier))
 

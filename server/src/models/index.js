@@ -85,6 +85,7 @@ const minesBetSchema = new Schema({
   amount: { type: Number, required: true },
   mines: { type: Number, required: true },
   houseEdge: Number, // locked in when the round starts
+  ladder: [Number], // payout after 1, 2, … gems, locked in when the round starts
   maxWin: Number, // ₹ cap locked in when the round starts
   minePositions: { type: [Number], required: true }, // secret until the round ends
   picks: { type: [Number], default: [] },
@@ -104,6 +105,7 @@ const towerBetSchema = new Schema({
   mode: { type: String, required: true }, // easy | medium | hard | expert
   levels: { type: Number, required: true },
   houseEdge: Number,
+  ladder: [Number], // payout per level, locked in when the round starts
   maxWin: Number,
   safe: { type: [[Number]], required: true }, // safe columns per level — secret until the round ends
   picks: { type: [Number], default: [] },
