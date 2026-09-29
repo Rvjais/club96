@@ -10,13 +10,11 @@ import { requireAuth } from '../auth.js'
 import { createChannel } from '../sse.js'
 import { AviatorBet, AviatorRound } from '../models/index.js'
 import { HttpError, balanceOf, credit, debit, toPaise, toRupees } from '../wallet.js'
+import { DEFAULTS, getSettings, onSettingsChange } from '../settings.js'
 
 const GAME = 'aviator'
 export const WAIT_MS = 6000
 export const CRASH_HOLD_MS = 3500
-const MAX_CRASH = 1000
-const MIN_BET = 1
-const MAX_BET = 10000
 const TICK_MS = 50
 
 export const multiplierAt = (sec) => 1 + 0.08 * sec + 0.02 * Math.pow(sec, 2.1)
@@ -33,12 +31,16 @@ function flightSecondsFor(crash) {
   return hi
 }
 
-// Same formula the client documents in its "Provably fair" dialog
-function crashPointFromSeed(seed) {
+// Same formula the client documents in its "Provably fair" dialog.
+// r is uniform in [0, 100); a cash-out target of x survives with probability (100 - houseEdge) / (100·x),
+// so every target returns (100 - houseEdge)% to players on average.
+function crashPointFromSeed(seed, rules) {
   const r = (parseInt(seed.slice(0, 13), 16) / 2 ** 52) * 100
-  if (r < 3) return 1
-  return Math.min(MAX_CRASH, Math.max(1, Math.floor((97 / (100 - r)) * 100) / 100))
+  if (r < rules.instantCrash) return 1
+  return Math.min(rules.maxMultiplier, Math.max(1, Math.floor(((100 - rules.houseEdge) / (100 - r)) * 100) / 100))
 }
+
+const roundRules = (cfg) => ({ houseEdge: cfg.houseEdge, instantCrash: cfg.instantCrash, maxMultiplier: cfg.maxMultiplier })
 
 const floor2 = (m) => Math.floor(m * 100) / 100
 
@@ -59,20 +61,21 @@ const autoBets = new Map() // betId → { id, user, amount, auto } for the curre
 
 async function newRound(now) {
   const seed = crypto.randomBytes(32).toString('hex')
-  const crashAt = crashPointFromSeed(seed)
+  const rules = roundRules(getSettings('aviator')) // odds are fixed per round
+  const crashAt = crashPointFromSeed(seed, rules)
   const flightStart = now + WAIT_MS
   const crashTime = flightStart + flightSecondsFor(crashAt) * 1000
   const id = nextRoundId++
   const hash = crypto.createHash('sha256').update(seed).digest('hex')
 
-  await AviatorRound.create({ _id: id, seed, hash, crashAt, startedAt: new Date(now) })
+  await AviatorRound.create({ _id: id, seed, hash, crashAt, startedAt: new Date(now), ...rules })
   await AviatorBet.updateMany({ status: 'queued' }, { status: 'active', round: id })
 
   autoBets.clear()
   const autos = await AviatorBet.find({ round: id, status: 'active', autoCashout: { $ne: null } }).lean()
   for (const b of autos) autoBets.set(String(b._id), { id: b._id, user: b.user, amount: b.amount, auto: b.autoCashout })
 
-  round = { id, seed, hash, crashAt, waitStart: now, flightStart, crashTime, endTime: crashTime + CRASH_HOLD_MS, crashed: false }
+  round = { id, seed, hash, crashAt, rules, waitStart: now, flightStart, crashTime, endTime: crashTime + CRASH_HOLD_MS, crashed: false }
 }
 
 /** Atomically mark an active bet cashed and pay it. Returns the win (paise) or null. */
@@ -104,7 +107,7 @@ async function crash(now) {
   round.crashed = true
   history.push(round.crashAt)
   if (history.length > 40) history.shift()
-  prevRound = { id: round.id, seed: round.seed, hash: round.hash, crashAt: round.crashAt }
+  prevRound = { id: round.id, seed: round.seed, hash: round.hash, crashAt: round.crashAt, rules: round.rules }
 }
 
 let ticking = false
@@ -148,9 +151,12 @@ async function snapshotFor(userId) {
   const rounds = await AviatorRound.find({ _id: { $in: [...new Set(settled.map((b) => b.round))] } }, { crashAt: 1 }).lean()
   const crashById = new Map(rounds.map((x) => [x._id, x.crashAt]))
 
+  const cfg = getSettings('aviator')
   return {
     serverNow: Date.now(),
     balance: toRupees(balance),
+    // Published game rules: odds for this round, current limits and availability
+    rules: { ...r.rules, enabled: cfg.enabled, minBet: cfg.minBet, maxBet: cfg.maxBet },
     round: {
       id: r.id,
       hash: r.hash,
@@ -197,17 +203,21 @@ aviatorRouter.get('/state', async (req, res) => res.json(await snapshotFor(req.u
 aviatorRouter.get('/stream', (req, res) => channel.connect(req, res))
 
 aviatorRouter.post('/bet', async (req, res) => {
+  const cfg = getSettings('aviator')
+  if (!cfg.enabled) throw new HttpError(403, 'Aviator is paused. Please try again later.')
   const panel = Number(req.body?.panel)
   if (panel !== 1 && panel !== 2) throw new HttpError(400, 'Invalid panel')
   const paise = toPaise(req.body?.amount)
-  if (!Number.isInteger(paise) || paise < MIN_BET * 100) throw new HttpError(400, `Minimum bet is ₹${MIN_BET}.00`)
-  if (paise > MAX_BET * 100) throw new HttpError(400, `Maximum bet is ₹${MAX_BET.toLocaleString('en-IN')}`)
+  if (!Number.isInteger(paise) || paise < Math.round(cfg.minBet * 100)) throw new HttpError(400, `Minimum bet is ₹${cfg.minBet.toLocaleString('en-IN')}`)
+  if (paise > Math.round(cfg.maxBet * 100)) throw new HttpError(400, `Maximum bet is ₹${cfg.maxBet.toLocaleString('en-IN')}`)
 
   let auto = req.body?.autoCashout
   if (auto == null || auto === false) auto = null
   else {
     auto = floor2(Number(auto))
-    if (!Number.isFinite(auto) || auto < 1.01 || auto > MAX_CRASH) throw new HttpError(400, 'Auto cash out must be at least 1.01x')
+    if (!Number.isFinite(auto) || auto < 1.01 || auto > cfg.maxMultiplier) {
+      throw new HttpError(400, `Auto cash out must be between 1.01x and ${cfg.maxMultiplier}x`)
+    }
   }
 
   const placed = await lock(async () => {
@@ -280,7 +290,20 @@ export async function startAviator() {
   const crashed = await AviatorRound.find({ crashedAt: { $ne: null } }).sort({ _id: -1 }).limit(40).lean()
   history = crashed.map((r) => r.crashAt).reverse()
   if (history.length === 0) history = [1.24, 2.5, 1.05, 14.2, 1.88, 3.12, 1.15, 8.45, 1.02, 2.05]
-  if (crashed[0]) prevRound = { id: crashed[0]._id, seed: crashed[0].seed, hash: crashed[0].hash, crashAt: crashed[0].crashAt }
+  if (crashed[0]) {
+    const p = crashed[0]
+    const d = DEFAULTS.aviator
+    prevRound = {
+      id: p._id,
+      seed: p.seed,
+      hash: p.hash,
+      crashAt: p.crashAt,
+      rules: { houseEdge: p.houseEdge ?? d.houseEdge, instantCrash: p.instantCrash ?? d.instantCrash, maxMultiplier: p.maxMultiplier ?? d.maxMultiplier },
+    }
+  }
+
+  // Limits / pause apply immediately; odds apply from the next round
+  onSettingsChange('aviator', () => channel.broadcast())
 
   await newRound(Date.now())
   setInterval(tick, TICK_MS)

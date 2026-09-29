@@ -5,6 +5,7 @@ import { Icon } from './Icons'
 import Login from './pages/Login'
 import Users from './pages/Users'
 import UserDetail from './pages/UserDetail'
+import GameSettings from './pages/GameSettings'
 
 function Layout({ admin, onLogout, children }) {
   return (
@@ -20,6 +21,9 @@ function Layout({ admin, onLogout, children }) {
         <nav className="nav">
           <NavLink to="/" end className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}>
             <Icon name="users" /> Users
+          </NavLink>
+          <NavLink to="/games" className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}>
+            <Icon name="sliders" /> Game settings
           </NavLink>
         </nav>
         <div className="sidebar-foot">
@@ -84,6 +88,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Users />} />
             <Route path="/users/:id" element={<UserDetail />} />
+            <Route path="/games" element={<GameSettings />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Layout>

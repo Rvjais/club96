@@ -710,6 +710,20 @@
   50% { box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 0 34px rgba(245,158,11,.65); }
 }
 
+/* ─── Paused notice ──────────────────────────────────────────── */
+.av-paused {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fde68a;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
 /* ─── Server states ──────────────────────────────────────────── */
 .av-connecting {
   position: absolute;
@@ -734,6 +748,7 @@
 }
 @keyframes av-spin { to { transform: rotate(360deg); } }
 
+.av-action:disabled:not(.is-pending) { cursor: not-allowed; opacity: .7; filter: none; }
 .av-action.is-pending { cursor: wait; filter: saturate(.7) brightness(.9); }
 .av-switch:disabled { cursor: not-allowed; opacity: .6; }
 

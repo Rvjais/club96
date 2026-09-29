@@ -8,6 +8,7 @@ import { checkRateLimit, clearFailures, recordFailure, validatePassword } from '
 import { Admin, AviatorBet, AviatorRound, ColorBet, Transaction, User } from '../models/index.js'
 import { HttpError, credit, debit, serializeTx, toPaise, toRupees } from '../wallet.js'
 import { periodLabel } from '../games/color.js'
+import { DEFAULTS, GAMES, getSettings, settingsLog, updateSettings } from '../settings.js'
 
 const COOKIE = 'asid'
 const COOKIE_PATH = '/api/admin'
@@ -259,4 +260,18 @@ adminRouter.post('/users/:id/logout', async (req, res) => {
   user.sessionVersion += 1
   await user.save()
   res.json({ ok: true })
+})
+
+// ── Game settings (odds, payouts, limits, pause) ─────────────
+adminRouter.get('/settings', async (req, res) => {
+  res.json({
+    settings: Object.fromEntries(GAMES.map((g) => [g, getSettings(g)])),
+    defaults: DEFAULTS,
+    log: await settingsLog(),
+  })
+})
+
+adminRouter.post('/settings/:game', async (req, res) => {
+  const saved = await updateSettings(req.params.game, req.body, req.admin.username)
+  res.json({ settings: saved, log: await settingsLog() })
 })

@@ -10,12 +10,20 @@ import { api } from '../../lib/api'
 
 export const ROUND_MS = 30000
 export const LOCK_MS = 5000
-export const MIN_BET = 10
 
 export const COLORS = {
-  red: { label: 'Red', multiplier: 2 },
-  violet: { label: 'Violet', multiplier: 4.5 },
-  green: { label: 'Green', multiplier: 2 },
+  red: { label: 'Red' },
+  violet: { label: 'Violet' },
+  green: { label: 'Green' },
+}
+
+// Used until the first server snapshot arrives; the server publishes the live rules
+export const DEFAULT_RULES = {
+  enabled: true,
+  chances: { red: 45, green: 45, violet: 10 },
+  multipliers: { red: 2, green: 2, violet: 4.5 },
+  minBet: 10,
+  maxBet: 100000,
 }
 
 export const getInitialSnapshot = () => ({
@@ -27,6 +35,7 @@ export const getInitialSnapshot = () => ({
   history: [],
   bets: [],
   records: [],
+  rules: DEFAULT_RULES,
 })
 
 export function createColorEngine({ onState, onEvent }) {
@@ -50,6 +59,7 @@ export function createColorEngine({ onState, onEvent }) {
       history: server.history,
       bets: server.bets,
       records: server.records,
+      rules: server.rules ?? DEFAULT_RULES,
     }
   }
 

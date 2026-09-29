@@ -37,6 +37,9 @@ function makeBots() {
 
 const idlePanel = { status: 'idle', amount: 0 }
 
+// Used until the first server snapshot arrives; the server publishes the live rules
+const DEFAULT_RULES = { enabled: true, houseEdge: 3, instantCrash: 3, maxMultiplier: 1000, minBet: 1, maxBet: 10000 }
+
 export const getInitialSnapshot = () => ({
   ready: false,
   phase: 'waiting',
@@ -50,6 +53,7 @@ export const getInitialSnapshot = () => ({
   round: { id: 0, hash: '' },
   prevRound: null,
   pending: { 1: false, 2: false },
+  rules: DEFAULT_RULES,
 })
 
 export function createAviatorEngine({ onState, onFrame, onEvent }) {
@@ -100,6 +104,7 @@ export function createAviatorEngine({ onState, onFrame, onEvent }) {
       round: { id: r.id, hash: r.hash },
       prevRound: server.prevRound,
       pending: { ...pending },
+      rules: server.rules ?? DEFAULT_RULES,
     })
   }
 

@@ -10,6 +10,7 @@ import { adminRouter, seedAdmin } from './routes/admin.js'
 import { aviatorRouter, startAviator } from './games/aviator.js'
 import { colorRouter, startColor } from './games/color.js'
 import { HttpError } from './wallet.js'
+import { loadSettings } from './settings.js'
 
 const app = express()
 app.disable('x-powered-by')
@@ -49,6 +50,7 @@ app.use((err, req, res, next) => {
 })
 
 await connectDb()
+await loadSettings()
 await seedAdmin()
 await seedDemoUser()
 await startAviator()

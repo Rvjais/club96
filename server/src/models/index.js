@@ -38,6 +38,10 @@ const aviatorRoundSchema = new Schema({
   crashAt: { type: Number, required: true },
   startedAt: { type: Date, required: true },
   crashedAt: Date,
+  // Settings the crash point was generated with (for fairness verification)
+  houseEdge: Number,
+  instantCrash: Number,
+  maxMultiplier: Number,
 })
 
 const aviatorBetSchema = new Schema({
@@ -65,6 +69,7 @@ const colorBetSchema = new Schema({
   period: { type: Number, required: true },
   color: { type: String, required: true },
   amount: { type: Number, required: true },
+  multiplier: Number, // payout locked in when the bet was placed
   status: { type: String, default: 'pending' }, // pending | won | lost
   result: String,
   win: { type: Number, default: 0 },
@@ -78,6 +83,19 @@ const adminSchema = new Schema({
   lastLoginAt: Date,
 }, { timestamps: true })
 
+const gameSettingsSchema = new Schema({
+  _id: String, // game key
+  data: { type: Schema.Types.Mixed, required: true },
+  updatedBy: String,
+}, { timestamps: true, minimize: false })
+
+const settingsLogSchema = new Schema({
+  game: { type: String, required: true },
+  admin: String,
+  before: Schema.Types.Mixed,
+  after: Schema.Types.Mixed,
+}, { timestamps: { createdAt: true, updatedAt: false } })
+
 export const User = model('User', userSchema)
 export const Transaction = model('Transaction', transactionSchema)
 export const AviatorRound = model('AviatorRound', aviatorRoundSchema)
@@ -85,3 +103,5 @@ export const AviatorBet = model('AviatorBet', aviatorBetSchema)
 export const ColorResult = model('ColorResult', colorResultSchema)
 export const ColorBet = model('ColorBet', colorBetSchema)
 export const Admin = model('Admin', adminSchema)
+export const GameSettings = model('GameSettings', gameSettingsSchema)
+export const SettingsLog = model('SettingsLog', settingsLogSchema)

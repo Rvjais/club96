@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Icon } from '../../components/Icons'
-import { COLORS, LOCK_MS, MIN_BET, ROUND_MS, createColorEngine, getInitialSnapshot } from './colorEngine'
+import { COLORS, LOCK_MS, ROUND_MS, createColorEngine, getInitialSnapshot } from './colorEngine'
 import { subscribe } from '../../lib/api'
 import { useAuth } from '../../auth/authContext'
 import './ColorPrediction.css'
@@ -74,13 +74,17 @@ export default function ColorPrediction() {
     return () => window.removeEventListener('keydown', onKey)
   }, [sheetColor])
 
-  const { ready, phase, period, timeLeft, balance, history, bets, records } = snap
-  const locked = phase !== 'open'
+  const { ready, phase, period, timeLeft, balance, history, bets, records, rules } = snap
+  const paused = !rules.enabled
+  const locked = phase !== 'open' || paused
+  const MIN_BET = rules.minBet
+  const pctText = (n) => `${Number(n.toFixed(2))}%`
   const seconds = Math.ceil(timeLeft / 1000)
   const value = Math.floor(Number(amount)) || 0
 
   const openSheet = (color) => {
     if (!ready) return
+    if (paused) return pushToast('error', 'Color Prediction is paused. Please try again later.')
     if (locked) return pushToast('error', 'Betting is closed for this period')
     setAmount('100')
     setSheetColor(color)
@@ -158,7 +162,13 @@ export default function ColorPrediction() {
           </div>
         </section>
 
-        {phase === 'locked' && (
+        {paused && (
+          <div className="cp-lock-note cp-paused-note">
+            <Icon name="lock" size={14} strokeWidth={2.2} /> This game is paused by the operator. Bets already placed will still be settled.
+          </div>
+        )}
+
+        {!paused && phase === 'locked' && (
           <div className="cp-lock-note">
             <Icon name="lock" size={14} strokeWidth={2.2} /> Bets close {LOCK_MS / 1000}s before the draw. Next period opens shortly.
           </div>
@@ -176,7 +186,8 @@ export default function ColorPrediction() {
             >
               <span className="cp-color-orb" />
               <span className="cp-color-name">{c.label}</span>
-              <span className="cp-color-mult">{c.multiplier}×</span>
+              <span className="cp-color-mult">{rules.multipliers[key]}×</span>
+              <span className="cp-color-chance">{pctText(rules.chances[key])} chance</span>
               {locked && (
                 <span className="cp-color-lock"><Icon name="lock" size={16} strokeWidth={2.2} /></span>
               )}
@@ -200,7 +211,7 @@ export default function ColorPrediction() {
                     <span className="cp-bet-color">
                       <i className={`cp-swatch ${b.color}`} />
                       {COLORS[b.color].label}
-                      <em>{COLORS[b.color].multiplier}×</em>
+                      <em>{b.multiplier}×</em>
                     </span>
                     <strong>{formatMoney(b.amount)}</strong>
                   </div>
@@ -266,7 +277,7 @@ export default function ColorPrediction() {
         </section>
 
         <p className="cp-note">
-          <Icon name="info" size={13} /> Uses your shared wallet. Red and green pay 2×, violet pays 4.5×.
+          <Icon name="info" size={13} /> Uses your shared wallet. Bets ₹{MIN_BET.toLocaleString('en-IN')}–₹{rules.maxBet.toLocaleString('en-IN')}. Payouts are fixed when you place a bet.
         </p>
       </main>
 
@@ -280,7 +291,7 @@ export default function ColorPrediction() {
               <div className={`cp-sheet-head cp-head-${sheetColor}`}>
                 <span className="cp-sheet-title">
                   <i className={`cp-swatch ${sheetColor}`} /> Bet on {COLORS[sheetColor].label}
-                  <em>{COLORS[sheetColor].multiplier}×</em>
+                  <em>{rules.multipliers[sheetColor]}×</em>
                 </span>
                 <button type="button" className="cp-sheet-close" onClick={() => setSheetColor(null)} aria-label="Close">
                   <Icon name="x" size={16} strokeWidth={2.4} />
@@ -319,7 +330,7 @@ export default function ColorPrediction() {
               <div className="cp-sheet-summary">
                 <div>
                   <span>Potential win</span>
-                  <strong>{formatMoney(value * COLORS[sheetColor].multiplier)}</strong>
+                  <strong>{formatMoney(value * rules.multipliers[sheetColor])}</strong>
                 </div>
                 <div>
                   <span>Balance after</span>

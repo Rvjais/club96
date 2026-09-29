@@ -11,25 +11,27 @@ import { requireAuth } from '../auth.js'
 import { createChannel } from '../sse.js'
 import { ColorBet, ColorResult } from '../models/index.js'
 import { HttpError, balanceOf, credit, debit, toPaise, toRupees } from '../wallet.js'
+import { DEFAULTS, getSettings, onSettingsChange } from '../settings.js'
 
 const GAME = 'color'
 export const PERIOD_MS = 30000
 export const LOCK_MS = 5000
-const MIN_BET = 10
-const MAX_BET = 100000
+const COLOR_KEYS = ['red', 'green', 'violet']
 
-export const COLORS = {
-  red: { multiplier: 2, weight: 0.45 },
-  green: { multiplier: 2, weight: 0.45 },
-  violet: { multiplier: 4.5, weight: 0.1 },
+/** Weighted random pick; weights are percentages that add up to 100. */
+function rollColor(weights) {
+  const r = (crypto.randomInt(0, 1_000_000) / 1_000_000) * 100
+  let acc = 0
+  for (const c of COLOR_KEYS) {
+    acc += weights[c]
+    if (r < acc) return c
+  }
+  return COLOR_KEYS.findLast((c) => weights[c] > 0)
 }
 
-function rollColor() {
-  const r = crypto.randomInt(0, 1_000_000) / 1_000_000
-  if (r < COLORS.red.weight) return 'red'
-  if (r < COLORS.red.weight + COLORS.green.weight) return 'green'
-  return 'violet'
-}
+// Odds are locked in when a period starts, so a settings change never alters a running period
+const periodOdds = new Map() // period index → weights
+const oddsFor = (idx) => periodOdds.get(idx) ?? getSettings('color').weights
 
 const periodIndex = (now) => Math.floor(now / PERIOD_MS)
 
@@ -51,7 +53,7 @@ async function resolvePeriod(idx) {
   let result = await ColorResult.findById(idx).lean()
   if (!result) {
     try {
-      result = (await ColorResult.create({ _id: idx, color: rollColor() })).toObject()
+      result = (await ColorResult.create({ _id: idx, color: rollColor(oddsFor(idx)) })).toObject()
     } catch (err) {
       if (err?.code !== 11000) throw err
       result = await ColorResult.findById(idx).lean()
@@ -61,12 +63,14 @@ async function resolvePeriod(idx) {
   const pending = await ColorBet.find({ period: idx, status: 'pending' }).lean()
   for (const bet of pending) {
     const won = bet.color === color
-    const win = won ? Math.floor(bet.amount * COLORS[color].multiplier) : 0
+    const multiplier = bet.multiplier ?? DEFAULTS.color.multipliers[bet.color] // older bets had no stored payout
+    const win = won ? Math.floor(bet.amount * multiplier) : 0
     await tx(async (session) => {
       const upd = await ColorBet.updateOne({ _id: bet._id, status: 'pending' }, { status: won ? 'won' : 'lost', result: color, win }, { session })
       if (upd.modifiedCount && win) await credit(session, bet.user, win, { type: 'win', game: GAME, ref: bet._id })
     })
   }
+  periodOdds.delete(idx)
 }
 
 let ticking = false
@@ -76,6 +80,7 @@ async function tick() {
   if (cur === lastIdx) return
   ticking = true
   try {
+    periodOdds.set(cur, { ...getSettings('color').weights })
     for (let idx = lastIdx; idx < cur; idx++) await resolvePeriod(idx)
     lastIdx = cur
     channel.broadcast()
@@ -100,12 +105,15 @@ async function snapshotFor(userId) {
     ColorBet.find({ user: userId, status: { $ne: 'pending' } }).sort({ createdAt: -1 }).limit(30).lean(),
   ])
 
+  const cfg = getSettings('color')
   return {
     serverNow: now,
     balance: toRupees(balance),
+    // Published game rules: chances for this period, current payouts, limits and availability
+    rules: { enabled: cfg.enabled, chances: oddsFor(cur), multipliers: cfg.multipliers, minBet: cfg.minBet, maxBet: cfg.maxBet },
     period: { id: cur, label: periodLabel(cur), endsAt: (cur + 1) * PERIOD_MS, periodMs: PERIOD_MS, lockMs: LOCK_MS },
     history: history.reverse().map((r) => ({ period: periodLabel(r._id), color: r.color })),
-    bets: current.map((b) => ({ id: String(b._id), color: b.color, amount: toRupees(b.amount) })),
+    bets: current.map((b) => ({ id: String(b._id), color: b.color, amount: toRupees(b.amount), multiplier: b.multiplier ?? DEFAULTS.color.multipliers[b.color] })),
     records: records.map((b) => ({
       id: String(b._id),
       period: periodLabel(b.period),
@@ -137,11 +145,13 @@ colorRouter.get('/state', async (req, res) => res.json(await snapshotFor(req.use
 colorRouter.get('/stream', (req, res) => channel.connect(req, res))
 
 colorRouter.post('/bet', async (req, res) => {
+  const cfg = getSettings('color')
+  if (!cfg.enabled) throw new HttpError(403, 'Color Prediction is paused. Please try again later.')
   const { color } = req.body ?? {}
-  if (!COLORS[color]) throw new HttpError(400, 'Pick red, green or violet')
+  if (!COLOR_KEYS.includes(color)) throw new HttpError(400, 'Pick red, green or violet')
   const paise = toPaise(req.body?.amount)
-  if (!Number.isInteger(paise) || paise < MIN_BET * 100) throw new HttpError(400, `Minimum bet is ₹${MIN_BET}`)
-  if (paise > MAX_BET * 100) throw new HttpError(400, `Maximum bet is ₹${MAX_BET.toLocaleString('en-IN')}`)
+  if (!Number.isInteger(paise) || paise < Math.round(cfg.minBet * 100)) throw new HttpError(400, `Minimum bet is ₹${cfg.minBet.toLocaleString('en-IN')}`)
+  if (paise > Math.round(cfg.maxBet * 100)) throw new HttpError(400, `Maximum bet is ₹${cfg.maxBet.toLocaleString('en-IN')}`)
 
   const now = Date.now()
   const cur = periodIndex(now)
@@ -149,7 +159,7 @@ colorRouter.post('/bet', async (req, res) => {
 
   await tx(async (session) => {
     await debit(session, req.userId, paise, { type: 'bet', game: GAME })
-    await ColorBet.create([{ user: req.userId, period: cur, color, amount: paise }], { session })
+    await ColorBet.create([{ user: req.userId, period: cur, color, amount: paise, multiplier: cfg.multipliers[color] }], { session })
   })
   channel.sendTo(req.userId)
   res.json(await snapshotFor(req.userId))
@@ -166,5 +176,8 @@ export async function startColor() {
     for (let i = 10; i >= 1; i--) await resolvePeriod(cur - i)
   }
   lastIdx = cur
+  periodOdds.set(cur, { ...getSettings('color').weights })
+  // Limits / payouts / pause apply immediately; chances apply from the next period
+  onSettingsChange('color', () => channel.broadcast())
   setInterval(tick, 200)
 }

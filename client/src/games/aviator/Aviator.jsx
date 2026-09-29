@@ -26,7 +26,7 @@ const timeOf = (ts) =>
 // ─────────────────────────────────────────────────────────────
 // Bet panel
 // ─────────────────────────────────────────────────────────────
-function BetPanel({ id, accent, phase, panel, amount, onAmount, auto, onAuto, onAction, estimateRef, hotkey, pending }) {
+function BetPanel({ id, accent, phase, panel, amount, onAmount, auto, onAuto, onAction, estimateRef, hotkey, pending, paused }) {
   const locked = panel.status !== 'idle'
   const value = parseFloat(amount) || 0
 
@@ -48,6 +48,12 @@ function BetPanel({ id, accent, phase, panel, amount, onAmount, auto, onAuto, on
     label = 'Cash out'
     sub = formatMoney(panel.amount)
   }
+  if (paused && panel.status === 'idle') {
+    variant = 'queued'
+    label = 'Paused'
+    sub = 'Betting is closed'
+  }
+  const blocked = paused && panel.status === 'idle'
   const autoLocked = locked || pending
 
   return (
@@ -123,7 +129,7 @@ function BetPanel({ id, accent, phase, panel, amount, onAmount, auto, onAuto, on
           </div>
         </div>
 
-        <button type="button" className={`av-action av-action-${variant} ${pending ? 'is-pending' : ''}`} onClick={onAction} disabled={pending}>
+        <button type="button" className={`av-action av-action-${variant} ${pending ? 'is-pending' : ''}`} onClick={onAction} disabled={pending || blocked}>
           <span className="av-action-label">{label}</span>
           <span className="av-action-sub" ref={variant === 'cashout' ? estimateRef : null}>
             {sub}
@@ -288,7 +294,7 @@ export default function Aviator() {
     if (next) audioRef.current?.unlock()
   }
 
-  const { ready, phase, balance, history, panels, bots, userRound, myBets, round, prevRound, crashAt, pending } = snap
+  const { ready, phase, balance, history, panels, bots, userRound, myBets, round, prevRound, crashAt, pending, rules } = snap
 
   const totalBets = bots.length + userRound.length
   const totalStake = bots.reduce((s, b) => s + b.amount, 0) + userRound.reduce((s, u) => s + u.amount, 0)
@@ -511,6 +517,12 @@ export default function Aviator() {
               </div>
             </div>
 
+            {!rules.enabled && (
+              <div className="av-paused">
+                <Icon name="info" size={16} /> Aviator is paused by the operator. New bets are disabled; bets already in play are settled normally.
+              </div>
+            )}
+
             <div className="av-panels">
               {[1, 2].map((id) => (
                 <BetPanel
@@ -527,6 +539,7 @@ export default function Aviator() {
                   estimateRef={(el) => { estimateRefs.current[id] = el }}
                   hotkey={id === 1 ? 'Space' : null}
                   pending={pending[id]}
+                  paused={!rules.enabled}
                 />
               ))}
             </div>
@@ -580,8 +593,17 @@ export default function Aviator() {
                 </div>
               )}
               <div>
+                <label>This round's rules</label>
+                <code>
+                  House edge {rules.houseEdge}% (returns {Number((100 - rules.houseEdge).toFixed(2))}% on average) ·
+                  instant crash {rules.instantCrash}% · max {rules.maxMultiplier}x
+                </code>
+              </div>
+              <div>
                 <label>Crash formula</label>
-                <code>r = seed[0..13] / 2^52 × 100 → crash = max(1, 97 / (100 − r))</code>
+                <code>
+                  r = seed[0..13] / 2^52 × 100 → r &lt; {rules.instantCrash} ? 1.00 : min({rules.maxMultiplier}, (100 − {rules.houseEdge}) / (100 − r))
+                </code>
               </div>
             </div>
             <button type="button" className="av-modal-btn" onClick={() => setFairOpen(false)}>Got it</button>

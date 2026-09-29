@@ -49,6 +49,12 @@ The server then serves the site at `/`, the admin panel at `/admin` and the API 
   lifetime stats, full transaction / Aviator / Color Prediction history,
   block / unblock, force logout, reset password
 
+**Game settings** (`/admin/games`): per game, set the odds, payouts, min/max bet and pause/resume.
+- Aviator: house edge, instant-crash chance, max multiplier. Color Prediction: chance and payout per colour
+  (chances must total 100%). The page previews return-to-player and house edge before you save.
+- Odds apply from the next round/period; every bet keeps the payout it was placed at. Limits and pause apply
+  immediately. Players see the current odds inside each game, and every change is logged with the admin's name.
+
 Passwords are stored as bcrypt hashes and cannot be viewed by anyone. Use **Reset password** to set a
 new one; this also logs the user out of every device.
 
