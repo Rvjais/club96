@@ -31,16 +31,41 @@ function flightSecondsFor(crash) {
   return hi
 }
 
+/**
+ * Custom odds: the multiplier a round reaches when a share `s`% of rounds get that far.
+ * Points are joined on a log–log scale (a straight line on a 1/x-shaped curve);
+ * past the last point the chance keeps falling like 1/x.
+ */
+export function curveMultiplier(curve, instantCrash, s) {
+  const pts = [{ mult: 1, chance: 100 - instantCrash }, ...curve]
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1]
+    const b = pts[i]
+    if (s < b.chance) continue
+    if (a.chance === b.chance) return b.mult
+    const k = Math.log(b.mult / a.mult) / Math.log(b.chance / a.chance)
+    return a.mult * (s / a.chance) ** k
+  }
+  const last = pts[pts.length - 1]
+  return (last.mult * last.chance) / s
+}
+
 // Same formula the client documents in its "Provably fair" dialog.
 // r is uniform in [0, 100); a cash-out target of x survives with probability (100 - houseEdge) / (100·x),
-// so every target returns (100 - houseEdge)% to players on average.
+// so every target returns (100 - houseEdge)% to players on average — unless custom odds are set.
 function crashPointFromSeed(seed, rules) {
   const r = (parseInt(seed.slice(0, 13), 16) / 2 ** 52) * 100
   if (r < rules.instantCrash) return 1
-  return Math.min(rules.maxMultiplier, Math.max(1, Math.floor(((100 - rules.houseEdge) / (100 - r)) * 100) / 100))
+  const x = rules.curve?.length ? curveMultiplier(rules.curve, rules.instantCrash, 100 - r) : (100 - rules.houseEdge) / (100 - r)
+  return Math.min(rules.maxMultiplier, Math.max(1, Math.floor(x * 100) / 100))
 }
 
-const roundRules = (cfg) => ({ houseEdge: cfg.houseEdge, instantCrash: cfg.instantCrash, maxMultiplier: cfg.maxMultiplier })
+const roundRules = (cfg) => ({
+  houseEdge: cfg.houseEdge,
+  instantCrash: cfg.instantCrash,
+  maxMultiplier: cfg.maxMultiplier,
+  ...(cfg.curve?.length ? { curve: cfg.curve } : {}),
+})
 
 const floor2 = (m) => Math.floor(m * 100) / 100
 
@@ -298,7 +323,12 @@ export async function startAviator() {
       seed: p.seed,
       hash: p.hash,
       crashAt: p.crashAt,
-      rules: { houseEdge: p.houseEdge ?? d.houseEdge, instantCrash: p.instantCrash ?? d.instantCrash, maxMultiplier: p.maxMultiplier ?? d.maxMultiplier },
+      rules: {
+        houseEdge: p.houseEdge ?? d.houseEdge,
+        instantCrash: p.instantCrash ?? d.instantCrash,
+        maxMultiplier: p.maxMultiplier ?? d.maxMultiplier,
+        ...(p.curve?.length ? { curve: p.curve } : {}),
+      },
     }
   }
 

@@ -597,3 +597,14 @@ select:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 3px rg
 .ladder-cell.is-bad { border-color: #fecaca; background: var(--red-soft); }
 .ladder-cell.is-bad small:not(.ladder-chance) { color: var(--red); }
 .alert-warn { background: var(--amber-soft); color: var(--amber); }
+
+/* ─── Aviator custom odds ─────────────────────────────────────── */
+.seg-mini { display: inline-flex; gap: 3px; padding: 3px; border-radius: 9px; background: var(--bg); border: 1px solid var(--line); }
+.seg-mini button { padding: 5px 10px; border-radius: 7px; border: none; background: none; font: inherit; font-size: 12.5px; font-weight: 700; color: var(--muted); cursor: pointer; }
+.seg-mini button.is-active { background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
+.seg-mini button:disabled { opacity: 0.5; cursor: not-allowed; }
+.odds-grid { grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); }
+.odds-cell-head { display: flex; align-items: center; justify-content: space-between; }
+.odds-cell-head span { font-size: 11px; font-weight: 700; color: var(--muted); }
+.odds-remove { border: none; background: none; padding: 2px; border-radius: 5px; color: var(--faint); cursor: pointer; display: grid; place-items: center; }
+.odds-remove:hover { color: var(--red); background: var(--red-soft); }

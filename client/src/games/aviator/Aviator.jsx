@@ -595,16 +595,33 @@ export default function Aviator() {
               <div>
                 <label>This round's rules</label>
                 <code>
-                  House edge {rules.houseEdge}% (returns {Number((100 - rules.houseEdge).toFixed(2))}% on average) ·
-                  instant crash {rules.instantCrash}% · max {rules.maxMultiplier}x
+                  {rules.curve?.length
+                    ? <>Custom odds · instant crash {rules.instantCrash}% · max {rules.maxMultiplier}x</>
+                    : <>House edge {rules.houseEdge}% (returns {Number((100 - rules.houseEdge).toFixed(2))}% on average) · instant crash {rules.instantCrash}% · max {rules.maxMultiplier}x</>}
                 </code>
               </div>
-              <div>
-                <label>Crash formula</label>
-                <code>
-                  r = seed[0..13] / 2^52 × 100 → r &lt; {rules.instantCrash} ? 1.00 : min({rules.maxMultiplier}, (100 − {rules.houseEdge}) / (100 − r))
-                </code>
-              </div>
+              {rules.curve?.length ? (
+                <>
+                  <div>
+                    <label>Chance a round reaches…</label>
+                    <code>{rules.curve.map((p) => `${p.mult}x: ${p.chance}%`).join(' · ')}</code>
+                  </div>
+                  <div>
+                    <label>Crash formula</label>
+                    <code>
+                      r = seed[0..13] / 2^52 × 100 → r &lt; {rules.instantCrash} ? 1.00 : the multiplier that (100 − r)% of rounds reach on
+                      the curve above (log–log between points, ∝ 1/x after the last), capped at {rules.maxMultiplier}x
+                    </code>
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <label>Crash formula</label>
+                  <code>
+                    r = seed[0..13] / 2^52 × 100 → r &lt; {rules.instantCrash} ? 1.00 : min({rules.maxMultiplier}, (100 − {rules.houseEdge}) / (100 − r))
+                  </code>
+                </div>
+              )}
             </div>
             <button type="button" className="av-modal-btn" onClick={() => setFairOpen(false)}>Got it</button>
           </div>

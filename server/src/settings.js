@@ -14,6 +14,9 @@ export const DEFAULTS = {
     maxMultiplier: 1000,
     minBet: 1,
     maxBet: 10000,
+    // Optional custom odds: [{ mult, chance }] = % of rounds that reach `mult`.
+    // Empty → the house-edge formula decides how far rounds fly.
+    curve: [],
   },
   color: {
     enabled: true,
@@ -154,6 +157,22 @@ export function validate(game, input) {
       maxBet: num(input.maxBet, 'Maximum bet', 1, 1_000_000),
     }
     if (s.maxBet < s.minBet) throw new HttpError(400, 'Maximum bet must be at least the minimum bet')
+    const curve = Array.isArray(input.curve) ? input.curve : []
+    if (curve.length > 12) throw new HttpError(400, 'Use at most 12 odds points')
+    s.curve = curve.map((p, i) => ({
+      mult: num(p?.mult, `Odds point ${i + 1} multiplier`, 1.01, s.maxMultiplier),
+      chance: num(p?.chance, `Odds point ${i + 1} chance`, 0.01, 100),
+    }))
+    let prev = { mult: 1, chance: 100 - s.instantCrash }
+    for (const [i, p] of s.curve.entries()) {
+      if (p.mult <= prev.mult) throw new HttpError(400, `Odds point ${i + 1}: multipliers must go up (${p.mult}x after ${prev.mult}x)`)
+      if (p.chance > prev.chance) {
+        throw new HttpError(400, i === 0
+          ? `Odds point 1: at most ${prev.chance}% of rounds can reach ${p.mult}x (the rest crash instantly)`
+          : `Odds point ${i + 1}: chances must go down (${p.chance}% after ${prev.chance}%)`)
+      }
+      prev = p
+    }
     return s
   }
 

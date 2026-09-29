@@ -44,6 +44,7 @@ const aviatorRoundSchema = new Schema({
   houseEdge: Number,
   instantCrash: Number,
   maxMultiplier: Number,
+  curve: { type: [{ _id: false, mult: Number, chance: Number }], default: undefined }, // custom odds, if any
 })
 
 const aviatorBetSchema = new Schema({

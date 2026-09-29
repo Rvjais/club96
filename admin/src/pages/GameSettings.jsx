@@ -3,6 +3,7 @@ import { api, dateTime, money } from '../api'
 import { Icon } from '../Icons'
 import { NumberField, SaveBar, Toggle } from './settings/controls'
 import { pct, toForm, toNum } from './settings/settingsForm'
+import AviatorSettings from './settings/AviatorSettings'
 import MinesSettings from './settings/MinesSettings'
 import TowerSettings from './settings/TowerSettings'
 import PlinkoSettings from './settings/PlinkoSettings'
@@ -14,77 +15,6 @@ const COLORS = [
   { key: 'green', label: 'Green' },
   { key: 'violet', label: 'Violet' },
 ]
-
-// ── Aviator ──────────────────────────────────────────────────
-function AviatorCard({ saved, defaults, onSaved }) {
-  const [form, setForm] = useState(() => toForm(saved))
-  const [busy, setBusy] = useState(false)
-  const [msg, setMsg] = useState(null)
-  const set = (k) => (v) => { setForm((f) => ({ ...f, [k]: v })); setMsg(null) }
-  const dirty = JSON.stringify(form) !== JSON.stringify(toForm(saved))
-
-  const edge = toNum(form.houseEdge)
-  const instant = toNum(form.instantCrash)
-  const maxMult = toNum(form.maxMultiplier)
-  // P(round reaches x) = min(1 − instant, (100 − edge) / (100·x)), and 0 above the cap
-  const reach = (x) => {
-    if ([edge, instant, maxMult].some(Number.isNaN) || x > maxMult) return 0
-    return Math.min(100 - instant, (100 - edge) / x)
-  }
-
-  const save = async () => {
-    setBusy(true)
-    try {
-      const body = { enabled: form.enabled, houseEdge: edge, instantCrash: instant, maxMultiplier: maxMult, minBet: toNum(form.minBet), maxBet: toNum(form.maxBet) }
-      const res = await api.post('/settings/aviator', body)
-      onSaved('aviator', res)
-      setMsg({ kind: 'success', text: 'Saved. Odds apply from the next round; limits apply now.' })
-    } catch (err) {
-      setMsg({ kind: 'error', text: err.message })
-    }
-    setBusy(false)
-  }
-
-  return (
-    <section className="card game-card">
-      <div className="game-card-head">
-        <h2 className="card-title"><Icon name="plane" size={16} /> Aviator</h2>
-        <Toggle enabled={form.enabled} onChange={set('enabled')} />
-      </div>
-
-      <div className="settings-grid">
-        <NumberField label="House edge" suffix="%" value={form.houseEdge} onChange={set('houseEdge')} hint="Share of every stake the house keeps on average" />
-        <NumberField label="Instant crash chance" suffix="%" value={form.instantCrash} onChange={set('instantCrash')} hint="Rounds that end at 1.00x" />
-        <NumberField label="Max multiplier" suffix="x" value={form.maxMultiplier} onChange={set('maxMultiplier')} />
-        <NumberField label="Minimum bet" prefix="₹" value={form.minBet} onChange={set('minBet')} />
-        <NumberField label="Maximum bet" prefix="₹" value={form.maxBet} onChange={set('maxBet')} />
-      </div>
-
-      <div className="preview">
-        <div className="preview-main">
-          <span>Return to player</span>
-          <strong>{Number.isNaN(edge) ? '—' : pct(100 - edge)}</strong>
-          <small>House keeps {Number.isNaN(edge) ? '—' : pct(edge)} of stakes</small>
-        </div>
-        <div className="preview-table">
-          <span className="preview-caption">Chance a round reaches…</span>
-          {[1.5, 2, 5, 10, 100].map((x) => (
-            <div key={x}><span>{x}x</span><strong>{pct(reach(x))}</strong></div>
-          ))}
-        </div>
-      </div>
-
-      <SaveBar
-        dirty={dirty}
-        busy={busy}
-        msg={msg}
-        onSave={save}
-        onReset={() => { setForm(toForm(saved)); setMsg(null) }}
-        onDefaults={() => { setForm(toForm(defaults)); setMsg(null) }}
-      />
-    </section>
-  )
-}
 
 // ── Color Prediction ─────────────────────────────────────────
 function ColorCard({ saved, defaults, onSaved }) {
@@ -209,6 +139,8 @@ function fieldLabel(key) {
   if (m) return `${m[1]} mines, gem ${Number(m[2]) + 1} payout`
   m = key.match(/^custom\.([a-z]+)\.(\d+)$/)
   if (m) return `${m[1]} level ${Number(m[2]) + 1} payout`
+  m = key.match(/^curve\.(\d+)\.(mult|chance)$/)
+  if (m) return `Odds point ${Number(m[1]) + 1} ${m[2] === 'mult' ? 'multiplier' : 'chance'}`
   m = key.match(/^risks\.(\w+)\.(\d+)\.(mult|count)$/)
   if (m) return `${m[1]} wheel group ${Number(m[2]) + 1} ${m[3] === 'mult' ? 'payout' : 'segments'}`
   return key
@@ -223,14 +155,14 @@ function changes(before, after) {
     .map(([k, v]) => `${fieldLabel(k)}: ${b[k] === undefined ? '—' : fmt(k, b[k])} → ${fmt(k, v)}`)
   // Wheel groups removed / custom payouts switched back to the formula
   for (const [k, v] of flatten(before)) {
-    if (!(k in a) && (k.startsWith('risks.') || k.startsWith('custom.'))) list.push(`${fieldLabel(k)}: ${fmt(k, v)} → ${k.startsWith('custom.') ? 'formula' : 'removed'}`)
+    if (!(k in a) && (k.startsWith('risks.') || k.startsWith('custom.') || k.startsWith('curve.'))) list.push(`${fieldLabel(k)}: ${fmt(k, v)} → ${k.startsWith('custom.') ? 'formula' : 'removed'}`)
   }
   return list
 }
 
 // ── Page ─────────────────────────────────────────────────────
 const GAMES = [
-  { key: 'aviator', label: 'Aviator', icon: 'plane', Card: AviatorCard },
+  { key: 'aviator', label: 'Aviator', icon: 'plane', Card: AviatorSettings },
   { key: 'color', label: 'Color Prediction', icon: 'palette', Card: ColorCard },
   { key: 'mines', label: 'Mines', icon: 'bomb', Card: MinesSettings },
   { key: 'tower', label: 'Tower', icon: 'layers', Card: TowerSettings },
