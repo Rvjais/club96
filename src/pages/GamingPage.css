@@ -1,0 +1,599 @@
+/* ─── Root: mobile-app container ────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #f0f0f5;
+  font-size: 14px;
+}
+
+.gp-root {
+  max-width: 420px;
+  margin: 0 auto;
+  background: #fff;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* ─── Header ─────────────────────────────────────────────────── */
+.gp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.gp-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gp-logo-ring {
+  width: 36px;
+  height: 36px;
+  border: 2.5px solid #e02020;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: #e02020;
+  letter-spacing: -0.5px;
+}
+
+.gp-logo-name {
+  font-size: 18px;
+  font-weight: 800;
+  color: #e02020;
+  letter-spacing: 1px;
+}
+
+.gp-header-icons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gp-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.gp-dl-btn {
+  background: #e02020;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─── Notice bar ─────────────────────────────────────────────── */
+.gp-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  background: #fff8f8;
+  border-bottom: 1px solid #ffe5e5;
+  font-size: 12px;
+  color: #555;
+  overflow: hidden;
+}
+
+.gp-notice marquee { flex: 1; }
+
+.gp-notice-mail {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #888;
+  flex-shrink: 0;
+}
+
+/* ─── Body ───────────────────────────────────────────────────── */
+.gp-body {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 70px;
+}
+
+/* ─── Hero Banner ────────────────────────────────────────────── */
+.gp-banner {
+  background: linear-gradient(135deg, #ff6b6b 0%, #e02020 50%, #ff9a9e 100%);
+  margin: 0;
+  padding: 16px;
+  position: relative;
+  min-height: 160px;
+  overflow: hidden;
+}
+
+.gp-banner-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 1;
+}
+
+.gp-banner-left {
+  flex: 1;
+}
+
+.gp-phones {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.gp-phone {
+  background: #fff;
+  border-radius: 10px;
+  opacity: 0.9;
+}
+
+.gp-phone-1 {
+  width: 52px;
+  height: 90px;
+}
+
+.gp-phone-2 {
+  width: 52px;
+  height: 75px;
+  opacity: 0.7;
+}
+
+.gp-banner-right {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.gp-banner-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 2px solid rgba(255,255,255,0.7);
+  border-radius: 50%;
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.gp-banner-text {
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.gp-banner-warp {
+  position: absolute;
+  right: 80px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255,255,255,0.2);
+  border: 1.5px solid rgba(255,255,255,0.5);
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+
+.gp-dots {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.gp-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.4);
+}
+
+.gp-dot-active {
+  background: #fff;
+  width: 18px;
+  border-radius: 3px;
+}
+
+/* ─── Wallet row ─────────────────────────────────────────────── */
+.gp-wallet-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.gp-wallet {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gp-wallet-label {
+  font-size: 11px;
+  color: #888;
+}
+
+.gp-wallet-amount {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111;
+}
+
+.gp-refresh {
+  font-size: 14px;
+  color: #aaa;
+  cursor: pointer;
+}
+
+.gp-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.gp-btn-withdraw,
+.gp-btn-deposit {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.gp-btn-withdraw {
+  background: #ff9800;
+  color: #fff;
+}
+
+.gp-btn-deposit {
+  background: #e02020;
+  color: #fff;
+}
+
+.gp-btn-arrow {
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* ─── Feature cards row ──────────────────────────────────────── */
+.gp-feature-row {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.gp-feature-card {
+  flex: 1;
+  border-radius: 12px;
+  padding: 14px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.gp-fortune {
+  background: linear-gradient(135deg, #ff8c00, #ffd54f);
+}
+
+.gp-vip {
+  background: linear-gradient(135deg, #9c27b0, #e040fb);
+}
+
+.gp-feature-wheel {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 3px solid rgba(255,255,255,0.6);
+  background: conic-gradient(#e02020 0deg 60deg,#fff 60deg 120deg,#ff9800 120deg 180deg,#fff 180deg 240deg,#4caf50 240deg 300deg,#fff 300deg 360deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.gp-wheel-inner {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.gp-feature-crown {
+  font-size: 28px;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.gp-feature-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.3;
+}
+
+/* ─── Category tabs ──────────────────────────────────────────── */
+.gp-tabs-wrap {
+  padding: 10px 14px 0;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.gp-tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 8px;
+}
+
+.gp-tabs::-webkit-scrollbar { display: none; }
+
+.gp-tab {
+  background: none;
+  border: none;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: 6px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.gp-tab-active {
+  color: #e02020;
+  background: #fff0f0;
+}
+
+.gp-tabs-scroll-bar {
+  height: 3px;
+  background: #e02020;
+  border-radius: 2px;
+  width: 50px;
+}
+
+/* ─── Section ────────────────────────────────────────────────── */
+.gp-section {
+  padding: 14px 14px 6px;
+}
+
+.gp-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.gp-section-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111;
+}
+
+.gp-star {
+  color: #f5c542;
+}
+
+.gp-section-nav {
+  display: flex;
+  gap: 4px;
+}
+
+.gp-nav-arrow {
+  background: #f0f0f0;
+  border: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+}
+
+/* ─── Recommended games grid ─────────────────────────────────── */
+.gp-games-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.gp-game-card {
+  border-radius: 10px;
+  height: 110px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.gp-game-art {
+  width: 100%;
+  height: 100%;
+  background: rgba(255,255,255,0.05);
+}
+
+.gp-game-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 6px 8px;
+  background: rgba(0,0,0,0.45);
+}
+
+.gp-game-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.gp-game-label {
+  font-size: 9px;
+  color: rgba(255,255,255,0.7);
+}
+
+/* ─── Lottery ────────────────────────────────────────────────── */
+.gp-lottery-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.gp-lottery-badge {
+  width: 28px;
+  height: 28px;
+  background: #e02020;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.gp-lottery-sub {
+  font-size: 11px;
+  color: #888;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.gp-lottery-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.gp-lottery-card {
+  border-radius: 12px;
+  height: 90px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.gp-lottery-name {
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+
+.gp-lottery-label {
+  font-size: 10px;
+  color: rgba(255,255,255,0.8);
+}
+
+/* ─── Add to Desktop ─────────────────────────────────────────── */
+.gp-add-desktop {
+  margin: 14px;
+  background: #fff5f5;
+  border: 1px dashed #e02020;
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: #e02020;
+}
+
+.gp-add-icon {
+  width: 28px;
+  height: 28px;
+  background: #ffe0e0;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─── Bottom nav ─────────────────────────────────────────────── */
+.gp-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 6px 0 10px;
+  z-index: 100;
+}
+
+.gp-nav-item {
+  background: none;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  flex: 1;
+}
+
+.gp-nav-icon { font-size: 20px; color: #999; }
+.gp-nav-label { font-size: 11px; color: #999; }
+
+.gp-nav-active .gp-nav-icon,
+.gp-nav-active .gp-nav-label { color: #e02020; }
+
+.gp-nav-cta {
+  background: #e02020;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}

@@ -1,0 +1,268 @@
+/* ─── Reset ──────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #fff;
+  color: #111;
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+a { text-decoration: none; }
+
+/* ─── Page wrapper ───────────────────────────────────────────── */
+.page {
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 0 20px;
+  position: relative;
+}
+
+/* ─── Top bar ────────────────────────────────────────────────── */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+/* ─── Buttons ────────────────────────────────────────────────── */
+.btn-red {
+  background: #e02020;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 22px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-red:hover { background: #c01818; }
+
+.btn-register {
+  display: block;
+  width: 200px;
+  text-align: center;
+  border-radius: 20px;
+  margin: 6px auto 0;
+  padding: 10px 0;
+  font-size: 14px;
+}
+
+/* ─── Sub-nav ────────────────────────────────────────────────── */
+.subnav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.subnav-brand {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111;
+}
+
+.subnav-links {
+  display: flex;
+  gap: 24px;
+}
+
+.subnav-link {
+  font-size: 14px;
+  color: #e02020;
+  font-weight: 500;
+}
+.subnav-link:hover { text-decoration: underline; }
+
+/* ─── Main content ───────────────────────────────────────────── */
+.main {
+  padding: 28px 0 48px;
+}
+
+/* ─── Page heading ───────────────────────────────────────────── */
+.page-heading {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 28px;
+}
+
+/* ─── Logo block ─────────────────────────────────────────────── */
+.logo-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 36px;
+}
+
+.logo-box {
+  background: #e02020;
+  border-radius: 18px;
+  width: 160px;
+  height: 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.logo-ring {
+  width: 80px;
+  height: 80px;
+  border: 3px solid rgba(255,255,255,0.7);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.logo-num {
+  font-size: 26px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.logo-text {
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 1px;
+}
+
+/* ─── Sections ───────────────────────────────────────────────── */
+.section {
+  margin-bottom: 32px;
+}
+
+.section-heading {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 10px;
+}
+
+/* ─── Info table ─────────────────────────────────────────────── */
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.info-table tr {
+  border: 1px solid #ccc;
+}
+
+.info-table td {
+  padding: 10px 14px;
+  border: 1px solid #ccc;
+  vertical-align: top;
+}
+
+.td-label {
+  width: 40%;
+  color: #333;
+}
+
+.td-value {
+  color: #111;
+}
+
+/* ─── Links ──────────────────────────────────────────────────── */
+.red-link {
+  color: #e02020;
+}
+.red-link:hover { text-decoration: underline; }
+
+/* ─── Body text ──────────────────────────────────────────────── */
+.body-text {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.7;
+}
+
+.body-text.mt { margin-top: 14px; }
+.body-text.bold { font-weight: 600; margin-bottom: 8px; }
+
+/* ─── Lists ──────────────────────────────────────────────────── */
+.benefit-list,
+.steps-list {
+  padding-left: 22px;
+  font-size: 14px;
+  color: #333;
+  line-height: 1.8;
+}
+
+.benefit-list li,
+.steps-list li {
+  margin-bottom: 4px;
+}
+
+/* ─── FAQ ────────────────────────────────────────────────────── */
+.faq-item {
+  margin-bottom: 18px;
+}
+
+.faq-q {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111;
+  margin-bottom: 4px;
+}
+
+/* ─── Footer ─────────────────────────────────────────────────── */
+.footer {
+  border-top: 1px solid #e5e5e5;
+  background: #f5f5f5;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #555;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.footer-links {
+  display: flex;
+  gap: 18px;
+}
+
+.footer-link {
+  color: #e02020;
+  font-size: 13px;
+}
+.footer-link:hover { text-decoration: underline; }
+
+/* ─── Scroll to top ──────────────────────────────────────────── */
+.scroll-top {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #333;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  width: 36px;
+  height: 36px;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .subnav { flex-wrap: wrap; gap: 8px; }
+  .footer { flex-direction: column; align-items: flex-start; }
+  .topbar { flex-wrap: wrap; gap: 8px; }
+}
