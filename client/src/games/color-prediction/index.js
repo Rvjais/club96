@@ -5,6 +5,7 @@ export default {
   id: 'color-prediction',
   name: 'Color Prediction',
   tagline: '30s rounds',
+  category: 'probability',
   path: '/games/color-prediction',
   icon: 'palette',
   bg: 'linear-gradient(160deg,#ff6b6b 0%,#e02020 45%,#9c27b0 100%)',

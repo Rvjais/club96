@@ -5,9 +5,22 @@ import jwt from 'jsonwebtoken'
 import { ADMIN_PASSWORD, ADMIN_SESSION_HOURS, ADMIN_USERNAME, IS_PROD, JWT_SECRET } from '../config.js'
 import { tx } from '../db.js'
 import { checkRateLimit, clearFailures, recordFailure, validatePassword } from '../auth.js'
-import { Admin, AviatorBet, AviatorRound, ColorBet, Transaction, User } from '../models/index.js'
+import { Admin, AviatorBet, AviatorRound, ColorBet, DiceBet, MinesBet, PlinkoBet, TowerBet, Transaction, User, WheelBet, Withdrawal } from '../models/index.js'
 import { HttpError, credit, debit, serializeTx, toPaise, toRupees } from '../wallet.js'
 import { periodLabel } from '../games/color.js'
+import { describeMines } from '../games/mines.js'
+import { describeTower } from '../games/tower.js'
+import { describePlinko } from '../games/plinko.js'
+import { describeDice } from '../games/dice.js'
+import { describeWheel } from '../games/wheel.js'
+
+const OTHER_GAMES = [
+  { game: 'mines', model: MinesBet, describe: describeMines },
+  { game: 'tower', model: TowerBet, describe: describeTower },
+  { game: 'plinko', model: PlinkoBet, describe: describePlinko },
+  { game: 'dice', model: DiceBet, describe: describeDice },
+  { game: 'wheel', model: WheelBet, describe: describeWheel },
+]
 import { DEFAULTS, GAMES, getSettings, settingsLog, updateSettings } from '../settings.js'
 
 const COOKIE = 'asid'
@@ -116,7 +129,9 @@ const SORTS = {
 function listUser(u) {
   return {
     id: String(u._id),
+    uid: u.uid ?? null,
     username: u.username,
+    displayName: u.displayName || null,
     phone: u.phone,
     balance: toRupees(u.balance),
     status: u.status,
@@ -132,7 +147,8 @@ adminRouter.get('/users', async (req, res) => {
   const q = String(req.query.q ?? '').trim()
   if (q) {
     const rx = new RegExp(escapeRegex(q), 'i')
-    filter.$or = [{ username: rx }, { phone: rx }]
+    filter.$or = [{ username: rx }, { phone: rx }, { displayName: rx }]
+    if (/^\d{7}$/.test(q)) filter.$or.push({ uid: Number(q) })
   }
   if (req.query.status === 'active' || req.query.status === 'blocked') filter.status = req.query.status
 
@@ -154,7 +170,7 @@ adminRouter.get('/users/:id', async (req, res) => {
   const user = await loadUser(req.params.id)
   const uid = user._id
 
-  const [byType, txs, aviator, color, aviatorCount, colorCount, biggest] = await Promise.all([
+  const [byType, txs, aviator, color, aviatorCount, colorCount, biggest, withdrawals, ...others] = await Promise.all([
     Transaction.aggregate([{ $match: { user: uid } }, { $group: { _id: '$type', total: { $sum: '$amount' }, count: { $sum: 1 } } }]),
     Transaction.find({ user: uid }).sort({ createdAt: -1 }).limit(100).lean(),
     AviatorBet.find({ user: uid }).sort({ createdAt: -1 }).limit(50).lean(),
@@ -162,7 +178,20 @@ adminRouter.get('/users/:id', async (req, res) => {
     AviatorBet.countDocuments({ user: uid, status: { $in: ['cashed', 'lost'] } }),
     ColorBet.countDocuments({ user: uid, status: { $in: ['won', 'lost'] } }),
     Transaction.findOne({ user: uid, type: 'win' }).sort({ amount: -1 }).lean(),
+    Withdrawal.find({ user: uid }).sort({ createdAt: -1 }).limit(50).lean(),
+    ...OTHER_GAMES.map((g) => g.model.find({ user: uid }).sort({ createdAt: -1 }).limit(50).lean()),
   ])
+  const otherCounts = await Promise.all(OTHER_GAMES.map((g) => g.model.countDocuments({ user: uid, status: { $ne: 'active' } })))
+  const otherBets = OTHER_GAMES.flatMap((g, i) => others[i].map((b) => ({
+    id: String(b._id),
+    game: g.game,
+    amount: toRupees(b.amount),
+    status: b.status ?? (b.win > 0 ? 'won' : 'lost'),
+    multiplier: b.multiplier,
+    win: toRupees(b.win),
+    detail: b.status === 'active' ? 'In progress' : g.describe(b),
+    time: b.createdAt,
+  }))).sort((a, b) => new Date(b.time) - new Date(a.time))
   const t = Object.fromEntries(byType.map((x) => [x._id, x.total]))
   const rounds = await AviatorRound.find({ _id: { $in: [...new Set(aviator.map((b) => b.round).filter(Boolean))] } }, { crashAt: 1 }).lean()
   const crashById = new Map(rounds.map((r) => [r._id, r.crashAt]))
@@ -171,7 +200,9 @@ adminRouter.get('/users/:id', async (req, res) => {
   res.json({
     user: {
       id: String(uid),
+      uid: user.uid ?? null,
       username: user.username,
+      displayName: user.displayName || null,
       phone: user.phone,
       inviteCode: user.inviteCode ?? null,
       balance: toRupees(user.balance),
@@ -187,12 +218,14 @@ adminRouter.get('/users/:id', async (req, res) => {
     stats: {
       deposits: toRupees(t.deposit ?? 0),
       bonuses: toRupees(t.bonus ?? 0),
+      withdrawn: toRupees(-(t.withdraw ?? 0) - (t.withdraw_refund ?? 0)),
       adjustments: toRupees(t.adjustment ?? 0),
       wagered: toRupees(wagered),
       won: toRupees(t.win ?? 0),
       net: toRupees((t.win ?? 0) - wagered),
       aviatorBets: aviatorCount,
       colorBets: colorCount,
+      ...Object.fromEntries(OTHER_GAMES.map((g, i) => [`${g.game}Bets`, otherCounts[i]])),
       biggestWin: toRupees(biggest?.amount ?? 0),
     },
     transactions: txs.map(serializeTx),
@@ -208,6 +241,8 @@ adminRouter.get('/users/:id', async (req, res) => {
       win: toRupees(b.win),
       time: b.createdAt,
     })),
+    withdrawals: withdrawals.map(serializeWithdrawalAdmin),
+    otherBets,
     colorBets: color.map((b) => ({
       id: String(b._id),
       period: periodLabel(b.period),
@@ -262,12 +297,103 @@ adminRouter.post('/users/:id/logout', async (req, res) => {
   res.json({ ok: true })
 })
 
+// ── Withdrawals ──────────────────────────────────────────────
+function serializeWithdrawalAdmin(w) {
+  return {
+    id: String(w._id),
+    amount: toRupees(w.amount),
+    method: w.method,
+    details: w.details,
+    status: w.status,
+    note: w.adminNote ?? null,
+    reference: w.reference ?? null,
+    processedBy: w.processedBy ?? null,
+    processedAt: w.processedAt ?? null,
+    createdAt: w.createdAt,
+  }
+}
+
+adminRouter.get('/withdrawals', async (req, res) => {
+  const status = ['pending', 'approved', 'rejected'].includes(req.query.status) ? req.query.status : undefined
+  const [rows, pendingCount, pendingSum] = await Promise.all([
+    Withdrawal.find(status ? { status } : {}).sort({ createdAt: status === 'pending' ? 1 : -1 }).limit(200).populate('user', 'username displayName phone uid balance status').lean(),
+    Withdrawal.countDocuments({ status: 'pending' }),
+    Withdrawal.aggregate([{ $match: { status: 'pending' } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
+  ])
+  res.json({
+    pendingCount,
+    pendingTotal: toRupees(pendingSum[0]?.total ?? 0),
+    items: rows.map((w) => ({
+      ...serializeWithdrawalAdmin(w),
+      user: w.user && {
+        id: String(w.user._id),
+        uid: w.user.uid ?? null,
+        username: w.user.username,
+        displayName: w.user.displayName || null,
+        phone: w.user.phone,
+        balance: toRupees(w.user.balance),
+        status: w.user.status,
+      },
+    })),
+  })
+})
+
+async function processWithdrawal(req, approve) {
+  if (!mongoose.isValidObjectId(req.params.id)) throw new HttpError(404, 'Withdrawal not found')
+  const note = String(req.body?.note ?? '').trim().slice(0, 200)
+  const reference = String(req.body?.reference ?? '').trim().slice(0, 100)
+  if (!approve && !note) throw new HttpError(400, 'Add a reason so the player knows why it was rejected')
+
+  return tx(async (session) => {
+    const w = await Withdrawal.findOneAndUpdate(
+      { _id: req.params.id, status: 'pending' },
+      {
+        status: approve ? 'approved' : 'rejected',
+        adminNote: note || undefined,
+        reference: reference || undefined,
+        processedBy: req.admin.username,
+        processedAt: new Date(),
+      },
+      { new: true, session },
+    )
+    if (!w) throw new HttpError(409, 'This withdrawal was already processed')
+    // Rejected: return the held money to the player's wallet
+    if (!approve) await credit(session, w.user, w.amount, { type: 'withdraw_refund', ref: w._id, note: `Withdrawal rejected: ${note}` })
+    return w
+  })
+}
+
+adminRouter.post('/withdrawals/:id/approve', async (req, res) => {
+  res.json({ withdrawal: serializeWithdrawalAdmin(await processWithdrawal(req, true)) })
+})
+
+adminRouter.post('/withdrawals/:id/reject', async (req, res) => {
+  res.json({ withdrawal: serializeWithdrawalAdmin(await processWithdrawal(req, false)) })
+})
+
 // ── Game settings (odds, payouts, limits, pause) ─────────────
+// Last 24h wagered / paid out / house profit per game
+async function gameStats() {
+  const since = new Date(Date.now() - 24 * 3600 * 1000)
+  const rows = await Transaction.aggregate([
+    { $match: { createdAt: { $gte: since }, game: { $in: GAMES }, type: { $in: ['bet', 'win', 'refund'] } } },
+    { $group: { _id: { game: '$game', type: '$type' }, total: { $sum: '$amount' }, count: { $sum: 1 } } },
+  ])
+  const pick = (game, type, key = 'total') => rows.find((r) => r._id.game === game && r._id.type === type)?.[key] ?? 0
+  return Object.fromEntries(GAMES.map((g) => {
+    const wagered = -pick(g, 'bet') - pick(g, 'refund')
+    const paid = pick(g, 'win')
+    return [g, { bets: pick(g, 'bet', 'count') - pick(g, 'refund', 'count'), wagered: toRupees(wagered), paid: toRupees(paid), profit: toRupees(wagered - paid) }]
+  }))
+}
+
 adminRouter.get('/settings', async (req, res) => {
+  const [log, stats] = await Promise.all([settingsLog(), gameStats()])
   res.json({
     settings: Object.fromEntries(GAMES.map((g) => [g, getSettings(g)])),
     defaults: DEFAULTS,
-    log: await settingsLog(),
+    stats,
+    log,
   })
 })
 

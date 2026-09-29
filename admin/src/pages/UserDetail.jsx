@@ -3,8 +3,17 @@ import { Link, useParams } from 'react-router-dom'
 import { api, dateTime, money, signedMoney, timeAgo } from '../api'
 import { Icon } from '../Icons'
 
-const TX_LABELS = { bonus: 'Signup bonus', deposit: 'Deposit', bet: 'Bet', win: 'Win', refund: 'Refund', adjustment: 'Admin adjustment' }
-const GAME_LABELS = { aviator: 'Aviator', color: 'Color Prediction' }
+const TX_LABELS = { bonus: 'Signup bonus', deposit: 'Deposit', bet: 'Bet', win: 'Win', refund: 'Refund', adjustment: 'Admin adjustment', withdraw: 'Withdrawal', withdraw_refund: 'Withdrawal refund' }
+const WD_LABEL = { pending: 'Pending', approved: 'Paid', rejected: 'Rejected' }
+const GAME_LABELS = { aviator: 'Aviator', color: 'Color Prediction', mines: 'Mines', tower: 'Tower', plinko: 'Plinko', dice: 'Dice', wheel: 'Wheel' }
+// Games that share the generic bet table (one tab each)
+const OTHER_GAMES = [
+  { key: 'mines', icon: 'bomb' },
+  { key: 'tower', icon: 'layers' },
+  { key: 'plinko', icon: 'pyramid' },
+  { key: 'dice', icon: 'dices' },
+  { key: 'wheel', icon: 'wheel' },
+]
 
 function CopyButton({ value }) {
   const [done, setDone] = useState(false)
@@ -195,13 +204,13 @@ export default function UserDetail() {
 
       <header className="profile-head">
         <div className="profile-id">
-          <span className="avatar avatar-lg">{u.username.slice(-2)}</span>
+          <span className="avatar avatar-lg">{(u.displayName || u.username).slice(0, 2).toUpperCase()}</span>
           <div>
             <h1>
-              {u.username}
+              {u.displayName || u.username}
               <span className={`badge badge-${u.status}`}>{u.status}</span>
             </h1>
-            <p className="mono">{u.phone} · joined {dateTime(u.createdAt)}</p>
+            <p className="mono">UID {u.uid ?? '—'} · {u.phone} · joined {dateTime(u.createdAt)}</p>
           </div>
         </div>
         <div className="profile-actions">
@@ -246,6 +255,7 @@ export default function UserDetail() {
           <h2 className="card-title"><Icon name="activity" size={16} /> Lifetime activity</h2>
           <div className="mini-stats">
             <div><span>Deposits</span><strong>{money(s.deposits)}</strong></div>
+            <div><span>Withdrawn</span><strong>{money(s.withdrawn)}</strong></div>
             <div><span>Bonuses</span><strong>{money(s.bonuses)}</strong></div>
             <div><span>Total wagered</span><strong>{money(s.wagered)}</strong></div>
             <div><span>Total won</span><strong className="pos">{money(s.won)}</strong></div>
@@ -253,6 +263,9 @@ export default function UserDetail() {
             <div><span>Admin adjustments</span><strong>{signedMoney(s.adjustments)}</strong></div>
             <div><span>Aviator bets</span><strong>{s.aviatorBets}</strong></div>
             <div><span>Color bets</span><strong>{s.colorBets}</strong></div>
+            {OTHER_GAMES.map((g) => (
+              <div key={g.key}><span>{GAME_LABELS[g.key]} bets</span><strong>{s[`${g.key}Bets`] ?? 0}</strong></div>
+            ))}
             <div><span>Biggest win</span><strong>{money(s.biggestWin)}</strong></div>
           </div>
         </section>
@@ -261,6 +274,8 @@ export default function UserDetail() {
         <section className="card">
           <h2 className="card-title"><Icon name="user" size={16} /> Profile</h2>
           <Row label="User ID" copy={u.id}><span className="mono small">{u.id}</span></Row>
+          <Row label="UID" copy={u.uid ? String(u.uid) : undefined}><span className="mono">{u.uid ?? '—'}</span></Row>
+          <Row label="Display name">{u.displayName ?? <span className="muted">Not set</span>}</Row>
           <Row label="Username" copy={u.username}>{u.username}</Row>
           <Row label="Phone" copy={u.phone}><span className="mono">{u.phone}</span></Row>
           <Row label="Invite code">{u.inviteCode ? <span className="mono">{u.inviteCode}</span> : <span className="muted">None</span>}</Row>
@@ -293,12 +308,20 @@ export default function UserDetail() {
           <button type="button" className={tab === 'transactions' ? 'is-active' : ''} onClick={() => setTab('transactions')}>
             <Icon name="receipt" size={15} /> Transactions <em>{data.transactions.length}</em>
           </button>
+          <button type="button" className={tab === 'withdrawals' ? 'is-active' : ''} onClick={() => setTab('withdrawals')}>
+            <Icon name="banknote" size={15} /> Withdrawals <em>{data.withdrawals.length}</em>
+          </button>
           <button type="button" className={tab === 'aviator' ? 'is-active' : ''} onClick={() => setTab('aviator')}>
             <Icon name="plane" size={15} /> Aviator <em>{data.aviatorBets.length}</em>
           </button>
           <button type="button" className={tab === 'color' ? 'is-active' : ''} onClick={() => setTab('color')}>
             <Icon name="palette" size={15} /> Color Prediction <em>{data.colorBets.length}</em>
           </button>
+          {OTHER_GAMES.map((g) => (
+            <button type="button" key={g.key} className={tab === g.key ? 'is-active' : ''} onClick={() => setTab(g.key)}>
+              <Icon name={g.icon} size={15} /> {GAME_LABELS[g.key]} <em>{data.otherBets.filter((b) => b.game === g.key).length}</em>
+            </button>
+          ))}
         </div>
 
         {tab === 'transactions' && (data.transactions.length === 0 ? <Empty text="No transactions yet" /> : (
@@ -314,6 +337,27 @@ export default function UserDetail() {
                     <td className="muted">{t.note ?? '—'}</td>
                     <td className={`num strong ${t.amount >= 0 ? 'pos' : 'neg'}`}>{signedMoney(t.amount)}</td>
                     <td className="num">{money(t.balanceAfter)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
+
+        {tab === 'withdrawals' && (data.withdrawals.length === 0 ? <Empty text="No withdrawals yet" /> : (
+          <div className="table-wrap">
+            <table className="table">
+              <thead><tr><th>Requested</th><th className="num">Amount</th><th>Method</th><th>Details</th><th>Status</th><th>Processed</th><th>Note / reference</th></tr></thead>
+              <tbody>
+                {data.withdrawals.map((w) => (
+                  <tr key={w.id}>
+                    <td className="nowrap">{dateTime(w.createdAt)}</td>
+                    <td className="num strong">{money(w.amount)}</td>
+                    <td>{w.method === 'upi' ? 'UPI' : 'Bank'}</td>
+                    <td className="mono small">{w.method === 'upi' ? w.details.upiId : `${w.details.accountName} · ${w.details.accountNumber} · ${w.details.ifsc}`}</td>
+                    <td><span className={`badge badge-wd-${w.status}`}>{WD_LABEL[w.status]}</span></td>
+                    <td className="nowrap muted">{w.processedAt ? `${dateTime(w.processedAt)} · ${w.processedBy}` : '—'}</td>
+                    <td className="muted">{[w.reference, w.note].filter(Boolean).join(' · ') || '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -367,6 +411,29 @@ export default function UserDetail() {
             </table>
           </div>
         ))}
+
+        {OTHER_GAMES.some((g) => g.key === tab) && (() => {
+          const bets = data.otherBets.filter((b) => b.game === tab)
+          return bets.length === 0 ? <Empty text={`No ${GAME_LABELS[tab]} bets yet`} /> : (
+            <div className="table-wrap">
+              <table className="table">
+                <thead><tr><th>Time</th><th>Round</th><th className="num">Bet</th><th>Outcome</th><th className="num">Multiplier</th><th className="num">Win</th></tr></thead>
+                <tbody>
+                  {bets.map((b) => (
+                    <tr key={b.id}>
+                      <td className="nowrap">{dateTime(b.time)}</td>
+                      <td>{b.detail}</td>
+                      <td className="num">{money(b.amount)}</td>
+                      <td><span className={`badge badge-bet-${b.status}`}>{b.status}</span></td>
+                      <td className="num">{b.multiplier ? `${b.multiplier.toFixed(2)}x` : '—'}</td>
+                      <td className={`num strong ${b.win > 0 ? 'pos' : ''}`}>{b.win > 0 ? money(b.win) : '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        })()}
       </section>
     </div>
   )

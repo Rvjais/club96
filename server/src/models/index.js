@@ -7,6 +7,8 @@ const ObjectId = Schema.Types.ObjectId
 
 const userSchema = new Schema({
   username: { type: String, required: true, unique: true },
+  uid: { type: Number, unique: true, sparse: true }, // short public ID shown to the player
+  displayName: { type: String, trim: true },
   phone: { type: String, required: true, unique: true },
   passwordHash: { type: String, required: true },
   passwordChangedAt: { type: Date, default: Date.now },
@@ -24,7 +26,7 @@ const transactionSchema = new Schema({
   user: { type: ObjectId, ref: 'User', required: true, index: true },
   amount: { type: Number, required: true }, // signed
   balanceAfter: { type: Number, required: true },
-  type: { type: String, required: true }, // bonus | deposit | bet | win | refund | adjustment
+  type: { type: String, required: true }, // bonus | deposit | bet | win | refund | adjustment | withdraw | withdraw_refund
   game: String,
   ref: String,
   note: String,
@@ -77,11 +79,105 @@ const colorBetSchema = new Schema({
 colorBetSchema.index({ user: 1, createdAt: -1 })
 colorBetSchema.index({ period: 1, status: 1 })
 
+// ── Mines: 5×5 grid; the round stays `active` until cash-out or a mine
+const minesBetSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true },
+  amount: { type: Number, required: true },
+  mines: { type: Number, required: true },
+  houseEdge: Number, // locked in when the round starts
+  maxWin: Number, // ₹ cap locked in when the round starts
+  minePositions: { type: [Number], required: true }, // secret until the round ends
+  picks: { type: [Number], default: [] },
+  hit: Number, // the mine that ended the round
+  status: { type: String, required: true }, // active | won | lost
+  multiplier: { type: Number, default: 0 },
+  win: { type: Number, default: 0 },
+  settledAt: Date,
+}, { timestamps: { createdAt: true, updatedAt: false } })
+minesBetSchema.index({ user: 1, createdAt: -1 })
+minesBetSchema.index({ user: 1 }, { unique: true, partialFilterExpression: { status: 'active' } }) // one round at a time
+
+// ── Tower: climb level by level; one pick per level
+const towerBetSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true },
+  amount: { type: Number, required: true },
+  mode: { type: String, required: true }, // easy | medium | hard | expert
+  levels: { type: Number, required: true },
+  houseEdge: Number,
+  maxWin: Number,
+  safe: { type: [[Number]], required: true }, // safe columns per level — secret until the round ends
+  picks: { type: [Number], default: [] },
+  status: { type: String, required: true }, // active | won | lost
+  multiplier: { type: Number, default: 0 },
+  win: { type: Number, default: 0 },
+  settledAt: Date,
+}, { timestamps: { createdAt: true, updatedAt: false } })
+towerBetSchema.index({ user: 1, createdAt: -1 })
+towerBetSchema.index({ user: 1 }, { unique: true, partialFilterExpression: { status: 'active' } })
+
+// ── Plinko: settled instantly; path is the left(0)/right(1) bounce per row
+const plinkoBetSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true },
+  amount: { type: Number, required: true },
+  rows: { type: Number, required: true },
+  risk: { type: String, required: true },
+  path: [Number],
+  bucket: Number,
+  multiplier: { type: Number, default: 0 },
+  win: { type: Number, default: 0 },
+}, { timestamps: { createdAt: true, updatedAt: false } })
+plinkoBetSchema.index({ user: 1, createdAt: -1 })
+
+// ── Dice: settled instantly; roll 0.00–99.99
+const diceBetSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true },
+  amount: { type: Number, required: true },
+  direction: { type: String, required: true }, // over | under
+  target: { type: Number, required: true },
+  chance: Number,
+  payout: Number, // multiplier offered for this roll
+  roll: Number,
+  won: Boolean,
+  multiplier: { type: Number, default: 0 },
+  win: { type: Number, default: 0 },
+}, { timestamps: { createdAt: true, updatedAt: false } })
+diceBetSchema.index({ user: 1, createdAt: -1 })
+
+// ── Wheel: settled instantly; every segment equally likely
+const wheelBetSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true },
+  amount: { type: Number, required: true },
+  risk: { type: String, required: true },
+  segments: Number,
+  index: Number,
+  multiplier: { type: Number, default: 0 },
+  win: { type: Number, default: 0 },
+}, { timestamps: { createdAt: true, updatedAt: false } })
+wheelBetSchema.index({ user: 1, createdAt: -1 })
+
 const adminSchema = new Schema({
   username: { type: String, required: true, unique: true },
   passwordHash: { type: String, required: true },
   lastLoginAt: Date,
 }, { timestamps: true })
+
+const withdrawalSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true, index: true },
+  amount: { type: Number, required: true }, // paise, held from the wallet when requested
+  method: { type: String, enum: ['upi', 'bank'], required: true },
+  details: {
+    upiId: String,
+    accountName: String,
+    accountNumber: String,
+    ifsc: String,
+  },
+  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending', index: true },
+  adminNote: String,
+  reference: String, // e.g. UPI transaction ID of the payout
+  processedBy: String,
+  processedAt: Date,
+}, { timestamps: true })
+withdrawalSchema.index({ status: 1, createdAt: -1 })
 
 const gameSettingsSchema = new Schema({
   _id: String, // game key
@@ -102,6 +198,12 @@ export const AviatorRound = model('AviatorRound', aviatorRoundSchema)
 export const AviatorBet = model('AviatorBet', aviatorBetSchema)
 export const ColorResult = model('ColorResult', colorResultSchema)
 export const ColorBet = model('ColorBet', colorBetSchema)
+export const MinesBet = model('MinesBet', minesBetSchema)
+export const TowerBet = model('TowerBet', towerBetSchema)
+export const PlinkoBet = model('PlinkoBet', plinkoBetSchema)
+export const DiceBet = model('DiceBet', diceBetSchema)
+export const WheelBet = model('WheelBet', wheelBetSchema)
 export const Admin = model('Admin', adminSchema)
+export const Withdrawal = model('Withdrawal', withdrawalSchema)
 export const GameSettings = model('GameSettings', gameSettingsSchema)
 export const SettingsLog = model('SettingsLog', settingsLogSchema)

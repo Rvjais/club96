@@ -30,11 +30,34 @@ function randomUsername() {
   return s
 }
 
-function publicUser(u) {
-  return { id: String(u._id), username: u.username, phone: u.phone, createdAt: u.createdAt }
+export function publicUser(u) {
+  return {
+    id: String(u._id),
+    uid: u.uid ?? null,
+    username: u.username,
+    displayName: u.displayName || u.username,
+    phone: u.phone,
+    createdAt: u.createdAt,
+    lastLoginAt: u.lastLoginAt ?? null,
+  }
 }
 
-function setSession(res, user) {
+/** Give a user a unique 7-digit public UID if they don't have one yet (older accounts). */
+export async function ensureUid(user) {
+  if (user.uid) return user
+  for (let i = 0; i < 10; i++) {
+    const uid = crypto.randomInt(1_000_000, 10_000_000)
+    try {
+      const updated = await User.findOneAndUpdate({ _id: user._id, uid: { $exists: false } }, { uid }, { new: true }).lean()
+      return updated ?? (await User.findById(user._id).lean())
+    } catch (err) {
+      if (err?.code !== 11000) throw err
+    }
+  }
+  return user
+}
+
+export function setSession(res, user) {
   const token = jwt.sign({ sub: String(user._id), v: user.sessionVersion }, JWT_SECRET, { expiresIn: `${SESSION_DAYS}d` })
   res.cookie(COOKIE, token, {
     httpOnly: true,
@@ -89,15 +112,15 @@ async function createUser({ phone, password, inviteCode, ip }, bonusPaise) {
     try {
       return await tx(async (session) => {
         const [user] = await User.create(
-          [{ username: randomUsername(), phone, passwordHash, inviteCode: inviteCode || undefined, signupIp: ip }],
+          [{ username: randomUsername(), uid: crypto.randomInt(1_000_000, 10_000_000), phone, passwordHash, inviteCode: inviteCode || undefined, signupIp: ip }],
           { session },
         )
         if (bonusPaise > 0) await credit(session, user._id, bonusPaise, { type: 'bonus', ref: 'signup' })
         return user
       })
     } catch (err) {
-      // Username collision → retry with a new one; phone collision → report
-      if (err?.code === 11000 && err.keyPattern?.username) continue
+      // Username/UID collision → retry with new ones; phone collision → report
+      if (err?.code === 11000 && (err.keyPattern?.username || err.keyPattern?.uid)) continue
       if (err?.code === 11000 && err.keyPattern?.phone) throw new HttpError(409, 'An account with this phone number already exists')
       throw err
     }
@@ -158,6 +181,6 @@ authRouter.post('/logout', (req, res) => {
 })
 
 authRouter.get('/me', requireAuth, async (req, res) => {
-  const user = await User.findById(req.userId).lean()
+  const user = await ensureUid(await User.findById(req.userId).lean())
   res.json({ user: publicUser(user), balance: toRupees(user.balance) })
 })

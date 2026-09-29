@@ -4,6 +4,8 @@ import Home from './pages/Home'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import GamingPage from './pages/GamingPage'
+import Account from './pages/Account'
+import History from './pages/History'
 import { games } from './games'
 import { AuthProvider, RequireAuth } from './auth/AuthProvider'
 
@@ -24,6 +26,8 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/game" element={<RequireAuth><GamingPage /></RequireAuth>} />
+          <Route path="/account" element={<RequireAuth><Account /></RequireAuth>} />
+          <Route path="/account/history/:tab" element={<RequireAuth><History /></RequireAuth>} />
           {games.map(({ id, path, component: Game }) => (
             <Route
               key={id}

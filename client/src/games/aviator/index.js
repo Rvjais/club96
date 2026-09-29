@@ -5,6 +5,7 @@ export default {
   id: 'aviator',
   name: 'Aviator',
   tagline: 'Crash game',
+  category: 'crash',
   path: '/games/aviator',
   icon: 'plane',
   bg: 'linear-gradient(160deg,#ff5c7c 0%,#19212e 78%)',

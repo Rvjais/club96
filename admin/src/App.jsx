@@ -6,8 +6,9 @@ import Login from './pages/Login'
 import Users from './pages/Users'
 import UserDetail from './pages/UserDetail'
 import GameSettings from './pages/GameSettings'
+import Withdrawals from './pages/Withdrawals'
 
-function Layout({ admin, onLogout, children }) {
+function Layout({ admin, onLogout, pending, children }) {
   return (
     <div className="shell">
       <aside className="sidebar">
@@ -21,6 +22,10 @@ function Layout({ admin, onLogout, children }) {
         <nav className="nav">
           <NavLink to="/" end className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}>
             <Icon name="users" /> Users
+          </NavLink>
+          <NavLink to="/withdrawals" className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}>
+            <Icon name="banknote" /> Withdrawals
+            {pending > 0 && <em className="nav-badge">{pending}</em>}
           </NavLink>
           <NavLink to="/games" className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}>
             <Icon name="sliders" /> Game settings
@@ -47,6 +52,17 @@ function Layout({ admin, onLogout, children }) {
 export default function App() {
   const [admin, setAdmin] = useState(null)
   const [status, setStatus] = useState('loading') // loading | authed | guest
+  const [pending, setPending] = useState(0)
+
+  // Keep the sidebar's pending-withdrawal badge fresh
+  useEffect(() => {
+    if (status !== 'authed') return
+    let cancelled = false
+    const poll = () => api.get('/withdrawals?status=pending').then((d) => !cancelled && setPending(d.pendingCount), () => {})
+    poll()
+    const t = setInterval(poll, 30000)
+    return () => { cancelled = true; clearInterval(t) }
+  }, [status])
 
   useEffect(() => {
     let cancelled = false
@@ -84,11 +100,12 @@ export default function App() {
           <Route path="*" element={<Login onLogin={onLogin} />} />
         </Routes>
       ) : (
-        <Layout admin={admin} onLogout={onLogout}>
+        <Layout admin={admin} onLogout={onLogout} pending={pending}>
           <Routes>
             <Route path="/" element={<Users />} />
             <Route path="/users/:id" element={<UserDetail />} />
             <Route path="/games" element={<GameSettings />} />
+            <Route path="/withdrawals" element={<Withdrawals onCountChange={setPending} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Layout>

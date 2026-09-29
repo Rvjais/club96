@@ -90,7 +90,7 @@ export default function Users() {
           <div className="input input-search">
             <Icon name="search" size={16} />
             <input
-              placeholder="Search by username or phone"
+              placeholder="Search by name, username, UID or phone"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               aria-label="Search users"
@@ -131,8 +131,11 @@ export default function Users() {
                 <tr key={u.id} onClick={() => navigate(`/users/${u.id}`)} tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && navigate(`/users/${u.id}`)}>
                   <td>
                     <div className="user-cell">
-                      <span className="avatar">{u.username.slice(-2)}</span>
-                      <strong>{u.username}</strong>
+                      <span className="avatar">{(u.displayName || u.username).slice(0, 2).toUpperCase()}</span>
+                      <div className="user-cell-text">
+                        <strong>{u.displayName || u.username}</strong>
+                        <span className="mono">UID {u.uid ?? '—'}</span>
+                      </div>
                     </div>
                   </td>
                   <td className="mono">{u.phone}</td>

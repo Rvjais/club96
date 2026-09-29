@@ -6,9 +6,15 @@ import { ADMIN_DIST, CLIENT_DIST, IS_PROD, PORT } from './config.js'
 import { connectDb } from './db.js'
 import { authRouter, seedDemoUser } from './auth.js'
 import { walletRouter } from './routes/wallet.js'
+import { accountRouter } from './routes/account.js'
 import { adminRouter, seedAdmin } from './routes/admin.js'
 import { aviatorRouter, startAviator } from './games/aviator.js'
 import { colorRouter, startColor } from './games/color.js'
+import { minesRouter } from './games/mines.js'
+import { towerRouter } from './games/tower.js'
+import { plinkoRouter } from './games/plinko.js'
+import { diceRouter } from './games/dice.js'
+import { wheelRouter } from './games/wheel.js'
 import { HttpError } from './wallet.js'
 import { loadSettings } from './settings.js'
 
@@ -22,8 +28,14 @@ app.use(cookieParser())
 app.get('/api/health', (req, res) => res.json({ ok: true }))
 app.use('/api/auth', authRouter)
 app.use('/api/wallet', walletRouter)
+app.use('/api/account', accountRouter)
 app.use('/api/games/aviator', aviatorRouter)
 app.use('/api/games/color', colorRouter)
+app.use('/api/games/mines', minesRouter)
+app.use('/api/games/tower', towerRouter)
+app.use('/api/games/plinko', plinkoRouter)
+app.use('/api/games/dice', diceRouter)
+app.use('/api/games/wheel', wheelRouter)
 app.use('/api/admin', adminRouter)
 app.use('/api', (req, res, next) => next(new HttpError(404, 'Not found')))
 

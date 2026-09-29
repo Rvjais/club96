@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Icon } from '../components/Icons'
-import { games } from '../games'
+import { gameCategories, games } from '../games'
 import { useAuth } from '../auth/authContext'
+import BottomNav from '../components/BottomNav'
 import './GamingPage.css'
 
 const categories = [
@@ -28,21 +29,13 @@ const lotteryGames = [
   { id: 4, name: 'MOTO RACING', icon: 'flag', bg: 'linear-gradient(135deg,#e65100,#ffb74d)', label: 'Guess number' },
 ]
 
-const navItems = [
-  { icon: 'home', label: 'Home' },
-  { icon: 'gift', label: 'Activity', dot: true },
-  { cta: true },
-  { icon: 'megaphone', label: 'Promotion' },
-  { icon: 'user', label: 'Account' },
-]
-
 export default function GamingPage() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('Lobby')
-  const [activeNav, setActiveNav] = useState('Home')
+  const [gameCat, setGameCat] = useState('all')
   const [spinning, setSpinning] = useState(false)
   const [toast, setToast] = useState(null)
-  const { balance, refresh: refreshWallet, deposit, logout } = useAuth()
+  const { balance, refresh: refreshWallet } = useAuth()
   const [slide, setSlide] = useState(0)
   const [tabThumb, setTabThumb] = useState({ left: 0, width: 40 })
   const tabsRef = useRef(null)
@@ -88,19 +81,6 @@ export default function GamingPage() {
     setSpinning(false)
   }
 
-  const onDeposit = async () => {
-    try {
-      await deposit(1000)
-      showToast('success', 'Demo deposit of ₹1,000 added')
-    } catch (err) {
-      showToast('error', err.message)
-    }
-  }
-
-  const onLogout = async () => {
-    await logout()
-    navigate('/', { replace: true })
-  }
 
   return (
     <div className="gp-root">
@@ -175,11 +155,11 @@ export default function GamingPage() {
             </div>
           </div>
           <div className="gp-actions">
-            <button type="button" className="gp-btn-withdraw" onClick={() => showToast('info', 'Withdrawals are not available in the demo')}>
+            <button type="button" className="gp-btn-withdraw" onClick={() => navigate('/account?open=withdraw')}>
               <Icon name="withdraw" size={18} strokeWidth={2.4} />
               Withdraw
             </button>
-            <button type="button" className="gp-btn-deposit" onClick={onDeposit}>
+            <button type="button" className="gp-btn-deposit" onClick={() => navigate('/account?open=deposit')}>
               <Icon name="deposit" size={18} strokeWidth={2.4} />
               Deposit
             </button>
@@ -188,7 +168,7 @@ export default function GamingPage() {
 
         {/* Feature cards row */}
         <section className="gp-feature-row">
-          <button type="button" className="gp-feature-card gp-fortune">
+          <button type="button" className="gp-feature-card gp-fortune" onClick={() => navigate('/games/wheel')}>
             <div className="gp-feature-wheel">
               <div className="gp-wheel-inner" />
             </div>
@@ -239,8 +219,27 @@ export default function GamingPage() {
             </h2>
             <span className="gp-section-count">{games.length} {games.length === 1 ? 'game' : 'games'}</span>
           </div>
+          <div className="gp-cat-chips" role="tablist" aria-label="Game categories">
+            {gameCategories.map((c) => {
+              const count = c.key === 'all' ? games.length : games.filter((g) => g.category === c.key).length
+              return (
+                <button
+                  type="button"
+                  key={c.key}
+                  role="tab"
+                  aria-selected={gameCat === c.key}
+                  className={`gp-cat-chip ${gameCat === c.key ? 'is-active' : ''}`}
+                  onClick={() => setGameCat(c.key)}
+                >
+                  <Icon name={c.icon} size={14} strokeWidth={2.2} />
+                  {c.label}
+                  <em>{count}</em>
+                </button>
+              )
+            })}
+          </div>
           <div className="gp-play-grid">
-            {games.map((g) => (
+            {games.filter((g) => gameCat === 'all' || g.category === gameCat).map((g) => (
               <button
                 type="button"
                 key={g.id}
@@ -342,35 +341,7 @@ export default function GamingPage() {
         </div>
       )}
 
-      {/* ── Bottom nav ───────────────────────────────────── */}
-      <nav className="gp-bottom-nav">
-        {navItems.map((item) =>
-          item.cta ? (
-            <button type="button" key="cta" className="gp-nav-cta">
-              <span className="gp-nav-cta-orb">
-                <Icon name="gift" size={24} strokeWidth={2} />
-              </span>
-              <span className="gp-nav-cta-label">Get ₹500</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              key={item.label}
-              className={`gp-nav-item ${activeNav === item.label ? 'gp-nav-active' : ''}`}
-              onClick={() => {
-                setActiveNav(item.label)
-                if (item.label === 'Account') onLogout()
-              }}
-            >
-              <span className="gp-nav-icon">
-                <Icon name={item.icon} size={22} strokeWidth={activeNav === item.label ? 2.2 : 1.8} />
-                {item.dot && <span className="gp-red-dot" />}
-              </span>
-              <span className="gp-nav-label">{item.label}</span>
-            </button>
-          ),
-        )}
-      </nav>
+      <BottomNav onSoon={(text) => showToast('info', text)} />
     </div>
   )
 }

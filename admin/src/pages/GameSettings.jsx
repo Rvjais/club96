@@ -1,56 +1,19 @@
 import { useEffect, useState } from 'react'
-import { api, dateTime } from '../api'
+import { api, dateTime, money } from '../api'
 import { Icon } from '../Icons'
+import { NumberField, SaveBar, Toggle } from './settings/controls'
+import { pct, toForm, toNum } from './settings/settingsForm'
+import MinesSettings from './settings/MinesSettings'
+import TowerSettings from './settings/TowerSettings'
+import PlinkoSettings from './settings/PlinkoSettings'
+import DiceSettings from './settings/DiceSettings'
+import WheelSettings from './settings/WheelSettings'
 
 const COLORS = [
   { key: 'red', label: 'Red' },
   { key: 'green', label: 'Green' },
   { key: 'violet', label: 'Violet' },
 ]
-const GAME_NAMES = { aviator: 'Aviator', color: 'Color Prediction' }
-const pct = (n) => `${(Math.round(n * 100) / 100).toLocaleString('en-IN')}%`
-
-// Form values are kept as strings while typing; convert for previews / saving
-const toForm = (obj) => JSON.parse(JSON.stringify(obj, (k, v) => (typeof v === 'number' ? String(v) : v)))
-const toNum = (v) => (v === '' || v == null ? NaN : Number(v))
-
-function NumberField({ label, suffix, prefix, value, onChange, hint, step = 'any' }) {
-  return (
-    <label className="field">
-      <span>{label}</span>
-      <div className="input">
-        {prefix && <span className="input-prefix">{prefix}</span>}
-        <input type="number" step={step} value={value} onChange={(e) => onChange(e.target.value)} />
-        {suffix && <span className="input-suffix">{suffix}</span>}
-      </div>
-      {hint && <small className="field-hint">{hint}</small>}
-    </label>
-  )
-}
-
-function Toggle({ enabled, onChange }) {
-  return (
-    <button type="button" role="switch" aria-checked={enabled} className={`live-toggle ${enabled ? 'is-on' : ''}`} onClick={() => onChange(!enabled)}>
-      <span className="live-toggle-knob" />
-      {enabled ? 'Live' : 'Paused'}
-    </button>
-  )
-}
-
-function SaveBar({ dirty, busy, msg, onSave, onReset, onDefaults, invalid }) {
-  return (
-    <div className="save-bar">
-      {msg && <div className={`alert alert-${msg.kind}`}><Icon name={msg.kind === 'success' ? 'checkCircle' : 'alert'} size={15} /> {msg.text}</div>}
-      <div className="save-bar-btns">
-        <button type="button" className="btn btn-ghost" onClick={onDefaults}>Load defaults</button>
-        <button type="button" className="btn btn-ghost" onClick={onReset} disabled={!dirty || busy}>Discard</button>
-        <button type="button" className="btn btn-primary" onClick={onSave} disabled={!dirty || busy || invalid}>
-          {busy ? <span className="spinner spinner-sm spinner-light" /> : 'Save changes'}
-        </button>
-      </div>
-    </div>
-  )
-}
 
 // ── Aviator ──────────────────────────────────────────────────
 function AviatorCard({ saved, defaults, onSaved }) {
@@ -232,22 +195,64 @@ function flatten(obj, prefix = '') {
 
 const FIELD_LABELS = {
   enabled: 'Status', houseEdge: 'House edge', instantCrash: 'Instant crash', maxMultiplier: 'Max multiplier',
-  minBet: 'Min bet', maxBet: 'Max bet',
+  minBet: 'Min bet', maxBet: 'Max bet', maxWin: 'Max win',
+  minMines: 'Fewest mines', maxMines: 'Most mines', levels: 'Tower height', minChance: 'Lowest chance', maxChance: 'Highest chance',
   'weights.red': 'Red chance', 'weights.green': 'Green chance', 'weights.violet': 'Violet chance',
   'multipliers.red': 'Red payout', 'multipliers.green': 'Green payout', 'multipliers.violet': 'Violet payout',
+}
+
+function fieldLabel(key) {
+  if (FIELD_LABELS[key]) return FIELD_LABELS[key]
+  let m = key.match(/^tables\.(\d+)\.(\w+)\.(\d+)$/)
+  if (m) return `${m[1]}-row ${m[2]} bucket ${Number(m[3]) + 1}`
+  m = key.match(/^risks\.(\w+)\.(\d+)\.(mult|count)$/)
+  if (m) return `${m[1]} wheel group ${Number(m[2]) + 1} ${m[3] === 'mult' ? 'payout' : 'segments'}`
+  return key
 }
 const fmt = (key, v) => (key === 'enabled' ? (v ? 'Live' : 'Paused') : String(v))
 
 function changes(before, after) {
   const b = Object.fromEntries(flatten(before))
-  return flatten(after)
+  const a = Object.fromEntries(flatten(after))
+  const list = flatten(after)
     .filter(([k, v]) => b[k] !== v)
-    .map(([k, v]) => `${FIELD_LABELS[k] ?? k}: ${b[k] === undefined ? '—' : fmt(k, b[k])} → ${fmt(k, v)}`)
+    .map(([k, v]) => `${fieldLabel(k)}: ${b[k] === undefined ? '—' : fmt(k, b[k])} → ${fmt(k, v)}`)
+  // Wheel groups that were removed
+  for (const [k, v] of flatten(before)) if (!(k in a) && k.startsWith('risks.')) list.push(`${fieldLabel(k)}: ${fmt(k, v)} → removed`)
+  return list
+}
+
+// ── Page ─────────────────────────────────────────────────────
+const GAMES = [
+  { key: 'aviator', label: 'Aviator', icon: 'plane', Card: AviatorCard },
+  { key: 'color', label: 'Color Prediction', icon: 'palette', Card: ColorCard },
+  { key: 'mines', label: 'Mines', icon: 'bomb', Card: MinesSettings },
+  { key: 'tower', label: 'Tower', icon: 'layers', Card: TowerSettings },
+  { key: 'plinko', label: 'Plinko', icon: 'pyramid', Card: PlinkoSettings },
+  { key: 'dice', label: 'Dice', icon: 'dices', Card: DiceSettings },
+  { key: 'wheel', label: 'Wheel', icon: 'wheel', Card: WheelSettings },
+]
+const GAME_NAMES = Object.fromEntries(GAMES.map((g) => [g.key, g.label]))
+
+function GameStats({ s }) {
+  if (!s) return null
+  return (
+    <div className="game-stats">
+      <div><span>Bets (24h)</span><strong>{s.bets.toLocaleString('en-IN')}</strong></div>
+      <div><span>Wagered (24h)</span><strong>{money(s.wagered)}</strong></div>
+      <div><span>Paid out (24h)</span><strong>{money(s.paid)}</strong></div>
+      <div>
+        <span>House profit (24h)</span>
+        <strong className={s.profit >= 0 ? 'pos' : 'neg'}>{s.profit < 0 ? '−' : ''}{money(Math.abs(s.profit))}</strong>
+      </div>
+    </div>
+  )
 }
 
 export default function GameSettings() {
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
+  const [game, setGame] = useState('aviator')
   const [version, setVersion] = useState(0) // remount forms after a save
 
   useEffect(() => {
@@ -256,52 +261,63 @@ export default function GameSettings() {
     return () => { cancelled = true }
   }, [])
 
-  const onSaved = (game, res) => {
-    setData((d) => ({ ...d, settings: { ...d.settings, [game]: res.settings }, log: res.log }))
+  const onSaved = (key, res) => {
+    setData((d) => ({ ...d, settings: { ...d.settings, [key]: res.settings }, log: res.log }))
     setVersion((v) => v + 1)
   }
 
   if (error) return <div className="page"><div className="alert alert-error"><Icon name="alert" size={16} /> {error}</div></div>
   if (!data) return <div className="page"><div className="empty"><span className="spinner" /></div></div>
 
+  const { Card } = GAMES.find((g) => g.key === game)
+  const log = data.log.filter((l) => l.game === game)
+
   return (
     <div className="page">
       <header className="page-head">
         <div>
           <h1>Game settings</h1>
-          <p>Odds, payouts and limits for each game. Players see the current odds inside the game.</p>
+          <p>Odds, payouts, limits and the on/off switch for each game. Players see the current odds inside the game.</p>
         </div>
       </header>
+
+      <div className="game-tabs" role="tablist">
+        {GAMES.map((g) => (
+          <button type="button" role="tab" aria-selected={game === g.key} key={g.key} className={game === g.key ? 'is-active' : ''} onClick={() => setGame(g.key)}>
+            <Icon name={g.icon} size={16} />
+            {g.label}
+            <i className={`status-dot ${data.settings[g.key]?.enabled ? 'is-on' : ''}`} title={data.settings[g.key]?.enabled ? 'Live' : 'Paused'} />
+          </button>
+        ))}
+      </div>
+
+      <GameStats s={data.stats?.[game]} />
 
       <div className="note">
         <Icon name="info" size={16} />
         <span>
-          Odds changes apply from the <strong>next</strong> round or period, never to one already in progress, and
-          every placed bet keeps the payout it was placed at. Results stay random within the odds you set.
+          Changes apply from the <strong>next</strong> round, never to one already in progress, and every placed bet keeps
+          the payout it was placed at. Results stay random within the odds you set.
         </span>
       </div>
 
-      <div className="stack">
-        <AviatorCard key={`a${version}`} saved={data.settings.aviator} defaults={data.defaults.aviator} onSaved={onSaved} />
-        <ColorCard key={`c${version}`} saved={data.settings.color} defaults={data.defaults.color} onSaved={onSaved} />
-      </div>
+      <Card key={`${game}${version}`} saved={data.settings[game]} defaults={data.defaults[game]} onSaved={onSaved} />
 
       <section className="card">
-        <h2 className="card-title"><Icon name="history" size={16} /> Change history</h2>
-        {data.log.length === 0 ? (
+        <h2 className="card-title"><Icon name="history" size={16} /> {GAME_NAMES[game]} change history</h2>
+        {log.length === 0 ? (
           <div className="empty empty-sm"><Icon name="inbox" size={24} strokeWidth={1.5} /><p>No changes yet</p></div>
         ) : (
           <div className="table-wrap">
             <table className="table">
-              <thead><tr><th>Time</th><th>Admin</th><th>Game</th><th>Changes</th></tr></thead>
+              <thead><tr><th>Time</th><th>Admin</th><th>Changes</th></tr></thead>
               <tbody>
-                {data.log.map((l) => {
+                {log.map((l) => {
                   const list = changes(l.before, l.after)
                   return (
                     <tr key={l.id}>
                       <td className="nowrap">{dateTime(l.time)}</td>
                       <td><strong>{l.admin}</strong></td>
-                      <td>{GAME_NAMES[l.game] ?? l.game}</td>
                       <td>{list.length ? <ul className="change-list">{list.map((c) => <li key={c}>{c}</li>)}</ul> : <span className="muted">No changes</span>}</td>
                     </tr>
                   )

@@ -46,6 +46,7 @@ export function AuthProvider({ children }) {
       balance,
       status,
       setBalance,
+      setUser,
       refresh,
       login: async (countryCode, phone, password) => apply(await api.post('/auth/login', { countryCode, phone, password })),
       signup: async (fields) => apply(await api.post('/auth/signup', fields)),
