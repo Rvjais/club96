@@ -1,28 +1,18 @@
 {
   "name": "viccky",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "workspaces": [
+    "client",
+    "admin",
+    "server"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "react-router-dom": "^7.18.4"
+    "dev": "concurrently -k -n api,web,admin -c red,cyan,magenta \"npm:dev -w server\" \"npm:dev -w client\" \"npm:dev -w admin\"",
+    "build": "npm run build -w client && npm run build -w admin",
+    "start": "npm start -w server",
+    "lint": "npm run lint -w client && npm run lint -w admin && npm run lint -w server"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.7",
-    "@vitejs/plugin-react": "^6.1.1",
-    "eslint": "^10.10.0",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.6",
-    "globals": "^17.12.0",
-    "vite": "^8.3.0"
+    "concurrently": "^9.2.1"
   }
 }

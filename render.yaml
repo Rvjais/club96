@@ -1,0 +1,26 @@
+# Render Blueprint: backend API + admin panel (served at /admin).
+# Render → New → Blueprint → pick this repo. Fill in the secret env vars when prompted.
+services:
+  - type: web
+    name: club96-api
+    runtime: node
+    plan: free
+    # --include=dev: the admin panel's build tools (Vite) are devDependencies
+    buildCommand: npm install --include=dev && npm run build -w admin
+    startCommand: npm start -w server
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "24"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MONGODB_URI
+        sync: false
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: SEED_DEMO_USER
+        value: "false"
