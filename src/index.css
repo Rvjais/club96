@@ -10,3 +10,22 @@ body {
 #root {
   min-height: 100vh;
 }
+
+/* Shown while a lazily-loaded game chunk downloads */
+.game-loading {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: #0f141c;
+}
+
+.game-loading-spinner {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.12);
+  border-top-color: #ff2d55;
+  animation: game-loading-spin 0.8s linear infinite;
+}
+
+@keyframes game-loading-spin { to { transform: rotate(360deg); } }

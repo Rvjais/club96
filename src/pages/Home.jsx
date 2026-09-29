@@ -1,4 +1,5 @@
 import { useNavigate, Link } from 'react-router-dom'
+import { Icon } from '../components/Icons'
 import './Home.css'
 
 const tableRows = [
@@ -118,7 +119,10 @@ export default function Home() {
           <p className="body-text bold">Playing through Club 55 Game offers several advantages:</p>
           <ul className="benefit-list">
             {benefits.map((b) => (
-              <li key={b.title}><strong>{b.title}:</strong> {b.text}</li>
+              <li key={b.title}>
+                <span className="benefit-check"><Icon name="check" size={13} strokeWidth={3} /></span>
+                <span><strong>{b.title}:</strong> {b.text}</span>
+              </li>
             ))}
           </ul>
         </div>
@@ -127,8 +131,11 @@ export default function Home() {
         <div className="section">
           <h2 className="section-heading">How to Get Started on Club 55?</h2>
           <ol className="steps-list">
-            {steps.map((s) => (
-              <li key={s.title}><strong>{s.title}:</strong> {s.text}</li>
+            {steps.map((s, i) => (
+              <li key={s.title}>
+                <span className="step-num">{i + 1}</span>
+                <span><strong>{s.title}:</strong> {s.text}</span>
+              </li>
             ))}
           </ol>
         </div>
@@ -156,7 +163,9 @@ export default function Home() {
         </div>
       </footer>
 
-      <button className="scroll-top" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>&#8679;</button>
+      <button className="scroll-top" aria-label="Scroll to top" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+        <Icon name="chevronUp" size={20} strokeWidth={2.4} />
+      </button>
     </div>
   )
 }

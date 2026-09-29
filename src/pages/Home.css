@@ -40,7 +40,9 @@ a { text-decoration: none; }
   cursor: pointer;
   transition: background 0.15s;
 }
+.btn-red { box-shadow: 0 6px 14px -6px rgba(224,32,32,0.7); transition: background 0.15s, transform 0.1s; }
 .btn-red:hover { background: #c01818; }
+.btn-red:active { transform: scale(0.97); }
 
 .btn-register {
   display: block;
@@ -101,8 +103,11 @@ a { text-decoration: none; }
 }
 
 .logo-box {
-  background: #e02020;
-  border-radius: 18px;
+  background:
+    radial-gradient(circle at 80% 10%, rgba(255,255,255,0.25), transparent 50%),
+    #e02020;
+  box-shadow: 0 18px 36px -14px rgba(224,32,32,0.7);
+  border-radius: 28px;
   width: 160px;
   height: 160px;
   display: flex;
@@ -151,23 +156,28 @@ a { text-decoration: none; }
 /* ─── Info table ─────────────────────────────────────────────── */
 .info-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 14px;
-}
-
-.info-table tr {
-  border: 1px solid #ccc;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .info-table td {
-  padding: 10px 14px;
-  border: 1px solid #ccc;
+  padding: 11px 16px;
+  border-bottom: 1px solid #eee;
   vertical-align: top;
 }
+
+.info-table tr:last-child td { border-bottom: none; }
+.info-table tr:nth-child(even) td { background: #fafafa; }
 
 .td-label {
   width: 40%;
   color: #333;
+  font-weight: 600;
+  border-right: 1px solid #eee;
 }
 
 .td-value {
@@ -193,20 +203,47 @@ a { text-decoration: none; }
 /* ─── Lists ──────────────────────────────────────────────────── */
 .benefit-list,
 .steps-list {
-  padding-left: 22px;
+  list-style: none;
   font-size: 14px;
   color: #333;
-  line-height: 1.8;
+  line-height: 1.7;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .benefit-list li,
 .steps-list li {
-  margin-bottom: 4px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
 }
+
+.benefit-check,
+.step-num {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #fff0f0;
+  color: #e02020;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.step-num { background: #e02020; color: #fff; }
 
 /* ─── FAQ ────────────────────────────────────────────────────── */
 .faq-item {
-  margin-bottom: 18px;
+  margin-bottom: 12px;
+  padding: 14px 16px;
+  border: 1px solid #eee;
+  border-left: 3px solid #e02020;
+  border-radius: 10px;
+  background: #fff;
 }
 
 .faq-q {
@@ -249,10 +286,11 @@ a { text-decoration: none; }
   background: #333;
   color: #fff;
   border: none;
-  border-radius: 4px;
-  width: 36px;
-  height: 36px;
-  font-size: 20px;
+  border-radius: 12px;
+  width: 42px;
+  height: 42px;
+  box-shadow: 0 8px 20px -6px rgba(0,0,0,0.4);
+  transition: background 0.15s, transform 0.1s;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -266,3 +304,5 @@ a { text-decoration: none; }
   .footer { flex-direction: column; align-items: flex-start; }
   .topbar { flex-wrap: wrap; gap: 8px; }
 }
+
+.scroll-top:hover { background: #e02020; }

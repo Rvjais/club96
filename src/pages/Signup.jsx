@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Icon } from '../components/Icons'
 import './Auth.css'
 
 export default function Signup() {
@@ -28,7 +29,9 @@ export default function Signup() {
         {/* ── Red header ── */}
         <div className="auth-header">
           <div className="auth-header-top">
-            <button className="auth-back" onClick={() => navigate('/')}>&#8249;</button>
+            <button type="button" className="auth-back" onClick={() => navigate('/')} aria-label="Back">
+              <Icon name="chevronLeft" size={22} strokeWidth={2.4} />
+            </button>
             <div className="auth-logo">
               <div className="auth-logo-ring">55</div>
               <span className="auth-logo-name">55CLUB</span>
@@ -48,8 +51,7 @@ export default function Signup() {
           {/* Tab strip */}
           <div className="auth-tab-strip">
             <div className="auth-tab-icon">
-              {/* phone icon */}
-              <svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
+                            <Icon name="phone" />
             </div>
             <div className="auth-tab-label">Register your phone</div>
           </div>
@@ -63,7 +65,7 @@ export default function Signup() {
               <div>
                 <div className="field-label-row">
                   <div className="field-icon">
-                    <svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
+                    <Icon name="phone" />
                   </div>
                   <span className="field-label">Phone number</span>
                 </div>
@@ -89,8 +91,7 @@ export default function Signup() {
               <div>
                 <div className="field-label-row">
                   <div className="field-icon">
-                    {/* lock icon */}
-                    <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                                        <Icon name="lock" />
                   </div>
                   <span className="field-label">Set password</span>
                 </div>
@@ -101,8 +102,8 @@ export default function Signup() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
-                  <button type="button" className="eye-btn" onClick={() => setShowPw(!showPw)}>
-                    {showPw ? '👁' : '🙈'}
+                  <button type="button" className="eye-btn" aria-label="Toggle password visibility" onClick={() => setShowPw(!showPw)}>
+                    <Icon name={showPw ? "eyeOff" : "eye"} size={19} />
                   </button>
                 </div>
               </div>
@@ -111,7 +112,7 @@ export default function Signup() {
               <div>
                 <div className="field-label-row">
                   <div className="field-icon">
-                    <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                    <Icon name="lock" />
                   </div>
                   <span className="field-label">Confirm password</span>
                 </div>
@@ -122,8 +123,8 @@ export default function Signup() {
                     value={confirm}
                     onChange={(e) => setConfirm(e.target.value)}
                   />
-                  <button type="button" className="eye-btn" onClick={() => setShowCf(!showCf)}>
-                    {showCf ? '👁' : '🙈'}
+                  <button type="button" className="eye-btn" aria-label="Toggle password visibility" onClick={() => setShowCf(!showCf)}>
+                    <Icon name={showCf ? "eyeOff" : "eye"} size={19} />
                   </button>
                 </div>
               </div>
@@ -132,8 +133,7 @@ export default function Signup() {
               <div>
                 <div className="field-label-row">
                   <div className="field-icon">
-                    {/* person icon */}
-                    <svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+                                        <Icon name="userPlus" />
                   </div>
                   <span className="field-label">Invite code</span>
                 </div>
