@@ -221,7 +221,8 @@ function StatsSheet() {
         <div><span>Total withdrawn</span><strong>{money(stats.withdrawals)}</strong></div>
       </div>
       {game('Aviator', 'plane', stats.aviator)}
-      {game('Color Prediction', 'palette', stats.color)}
+      {game('Win Go', 'timer', stats.wingo)}
+      {stats.color?.bets > 0 && game('Color Prediction', 'palette', stats.color)}
       {game('Mines', 'bomb', stats.mines)}
       {game('Tower', 'layers', stats.tower)}
       {game('Plinko', 'pyramid', stats.plinko)}

@@ -608,3 +608,17 @@ select:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 3px rg
 .odds-cell-head span { font-size: 11px; font-weight: 700; color: var(--muted); }
 .odds-remove { border: none; background: none; padding: 2px; border-radius: 5px; color: var(--faint); cursor: pointer; display: grid; place-items: center; }
 .odds-remove:hover { color: var(--red); background: var(--red-soft); }
+
+/* ─── Win Go ──────────────────────────────────────────────────── */
+.chip-toggle { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
+.chip-toggle.is-on { color: var(--green); border-color: #bbf7d0; background: var(--green-soft); }
+.digit-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-bottom: 8px; }
+.digit-cell { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px; border-radius: 10px; background: var(--bg); }
+.digit-cell small { font-size: 10.5px; font-weight: 600; color: var(--faint); text-transform: capitalize; }
+.digit-ball { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 900; font-size: 14px; }
+.digit-red { background: #e02020; }
+.digit-green { background: #0f9d58; }
+.digit-red-violet { background: linear-gradient(135deg, #e02020 50%, #9c27b0 50%); }
+.digit-green-violet { background: linear-gradient(135deg, #0f9d58 50%, #9c27b0 50%); }
+.preview-table > div.is-bad strong { color: var(--red); }
+@media (max-width: 700px) { .digit-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

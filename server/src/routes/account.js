@@ -3,7 +3,7 @@ import { Router } from 'express'
 import mongoose from 'mongoose'
 import bcrypt from 'bcryptjs'
 import { ensureUid, publicUser, requireAuth, setSession, validatePassword } from '../auth.js'
-import { AviatorBet, AviatorRound, ColorBet, DiceBet, MinesBet, PlinkoBet, TowerBet, Transaction, User, WheelBet, Withdrawal } from '../models/index.js'
+import { AviatorBet, AviatorRound, ColorBet, DiceBet, MinesBet, PlinkoBet, TowerBet, Transaction, User, WheelBet, WingoBet, Withdrawal } from '../models/index.js'
 import { HttpError, serializeTx, toRupees } from '../wallet.js'
 import { periodLabel } from '../games/color.js'
 import { describeMines } from '../games/mines.js'
@@ -11,9 +11,11 @@ import { describeTower } from '../games/tower.js'
 import { describePlinko } from '../games/plinko.js'
 import { describeDice } from '../games/dice.js'
 import { describeWheel } from '../games/wheel.js'
+import { describeWingo, periodLabel as wingoPeriod } from '../games/wingo.js'
 
 // Newer games share one history shape: { game, model, settled filter, describe }
 const OTHER_GAMES = [
+  { game: 'wingo', model: WingoBet, settled: { status: { $in: ['won', 'lost'] } }, describe: describeWingo, ref: (b) => `Period ${wingoPeriod(b.room, b.period)}` },
   { game: 'mines', model: MinesBet, settled: { status: { $in: ['won', 'lost'] } }, describe: describeMines },
   { game: 'tower', model: TowerBet, settled: { status: { $in: ['won', 'lost'] } }, describe: describeTower },
   { game: 'plinko', model: PlinkoBet, settled: {}, describe: describePlinko },
@@ -116,7 +118,7 @@ accountRouter.get('/game-history', async (req, res) => {
       win: toRupees(b.win),
       won: b.win > 0,
       detail: g.describe(b),
-      ref: `Bet ${String(b._id).slice(-8).toUpperCase()}`,
+      ref: g.ref ? g.ref(b) : `Bet ${String(b._id).slice(-8).toUpperCase()}`,
     }))),
   ]
     .sort((a, b) => new Date(b.time) - new Date(a.time))

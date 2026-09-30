@@ -1,0 +1,457 @@
+/* ─── Win Go — lobby red & white theme, scoped under .wg-root ── */
+.wg-root {
+  --wg-red: #fb5b5b;
+  --wg-red-2: #e02020;
+  --wg-green: #18b660;
+  --wg-green-2: #0f9d58;
+  --wg-violet: #c86eff;
+  --wg-violet-2: #9c27b0;
+  --wg-big: #ffa82e;
+  --wg-small: #6ea8fe;
+  --wg-bg: #f7f8ff;
+  --wg-card: #fff;
+  --wg-text: #1e2637;
+  --wg-sub: #768096;
+  --wg-line: #eef0f6;
+
+  max-width: 440px;
+  min-height: 100vh;
+  margin: 0 auto;
+  background: var(--wg-bg);
+  color: var(--wg-text);
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  position: relative;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.06);
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: clip;
+}
+
+.wg-root *, .wg-root *::before, .wg-root *::after { box-sizing: border-box; }
+.wg-root button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; padding: 0; }
+.wg-root button:disabled { cursor: not-allowed; }
+.wg-root .icon { display: block; flex-shrink: 0; }
+.wg-root input[type='number']::-webkit-inner-spin-button,
+.wg-root input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.wg-root input[type='number'] { -moz-appearance: textfield; appearance: textfield; }
+.wg-mono { font-variant-numeric: tabular-nums; }
+
+/* ─── Header ─────────────────────────────────────────────────── */
+.wg-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  color: #fff;
+  background: linear-gradient(90deg, var(--wg-red), var(--wg-red-2));
+  box-shadow: 0 4px 14px -6px rgba(224, 32, 32, 0.6);
+}
+.wg-root .wg-icon-btn { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; transition: background 0.15s; }
+.wg-root .wg-icon-btn:hover { background: rgba(255, 255, 255, 0.15); }
+.wg-title { flex: 1; text-align: center; font-size: 18px; font-weight: 900; letter-spacing: 0.5px; }
+
+.wg-main { padding: 10px 10px 40px; display: flex; flex-direction: column; gap: 10px; }
+
+/* ─── Wallet ─────────────────────────────────────────────────── */
+.wg-wallet {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 14px 14px;
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(251, 91, 91, 0.12), transparent 50%),
+    var(--wg-card);
+  box-shadow: 0 4px 16px -8px rgba(30, 38, 55, 0.18);
+}
+.wg-wallet-amount { display: flex; align-items: center; gap: 6px; font-size: 24px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.wg-root .wg-wallet-amount button { color: #b0b6c3; }
+.wg-root .wg-wallet-amount button:active .icon { transform: rotate(-150deg); transition: transform 0.3s; }
+.wg-wallet-label { display: flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--wg-sub); }
+.wg-wallet-label .icon { color: var(--wg-red-2); }
+.wg-wallet-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; margin-top: 10px; }
+.wg-root .wg-wallet-actions button { height: 40px; border-radius: 999px; font-size: 15px; font-weight: 800; color: #fff; }
+.wg-root .wg-btn-withdraw { background: linear-gradient(180deg, #ff8a8a, var(--wg-red-2)); box-shadow: 0 6px 14px -6px rgba(224, 32, 32, 0.8); }
+.wg-root .wg-btn-deposit { background: linear-gradient(180deg, #4ade80, var(--wg-green-2)); box-shadow: 0 6px 14px -6px rgba(15, 157, 88, 0.8); }
+
+/* ─── Rooms ──────────────────────────────────────────────────── */
+.wg-rooms { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 5px; border-radius: 16px; background: var(--wg-card); box-shadow: 0 4px 16px -10px rgba(30, 38, 55, 0.25); }
+.wg-root .wg-room {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 2px 8px;
+  border-radius: 12px;
+  color: var(--wg-sub);
+  transition: background 0.2s, color 0.2s;
+}
+.wg-room .icon { color: #c3c8d4; margin-bottom: 2px; }
+.wg-room span { font-size: 11.5px; font-weight: 600; }
+.wg-room strong { font-size: 13px; font-weight: 800; }
+.wg-root .wg-room.is-active { color: #fff; background: linear-gradient(180deg, var(--wg-red), var(--wg-red-2)); box-shadow: 0 8px 16px -8px rgba(224, 32, 32, 0.8); }
+.wg-room.is-active .icon { color: #fff; }
+.wg-root .wg-room.is-closed { opacity: 0.45; }
+
+/* ─── Timer ──────────────────────────────────────────────────── */
+.wg-timer {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 16px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 0% 100%, rgba(255, 255, 255, 0.18), transparent 40%),
+    linear-gradient(120deg, #ff7a7a, var(--wg-red-2));
+  overflow: hidden;
+  box-shadow: 0 10px 24px -12px rgba(224, 32, 32, 0.8);
+}
+.wg-timer::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 54%;
+  border-left: 2px dashed rgba(255, 255, 255, 0.5);
+}
+.wg-timer-left, .wg-timer-right { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.wg-timer-right { align-items: flex-end; }
+.wg-root .wg-howto {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.wg-timer-name { font-size: 15px; font-weight: 800; }
+.wg-timer-balls { display: flex; gap: 4px; }
+.wg-timer-right > span { font-size: 12px; font-weight: 700; opacity: 0.95; }
+.wg-digits { display: flex; gap: 3px; }
+.wg-digits b {
+  width: 26px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--wg-red-2);
+  font-size: 20px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.wg-digits b.is-colon { width: 12px; background: transparent; color: #fff; }
+.wg-timer-right em { font-style: normal; font-size: 13px; font-weight: 800; letter-spacing: 0.3px; font-variant-numeric: tabular-nums; }
+
+.wg-note { display: flex; align-items: center; gap: 6px; padding: 9px 12px; border-radius: 10px; font-size: 12.5px; font-weight: 600; }
+.wg-note-red { background: #fff0f0; color: var(--wg-red-2); border: 1px solid #ffd4d4; }
+
+/* ─── Balls ──────────────────────────────────────────────────── */
+.wg-ball {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  font-weight: 900;
+  font-size: 14px;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.18), inset 0 2px 0 rgba(255, 255, 255, 0.35);
+}
+.wg-ball-red { background: radial-gradient(circle at 35% 30%, #ff9a9a, var(--wg-red-2)); }
+.wg-ball-green { background: radial-gradient(circle at 35% 30%, #6fe39f, var(--wg-green-2)); }
+.wg-ball-red-violet { background: linear-gradient(135deg, var(--wg-red-2) 50%, var(--wg-violet-2) 50%); }
+.wg-ball-green-violet { background: linear-gradient(135deg, var(--wg-green-2) 50%, var(--wg-violet-2) 50%); }
+.wg-ball.is-xs { width: 20px; height: 20px; font-size: 10.5px; }
+.wg-ball.is-sm { width: 26px; height: 26px; font-size: 12.5px; }
+.wg-ball.is-lg { width: 100%; height: auto; aspect-ratio: 1; font-size: 22px; border: 3px solid #fff; box-shadow: 0 6px 12px -6px rgba(0, 0, 0, 0.4), inset 0 -4px 0 rgba(0, 0, 0, 0.18); }
+
+/* ─── Betting board ──────────────────────────────────────────── */
+.wg-board {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 16px;
+  background: var(--wg-card);
+  box-shadow: 0 4px 16px -10px rgba(30, 38, 55, 0.25);
+}
+
+.wg-lock {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(1px);
+  animation: wg-fade 0.2s ease-out;
+}
+.wg-lock b {
+  width: 86px;
+  height: 120px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: #fff;
+  color: var(--wg-red-2);
+  font-size: 84px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.wg-colors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.wg-root .wg-color {
+  height: 46px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.1;
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  transition: transform 0.1s, filter 0.15s;
+}
+.wg-color small { font-size: 10.5px; font-weight: 700; opacity: 0.9; }
+.wg-root .wg-color:active { transform: scale(0.96); }
+.wg-root .wg-color:hover { filter: brightness(1.05); }
+.wg-root .wg-color-green { background: linear-gradient(180deg, #34d27b, var(--wg-green-2)); border-radius: 4px 14px 4px 14px; box-shadow: 0 6px 12px -6px rgba(15, 157, 88, 0.9); }
+.wg-root .wg-color-violet { background: linear-gradient(180deg, var(--wg-violet), var(--wg-violet-2)); border-radius: 10px; box-shadow: 0 6px 12px -6px rgba(156, 39, 176, 0.9); }
+.wg-root .wg-color-red { background: linear-gradient(180deg, #ff7a7a, var(--wg-red-2)); border-radius: 14px 4px 14px 4px; box-shadow: 0 6px 12px -6px rgba(224, 32, 32, 0.9); }
+
+.wg-numbers {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  background: #f5f6fb;
+}
+.wg-root .wg-number { transition: transform 0.1s; }
+.wg-root .wg-number:hover { transform: translateY(-2px); }
+.wg-root .wg-number:active { transform: scale(0.94); }
+
+.wg-mults { display: flex; gap: 5px; overflow-x: auto; scrollbar-width: none; }
+.wg-mults::-webkit-scrollbar { display: none; }
+.wg-root .wg-mults button {
+  flex-shrink: 0;
+  height: 30px;
+  padding: 0 11px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--wg-sub);
+  border: 1px solid #e3e6ee;
+  background: #fff;
+}
+.wg-root .wg-mults .wg-random { color: var(--wg-red-2); border-color: var(--wg-red); }
+.wg-root .wg-mults button.is-active { color: #fff; background: var(--wg-green-2); border-color: var(--wg-green-2); }
+
+.wg-size { display: grid; grid-template-columns: 1fr 1fr; border-radius: 999px; overflow: hidden; }
+.wg-root .wg-size button { height: 42px; font-size: 16px; font-weight: 800; color: #fff; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.wg-size small { font-size: 11px; font-weight: 700; opacity: 0.85; }
+.wg-root .wg-big { background: linear-gradient(180deg, #ffc46b, var(--wg-big)); }
+.wg-root .wg-small { background: linear-gradient(180deg, #9cc4ff, var(--wg-small)); }
+.wg-root .wg-size button:active { filter: brightness(0.95); }
+
+/* ─── Cards / tabs ───────────────────────────────────────────── */
+.wg-card { padding: 12px; border-radius: 16px; background: var(--wg-card); box-shadow: 0 4px 16px -10px rgba(30, 38, 55, 0.25); }
+.wg-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.wg-card-head h2 { margin: 0; font-size: 14px; font-weight: 800; }
+.wg-card-head strong { color: var(--wg-red-2); font-variant-numeric: tabular-nums; }
+
+.wg-mybets { display: flex; flex-wrap: wrap; gap: 6px; }
+.wg-chip { padding: 5px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; color: #fff; animation: wg-fade 0.25s ease-out; }
+.wg-chip-green { background: var(--wg-green-2); }
+.wg-chip-red { background: var(--wg-red-2); }
+.wg-chip-violet { background: var(--wg-violet-2); }
+.wg-chip-big { background: var(--wg-big); }
+.wg-chip-small { background: var(--wg-small); }
+
+.wg-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px; }
+.wg-root .wg-tabs button { height: 36px; border-radius: 10px; font-size: 13px; font-weight: 700; color: var(--wg-sub); background: #f3f4f9; transition: all 0.15s; }
+.wg-root .wg-tabs button.is-active { color: #fff; background: linear-gradient(180deg, var(--wg-red), var(--wg-red-2)); box-shadow: 0 6px 12px -6px rgba(224, 32, 32, 0.8); }
+
+.wg-table { display: flex; flex-direction: column; border-radius: 10px; overflow: hidden; }
+.wg-table-head, .wg-table-row { display: grid; grid-template-columns: 1.8fr 0.9fr 1fr 0.8fr; align-items: center; text-align: center; }
+.wg-table-head { padding: 9px 4px; font-size: 12.5px; font-weight: 700; color: #fff; background: var(--wg-red); }
+.wg-table-row { padding: 9px 4px; font-size: 13px; font-weight: 600; border-bottom: 1px solid var(--wg-line); animation: wg-fade 0.3s ease-out; }
+.wg-table-row:nth-child(even) { background: #fafbfe; }
+.wg-num { font-size: 22px; font-weight: 900; }
+.wg-num-red { color: var(--wg-red-2); }
+.wg-num-green { color: var(--wg-green-2); }
+.wg-num-red-violet { background: linear-gradient(135deg, var(--wg-red-2) 50%, var(--wg-violet-2) 50%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.wg-num-green-violet { background: linear-gradient(135deg, var(--wg-green-2) 50%, var(--wg-violet-2) 50%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.wg-dots { display: inline-flex; gap: 3px; justify-content: center; }
+.wg-dots i { width: 11px; height: 11px; border-radius: 50%; }
+.wg-dot-red { background: var(--wg-red-2); }
+.wg-dot-green { background: var(--wg-green-2); }
+.wg-dot-violet { background: var(--wg-violet-2); }
+
+.wg-chart-stats { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; }
+.wg-chart-stats span { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.wg-chart-stats em { font-style: normal; font-size: 12px; font-weight: 800; color: var(--wg-text); }
+.wg-chart-cap { margin: 6px 0 10px; text-align: center; font-size: 11.5px; color: var(--wg-sub); }
+.wg-chart-row { display: grid; grid-template-columns: 50px 1fr 22px; align-items: center; gap: 6px; padding: 5px 0; border-top: 1px solid var(--wg-line); font-size: 12px; color: var(--wg-sub); }
+.wg-chart-cells { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; }
+.wg-chart-cells i { font-style: normal; aspect-ratio: 1; max-width: 22px; display: grid; place-items: center; border-radius: 50%; border: 1px solid #e3e6ee; font-size: 10.5px; color: #b7bdc9; }
+.wg-chart-cells i.is-hit { border: none; color: #fff; font-weight: 800; }
+.wg-chart-row b { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 10.5px; color: #fff; }
+.wg-chart-row b.big { background: var(--wg-big); }
+.wg-chart-row b.small { background: var(--wg-small); }
+
+.wg-records { display: flex; flex-direction: column; gap: 6px; }
+.wg-record { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 12px; background: #fafbfe; border: 1px solid var(--wg-line); }
+.wg-record-pick { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; flex-shrink: 0; color: #fff; font-weight: 900; font-size: 16px; }
+.wg-record-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.wg-record-main strong { font-size: 13px; }
+.wg-record-main span { font-size: 11.5px; color: var(--wg-sub); font-variant-numeric: tabular-nums; }
+.wg-record > strong { font-size: 13.5px; font-variant-numeric: tabular-nums; }
+.wg-record .is-won { color: var(--wg-green-2); }
+.wg-record .is-lost { color: var(--wg-red-2); }
+
+.wg-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 24px 0; color: #b0b6c3; }
+.wg-empty p { margin: 0; font-size: 13px; color: var(--wg-sub); }
+
+.wg-footnote { display: flex; align-items: center; gap: 6px; margin: 0; padding: 0 4px; font-size: 11.5px; color: var(--wg-sub); }
+
+/* ─── Sheets ─────────────────────────────────────────────────── */
+.wg-overlay { position: fixed; inset: 0; z-index: 90; display: flex; align-items: flex-end; justify-content: center; pointer-events: none; }
+.wg-overlay-center { align-items: center; padding: 16px; }
+.wg-overlay.is-open { pointer-events: auto; }
+.wg-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.5); opacity: 0; transition: opacity 0.25s; }
+.wg-overlay.is-open .wg-backdrop { opacity: 1; }
+
+.wg-sheet {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  border-radius: 20px 20px 0 0;
+  background: #fff;
+  overflow: hidden;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+.wg-overlay.is-open .wg-sheet { transform: translateY(0); }
+
+.wg-sheet-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 18px 16px 34px;
+  color: #fff;
+  clip-path: polygon(0 0, 100% 0, 100% 78%, 50% 100%, 0 78%);
+}
+.wg-sheet-head strong { font-size: 18px; font-weight: 900; }
+.wg-sheet-head span { padding: 5px 14px; border-radius: 999px; background: #fff; font-size: 13px; font-weight: 700; color: var(--wg-text); }
+.wg-sheet-head.is-green { background: linear-gradient(180deg, #34d27b, var(--wg-green-2)); }
+.wg-sheet-head.is-red { background: linear-gradient(180deg, #ff7a7a, var(--wg-red-2)); }
+.wg-sheet-head.is-violet { background: linear-gradient(180deg, var(--wg-violet), var(--wg-violet-2)); }
+.wg-sheet-head.is-big { background: linear-gradient(180deg, #ffc46b, var(--wg-big)); }
+.wg-sheet-head.is-small { background: linear-gradient(180deg, #9cc4ff, var(--wg-small)); }
+
+.wg-sheet-body { display: flex; flex-direction: column; gap: 14px; padding: 14px 16px 16px; }
+.wg-sheet-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.wg-sheet-row > span { font-size: 14px; font-weight: 700; }
+.wg-choices { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.wg-choices-mults { justify-content: space-between; }
+.wg-root .wg-choices button { min-width: 44px; height: 32px; padding: 0 10px; border-radius: 8px; font-size: 13px; font-weight: 700; color: var(--wg-sub); background: #f3f4f9; }
+.wg-root .wg-choices button.is-active { color: #fff; }
+.wg-root .is-active.is-green, .wg-root .wg-qty .is-green, .wg-root .wg-confirm.is-green { background: var(--wg-green-2); }
+.wg-root .is-active.is-red, .wg-root .wg-qty .is-red, .wg-root .wg-confirm.is-red { background: var(--wg-red-2); }
+.wg-root .is-active.is-violet, .wg-root .wg-qty .is-violet, .wg-root .wg-confirm.is-violet { background: var(--wg-violet-2); }
+.wg-root .is-active.is-big, .wg-root .wg-qty .is-big, .wg-root .wg-confirm.is-big { background: var(--wg-big); }
+.wg-root .is-active.is-small, .wg-root .wg-qty .is-small, .wg-root .wg-confirm.is-small { background: var(--wg-small); }
+
+.wg-qty { display: flex; align-items: center; gap: 6px; }
+.wg-root .wg-qty button { width: 34px; height: 32px; border-radius: 8px; display: grid; place-items: center; color: #fff; }
+.wg-qty input { width: 70px; height: 32px; border-radius: 8px; border: 1px solid #e3e6ee; text-align: center; font-size: 15px; font-weight: 800; color: var(--wg-text); outline: none; font-family: inherit; }
+.wg-qty input:focus { border-color: var(--wg-red); }
+.wg-sheet-fee { margin: 0; padding: 9px 11px; border-radius: 10px; background: #f7f8fc; font-size: 12px; color: var(--wg-sub); line-height: 1.45; }
+
+.wg-sheet-foot { display: grid; grid-template-columns: 1fr 2fr; }
+.wg-root .wg-cancel { height: 52px; font-size: 15px; font-weight: 700; color: var(--wg-sub); background: #f1f2f7; }
+.wg-root .wg-confirm { height: 52px; font-size: 15px; font-weight: 800; color: #fff; transition: filter 0.15s, opacity 0.15s; }
+.wg-root .wg-confirm:disabled { opacity: 0.55; }
+.wg-root .wg-confirm:hover:not(:disabled) { filter: brightness(1.06); }
+
+.wg-rules {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 20px;
+  border-radius: 18px;
+  background: #fff;
+  animation: wg-pop 0.3s cubic-bezier(0.2, 1.3, 0.4, 1);
+}
+.wg-rules h3 { margin: 0 0 10px; text-align: center; font-size: 18px; color: var(--wg-red-2); }
+.wg-rules p, .wg-rules li { font-size: 13px; line-height: 1.55; color: #4a5366; }
+.wg-rules ul { padding-left: 18px; margin: 8px 0; }
+.wg-rules .t-green { color: var(--wg-green-2); }
+.wg-rules .t-red { color: var(--wg-red-2); }
+.wg-rules .t-violet { color: var(--wg-violet-2); }
+.wg-rules-chances { padding: 8px 10px; border-radius: 10px; background: #f7f8fc; font-size: 12px !important; font-variant-numeric: tabular-nums; }
+.wg-rules .wg-confirm { width: 100%; border-radius: 999px; margin-top: 8px; height: 46px; }
+
+/* ─── Result popup ───────────────────────────────────────────── */
+.wg-popup-wrap { position: fixed; inset: 0; z-index: 110; display: grid; place-items: center; padding: 20px; background: rgba(0, 0, 0, 0.45); animation: wg-fade 0.2s ease-out; }
+.wg-popup {
+  width: 100%;
+  max-width: 320px;
+  border-radius: 22px;
+  overflow: hidden;
+  background: #fff;
+  text-align: center;
+  box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.5);
+  animation: wg-pop 0.35s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.wg-popup-top { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 22px 16px 16px; color: #fff; }
+.wg-popup.is-win .wg-popup-top { background: linear-gradient(180deg, #ffb347, #ff6a3d); }
+.wg-popup.is-loss .wg-popup-top { background: linear-gradient(180deg, #8ea3c7, #5a6b8c); }
+.wg-popup-top strong { font-size: 24px; font-weight: 900; }
+.wg-popup-result { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 12px 6px; }
+.wg-popup-result > span { font-size: 12.5px; color: var(--wg-sub); font-weight: 600; }
+.wg-popup-result > div { display: flex; align-items: center; gap: 6px; }
+.wg-popup-result em { font-style: normal; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 800; color: #fff; text-transform: capitalize; }
+.wg-tag-red { background: var(--wg-red-2); }
+.wg-tag-green { background: var(--wg-green-2); }
+.wg-tag-violet { background: var(--wg-violet-2); }
+.wg-tag-size { background: #8b93a7; }
+.wg-popup-amount { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 12px 20px; }
+.wg-popup-amount span { font-size: 12.5px; color: var(--wg-sub); }
+.wg-popup-amount strong { font-size: 26px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.wg-popup.is-win .wg-popup-amount strong { color: #ff6a3d; }
+.wg-popup-amount small { font-size: 11.5px; color: #a0a7b6; font-variant-numeric: tabular-nums; }
+
+/* ─── Toasts ─────────────────────────────────────────────────── */
+.wg-toasts { position: fixed; top: 66px; left: 50%; transform: translateX(-50%); z-index: 120; display: flex; flex-direction: column; align-items: center; gap: 6px; width: calc(100% - 32px); max-width: 400px; pointer-events: none; }
+.wg-toast { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 12px; font-size: 13px; font-weight: 600; color: #fff; background: rgba(34, 34, 34, 0.94); box-shadow: 0 10px 24px -8px rgba(0, 0, 0, 0.35); animation: wg-fade 0.25s ease-out; }
+.wg-toast-success .icon { color: #81c784; }
+.wg-toast-error { background: var(--wg-red-2); }
+
+@keyframes wg-fade { from { opacity: 0; transform: translateY(-4px); } }
+@keyframes wg-pop { from { opacity: 0; transform: scale(0.8); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .wg-lock, .wg-chip, .wg-table-row, .wg-popup, .wg-popup-wrap, .wg-rules, .wg-toast { animation: none; }
+}

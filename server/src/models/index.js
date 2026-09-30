@@ -158,6 +158,33 @@ const wheelBetSchema = new Schema({
 }, { timestamps: { createdAt: true, updatedAt: false } })
 wheelBetSchema.index({ user: 1, createdAt: -1 })
 
+// ── Win Go: a digit 0–9 is drawn at the end of every period, in four rooms (30s / 1m / 3m / 5m)
+const wingoResultSchema = new Schema({
+  _id: String, // "<room>:<period index>"
+  room: { type: String, required: true },
+  period: { type: Number, required: true }, // floor(time / room length)
+  number: { type: Number, required: true },
+}, { timestamps: { createdAt: true, updatedAt: false } })
+wingoResultSchema.index({ room: 1, period: -1 })
+
+const wingoBetSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true },
+  room: { type: String, required: true },
+  period: { type: Number, required: true },
+  pick: { type: String, required: true }, // green | red | violet | big | small | 0–9
+  amount: { type: Number, required: true }, // paise staked (fee included)
+  fee: Number, // % service fee locked in when the bet was placed
+  payouts: Schema.Types.Mixed, // payout table locked in when the bet was placed
+  maxWin: Number, // ₹ cap locked in when the bet was placed
+  status: { type: String, default: 'pending' }, // pending | won | lost
+  result: Number,
+  multiplier: { type: Number, default: 0 },
+  win: { type: Number, default: 0 },
+}, { timestamps: { createdAt: true, updatedAt: false } })
+wingoBetSchema.index({ user: 1, createdAt: -1 })
+wingoBetSchema.index({ room: 1, period: 1, status: 1 })
+wingoBetSchema.index({ status: 1, period: 1 })
+
 const adminSchema = new Schema({
   username: { type: String, required: true, unique: true },
   passwordHash: { type: String, required: true },
@@ -206,6 +233,8 @@ export const TowerBet = model('TowerBet', towerBetSchema)
 export const PlinkoBet = model('PlinkoBet', plinkoBetSchema)
 export const DiceBet = model('DiceBet', diceBetSchema)
 export const WheelBet = model('WheelBet', wheelBetSchema)
+export const WingoResult = model('WingoResult', wingoResultSchema)
+export const WingoBet = model('WingoBet', wingoBetSchema)
 export const Admin = model('Admin', adminSchema)
 export const Withdrawal = model('Withdrawal', withdrawalSchema)
 export const GameSettings = model('GameSettings', gameSettingsSchema)

@@ -391,6 +391,7 @@
 .hs-icon-violet { background: linear-gradient(160deg, #e040fb, var(--violet)); }
 .hs-icon-dark { background: linear-gradient(160deg, #ff5c7c, #19212e); }
 .hs-icon-aviator { background: linear-gradient(160deg, #ff5c7c, #19212e); }
+.hs-icon-wingo { background: linear-gradient(160deg, #ff8a8a, #e02020); }
 .hs-icon-color { background: linear-gradient(160deg, #e040fb, var(--violet)); }
 .hs-icon-mines { background: linear-gradient(160deg, #ffc24d, #b86b00); }
 .hs-icon-tower { background: linear-gradient(160deg, #ff7a93, #c21d4b); }

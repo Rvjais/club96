@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken'
 import { ADMIN_PASSWORD, ADMIN_SESSION_HOURS, ADMIN_USERNAME, IS_PROD, JWT_SECRET } from '../config.js'
 import { tx } from '../db.js'
 import { checkRateLimit, clearFailures, recordFailure, validatePassword } from '../auth.js'
-import { Admin, AviatorBet, AviatorRound, ColorBet, DiceBet, MinesBet, PlinkoBet, TowerBet, Transaction, User, WheelBet, Withdrawal } from '../models/index.js'
+import { Admin, AviatorBet, AviatorRound, ColorBet, DiceBet, MinesBet, PlinkoBet, TowerBet, Transaction, User, WheelBet, WingoBet, Withdrawal } from '../models/index.js'
 import { HttpError, credit, debit, serializeTx, toPaise, toRupees } from '../wallet.js'
 import { periodLabel } from '../games/color.js'
 import { describeMines } from '../games/mines.js'
@@ -13,8 +13,10 @@ import { describeTower } from '../games/tower.js'
 import { describePlinko } from '../games/plinko.js'
 import { describeDice } from '../games/dice.js'
 import { describeWheel } from '../games/wheel.js'
+import { describeWingo } from '../games/wingo.js'
 
 const OTHER_GAMES = [
+  { game: 'wingo', model: WingoBet, describe: describeWingo },
   { game: 'mines', model: MinesBet, describe: describeMines },
   { game: 'tower', model: TowerBet, describe: describeTower },
   { game: 'plinko', model: PlinkoBet, describe: describePlinko },

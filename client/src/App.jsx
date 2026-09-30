@@ -42,6 +42,7 @@ function App() {
             />
           ))}
           <Route path="/aviator" element={<Navigate to="/games/aviator" replace />} />
+          <Route path="/games/color-prediction" element={<Navigate to="/games/wingo" replace />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

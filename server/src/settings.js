@@ -18,12 +18,22 @@ export const DEFAULTS = {
     // Empty → the house-edge formula decides how far rounds fly.
     curve: [],
   },
-  color: {
+  wingo: {
     enabled: true,
-    weights: { red: 45, green: 45, violet: 10 }, // % chance of each result
-    multipliers: { red: 2, green: 2, violet: 4.5 },
-    minBet: 10,
+    rooms: { '30s': true, '1m': true, '3m': true, '5m': true }, // which round lengths are open
+    lockSeconds: 5, // betting closes this long before each draw
+    fee: 2, // % service fee taken from every stake before payouts are worked out
+    weights: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10], // % chance of drawing 0–9
+    payouts: {
+      size: 2, // Big (5–9) / Small (0–4)
+      color: 2, // Green on 1·3·7·9, Red on 2·4·6·8
+      colorSplit: 1.5, // Green on 5, Red on 0 (those numbers are also Violet)
+      violet: 4.5, // 0 or 5
+      number: 9, // exact digit
+    },
+    minBet: 1,
     maxBet: 100000,
+    maxWin: 1000000,
   },
   mines: {
     enabled: true,
@@ -95,7 +105,7 @@ export const DEFAULTS = {
 }
 
 export const GAMES = Object.keys(DEFAULTS)
-const COLOR_KEYS = ['red', 'green', 'violet']
+export const WINGO_ROOMS = ['30s', '1m', '3m', '5m']
 export const RISKS = ['low', 'medium', 'high']
 export const PLINKO_ROWS = [8, 12, 16]
 export const TOWER_MODE_KEYS = ['easy', 'medium', 'hard', 'expert']
@@ -176,28 +186,33 @@ export function validate(game, input) {
     return s
   }
 
-  if (game === 'color') {
-    const weights = {}
-    const multipliers = {}
-    for (const c of COLOR_KEYS) {
-      weights[c] = num(input.weights?.[c], `${c} chance`, 0, 100)
-      multipliers[c] = num(input.multipliers?.[c], `${c} payout`, 1.01, 100)
-    }
-    const total = round2(COLOR_KEYS.reduce((t, c) => t + weights[c], 0))
-    if (Math.abs(total - 100) > 0.001) throw new HttpError(400, `Chances must add up to 100% (currently ${total}%)`)
-    const s = {
-      enabled: Boolean(input.enabled),
-      weights,
-      multipliers,
-      minBet: num(input.minBet, 'Minimum bet', 1, 10_000_000),
-      maxBet: num(input.maxBet, 'Maximum bet', 1, 10_000_000),
-    }
-    if (s.maxBet < s.minBet) throw new HttpError(400, 'Maximum bet must be at least the minimum bet')
-    return s
-  }
-
   if (!DEFAULTS[game]) throw new HttpError(404, 'Unknown game')
   const base = limits(input)
+
+  if (game === 'wingo') {
+    const rooms = {}
+    for (const r of WINGO_ROOMS) rooms[r] = input.rooms?.[r] !== false
+    if (!Object.values(rooms).some(Boolean)) throw new HttpError(400, 'Keep at least one round length open (or pause the game instead)')
+    if (!Array.isArray(input.weights) || input.weights.length !== 10) throw new HttpError(400, 'Give a chance for each number 0–9')
+    const weights = input.weights.map((w, i) => num(w, `Chance of ${i}`, 0, 100))
+    const total = round2(weights.reduce((t, w) => t + w, 0))
+    if (Math.abs(total - 100) > 0.001) throw new HttpError(400, `Number chances must add up to 100% (currently ${total}%)`)
+    const p = input.payouts ?? {}
+    return {
+      ...base,
+      rooms,
+      lockSeconds: Math.round(num(input.lockSeconds, 'Betting lock', 1, 15)),
+      fee: num(input.fee, 'Service fee', 0, 20),
+      weights,
+      payouts: {
+        size: num(p.size, 'Big / Small payout', 1.01, 100),
+        color: num(p.color, 'Green / Red payout', 1.01, 100),
+        colorSplit: num(p.colorSplit, 'Green / Red on 0 or 5 payout', 1, 100),
+        violet: num(p.violet, 'Violet payout', 1.01, 100),
+        number: num(p.number, 'Number payout', 1.01, 1000),
+      },
+    }
+  }
 
   if (game === 'mines') {
     const s = {

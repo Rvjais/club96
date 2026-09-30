@@ -5,9 +5,10 @@ import { Icon } from '../Icons'
 
 const TX_LABELS = { bonus: 'Signup bonus', deposit: 'Deposit', bet: 'Bet', win: 'Win', refund: 'Refund', adjustment: 'Admin adjustment', withdraw: 'Withdrawal', withdraw_refund: 'Withdrawal refund' }
 const WD_LABEL = { pending: 'Pending', approved: 'Paid', rejected: 'Rejected' }
-const GAME_LABELS = { aviator: 'Aviator', color: 'Color Prediction', mines: 'Mines', tower: 'Tower', plinko: 'Plinko', dice: 'Dice', wheel: 'Wheel' }
+const GAME_LABELS = { aviator: 'Aviator', wingo: 'Win Go', color: 'Color Prediction', mines: 'Mines', tower: 'Tower', plinko: 'Plinko', dice: 'Dice', wheel: 'Wheel' }
 // Games that share the generic bet table (one tab each)
 const OTHER_GAMES = [
+  { key: 'wingo', icon: 'clock' },
   { key: 'mines', icon: 'bomb' },
   { key: 'tower', icon: 'layers' },
   { key: 'plinko', icon: 'pyramid' },

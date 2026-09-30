@@ -9,7 +9,8 @@ import { walletRouter } from './routes/wallet.js'
 import { accountRouter } from './routes/account.js'
 import { adminRouter, seedAdmin } from './routes/admin.js'
 import { aviatorRouter, startAviator } from './games/aviator.js'
-import { colorRouter, startColor } from './games/color.js'
+import { refundRetiredColorBets } from './games/color.js'
+import { startWingo, wingoRouter } from './games/wingo.js'
 import { minesRouter } from './games/mines.js'
 import { towerRouter } from './games/tower.js'
 import { plinkoRouter } from './games/plinko.js'
@@ -30,7 +31,7 @@ app.use('/api/auth', authRouter)
 app.use('/api/wallet', walletRouter)
 app.use('/api/account', accountRouter)
 app.use('/api/games/aviator', aviatorRouter)
-app.use('/api/games/color', colorRouter)
+app.use('/api/games/wingo', wingoRouter)
 app.use('/api/games/mines', minesRouter)
 app.use('/api/games/tower', towerRouter)
 app.use('/api/games/plinko', plinkoRouter)
@@ -66,6 +67,7 @@ await loadSettings()
 await seedAdmin()
 await seedDemoUser()
 await startAviator()
-await startColor()
+await refundRetiredColorBets()
+await startWingo()
 
 app.listen(PORT, () => console.log(`API listening on http://localhost:${PORT}`))

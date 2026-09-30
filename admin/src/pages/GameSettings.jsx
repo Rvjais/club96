@@ -1,120 +1,14 @@
 import { useEffect, useState } from 'react'
 import { api, dateTime, money } from '../api'
 import { Icon } from '../Icons'
-import { NumberField, SaveBar, Toggle } from './settings/controls'
-import { pct, toForm, toNum } from './settings/settingsForm'
 import AviatorSettings from './settings/AviatorSettings'
+import WingoSettings from './settings/WingoSettings'
 import MinesSettings from './settings/MinesSettings'
 import TowerSettings from './settings/TowerSettings'
 import PlinkoSettings from './settings/PlinkoSettings'
 import DiceSettings from './settings/DiceSettings'
 import WheelSettings from './settings/WheelSettings'
 
-const COLORS = [
-  { key: 'red', label: 'Red' },
-  { key: 'green', label: 'Green' },
-  { key: 'violet', label: 'Violet' },
-]
-
-// ── Color Prediction ─────────────────────────────────────────
-function ColorCard({ saved, defaults, onSaved }) {
-  const [form, setForm] = useState(() => toForm(saved))
-  const [busy, setBusy] = useState(false)
-  const [msg, setMsg] = useState(null)
-  const dirty = JSON.stringify(form) !== JSON.stringify(toForm(saved))
-  const setTop = (k) => (v) => { setForm((f) => ({ ...f, [k]: v })); setMsg(null) }
-  const setNested = (group, color) => (v) => {
-    setForm((f) => ({ ...f, [group]: { ...f[group], [color]: v } }))
-    setMsg(null)
-  }
-
-  const chance = (c) => toNum(form.weights[c])
-  const mult = (c) => toNum(form.multipliers[c])
-  const total = COLORS.reduce((t, c) => t + (chance(c.key) || 0), 0)
-  const totalOk = Math.abs(total - 100) < 0.001
-
-  const save = async () => {
-    setBusy(true)
-    try {
-      const body = {
-        enabled: form.enabled,
-        weights: Object.fromEntries(COLORS.map((c) => [c.key, chance(c.key)])),
-        multipliers: Object.fromEntries(COLORS.map((c) => [c.key, mult(c.key)])),
-        minBet: toNum(form.minBet),
-        maxBet: toNum(form.maxBet),
-      }
-      const res = await api.post('/settings/color', body)
-      onSaved('color', res)
-      setMsg({ kind: 'success', text: 'Saved. Chances apply from the next period; payouts and limits apply now.' })
-    } catch (err) {
-      setMsg({ kind: 'error', text: err.message })
-    }
-    setBusy(false)
-  }
-
-  return (
-    <section className="card game-card">
-      <div className="game-card-head">
-        <h2 className="card-title"><Icon name="palette" size={16} /> Color Prediction</h2>
-        <Toggle enabled={form.enabled} onChange={setTop('enabled')} />
-      </div>
-
-      <div className="table-wrap">
-        <table className="table odds-table">
-          <thead>
-            <tr><th>Colour</th><th>Chance</th><th>Payout</th><th className="num">Return to player</th><th className="num">House edge</th></tr>
-          </thead>
-          <tbody>
-            {COLORS.map((c) => {
-              const rtp = (chance(c.key) || 0) * (mult(c.key) || 0)
-              return (
-                <tr key={c.key}>
-                  <td className="nowrap"><span className={`swatch swatch-${c.key}`} /> {c.label}</td>
-                  <td>
-                    <div className="input input-sm">
-                      <input type="number" step="any" value={form.weights[c.key]} onChange={(e) => setNested('weights', c.key)(e.target.value)} aria-label={`${c.label} chance`} />
-                      <span className="input-suffix">%</span>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="input input-sm">
-                      <input type="number" step="any" value={form.multipliers[c.key]} onChange={(e) => setNested('multipliers', c.key)(e.target.value)} aria-label={`${c.label} payout`} />
-                      <span className="input-suffix">x</span>
-                    </div>
-                  </td>
-                  <td className="num strong">{pct(rtp)}</td>
-                  <td className={`num strong ${rtp > 100 ? 'neg' : ''}`}>{pct(100 - rtp)}</td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-      <div className={`total-line ${totalOk ? 'is-ok' : 'is-bad'}`}>
-        <Icon name={totalOk ? 'checkCircle' : 'alert'} size={15} />
-        Chances total {pct(total)} {totalOk ? '' : '(must be exactly 100%)'}
-      </div>
-      {COLORS.some((c) => (chance(c.key) || 0) * (mult(c.key) || 0) > 100) && (
-        <div className="alert alert-error"><Icon name="alert" size={15} /> A colour pays out more than it takes in on average. The house loses money on it.</div>
-      )}
-
-      <div className="settings-grid settings-grid-2">
-        <NumberField label="Minimum bet" prefix="₹" value={form.minBet} onChange={setTop('minBet')} />
-        <NumberField label="Maximum bet" prefix="₹" value={form.maxBet} onChange={setTop('maxBet')} />
-      </div>
-
-      <SaveBar
-        dirty={dirty}
-        busy={busy}
-        msg={msg}
-        invalid={!totalOk}
-        onSave={save}
-        onReset={() => { setForm(toForm(saved)); setMsg(null) }}
-        onDefaults={() => { setForm(toForm(defaults)); setMsg(null) }}
-      />
-    </section>
-  )
-}
 
 // ── Change log ───────────────────────────────────────────────
 function flatten(obj, prefix = '') {
@@ -129,11 +23,18 @@ const FIELD_LABELS = {
   minMines: 'Fewest mines', maxMines: 'Most mines', levels: 'Tower height', minChance: 'Lowest chance', maxChance: 'Highest chance',
   'weights.red': 'Red chance', 'weights.green': 'Green chance', 'weights.violet': 'Violet chance',
   'multipliers.red': 'Red payout', 'multipliers.green': 'Green payout', 'multipliers.violet': 'Violet payout',
+  lockSeconds: 'Betting lock', fee: 'Service fee',
+  'payouts.size': 'Big / Small payout', 'payouts.color': 'Green / Red payout', 'payouts.colorSplit': 'Green / Red on 5 / 0 payout',
+  'payouts.violet': 'Violet payout', 'payouts.number': 'Number payout',
 }
 
 function fieldLabel(key) {
   if (FIELD_LABELS[key]) return FIELD_LABELS[key]
-  let m = key.match(/^tables\.(\d+)\.(\w+)\.(\d+)$/)
+  let m = key.match(/^weights\.(\d)$/)
+  if (m) return `Chance of ${m[1]}`
+  m = key.match(/^rooms\.(\w+)$/)
+  if (m) return `Room ${m[1]}`
+  m = key.match(/^tables\.(\d+)\.(\w+)\.(\d+)$/)
   if (m) return `${m[1]}-row ${m[2]} bucket ${Number(m[3]) + 1}`
   m = key.match(/^custom\.(\d+)\.(\d+)$/)
   if (m) return `${m[1]} mines, gem ${Number(m[2]) + 1} payout`
@@ -145,7 +46,7 @@ function fieldLabel(key) {
   if (m) return `${m[1]} wheel group ${Number(m[2]) + 1} ${m[3] === 'mult' ? 'payout' : 'segments'}`
   return key
 }
-const fmt = (key, v) => (key === 'enabled' ? (v ? 'Live' : 'Paused') : String(v))
+const fmt = (key, v) => (key === 'enabled' ? (v ? 'Live' : 'Paused') : key.startsWith('rooms.') ? (v ? 'Open' : 'Closed') : String(v))
 
 function changes(before, after) {
   const b = Object.fromEntries(flatten(before))
@@ -163,7 +64,7 @@ function changes(before, after) {
 // ── Page ─────────────────────────────────────────────────────
 const GAMES = [
   { key: 'aviator', label: 'Aviator', icon: 'plane', Card: AviatorSettings },
-  { key: 'color', label: 'Color Prediction', icon: 'palette', Card: ColorCard },
+  { key: 'wingo', label: 'Win Go', icon: 'clock', Card: WingoSettings },
   { key: 'mines', label: 'Mines', icon: 'bomb', Card: MinesSettings },
   { key: 'tower', label: 'Tower', icon: 'layers', Card: TowerSettings },
   { key: 'plinko', label: 'Plinko', icon: 'pyramid', Card: PlinkoSettings },

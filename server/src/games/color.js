@@ -1,39 +1,13 @@
 // ─────────────────────────────────────────────────────────────
-// Color Prediction — server-authoritative 30s periods.
-// Periods are derived from the clock: period = floor(now / 30s).
-// Betting closes LOCK_MS before the draw; the result is rolled on
-// the server when the period ends and bets are settled immediately.
+// Color Prediction (retired — replaced by Win Go, see wingo.js).
+// Only kept so past bets still show in player / admin history, and so
+// any bet left unsettled when the game was retired is refunded.
 // ─────────────────────────────────────────────────────────────
-import crypto from 'node:crypto'
-import { Router } from 'express'
 import { tx } from '../db.js'
-import { requireAuth } from '../auth.js'
-import { createChannel } from '../sse.js'
-import { ColorBet, ColorResult } from '../models/index.js'
-import { HttpError, balanceOf, credit, debit, toPaise, toRupees } from '../wallet.js'
-import { DEFAULTS, getSettings, onSettingsChange } from '../settings.js'
+import { ColorBet } from '../models/index.js'
+import { credit } from '../wallet.js'
 
-const GAME = 'color'
-export const PERIOD_MS = 30000
-export const LOCK_MS = 5000
-const COLOR_KEYS = ['red', 'green', 'violet']
-
-/** Weighted random pick; weights are percentages that add up to 100. */
-function rollColor(weights) {
-  const r = (crypto.randomInt(0, 1_000_000) / 1_000_000) * 100
-  let acc = 0
-  for (const c of COLOR_KEYS) {
-    acc += weights[c]
-    if (r < acc) return c
-  }
-  return COLOR_KEYS.findLast((c) => weights[c] > 0)
-}
-
-// Odds are locked in when a period starts, so a settings change never alters a running period
-const periodOdds = new Map() // period index → weights
-const oddsFor = (idx) => periodOdds.get(idx) ?? getSettings('color').weights
-
-const periodIndex = (now) => Math.floor(now / PERIOD_MS)
+const PERIOD_MS = 30000
 
 /** 20260930 + sequence within the day, e.g. 202609300421 */
 export function periodLabel(idx) {
@@ -46,138 +20,16 @@ export function periodLabel(idx) {
   return `${y}${m}${d}${String(seq).padStart(4, '0')}`
 }
 
-let lastIdx = periodIndex(Date.now())
-
-/** Roll (once) and store the result for a finished period, then settle its bets. */
-async function resolvePeriod(idx) {
-  let result = await ColorResult.findById(idx).lean()
-  if (!result) {
-    try {
-      result = (await ColorResult.create({ _id: idx, color: rollColor(oddsFor(idx)) })).toObject()
-    } catch (err) {
-      if (err?.code !== 11000) throw err
-      result = await ColorResult.findById(idx).lean()
-    }
-  }
-  const color = result.color
-  const pending = await ColorBet.find({ period: idx, status: 'pending' }).lean()
+/** Return the stake of every Color Prediction bet that was never drawn. */
+export async function refundRetiredColorBets() {
+  const pending = await ColorBet.find({ status: 'pending' }).lean()
   for (const bet of pending) {
-    const won = bet.color === color
-    const multiplier = bet.multiplier ?? DEFAULTS.color.multipliers[bet.color] // older bets had no stored payout
-    const win = won ? Math.floor(bet.amount * multiplier) : 0
     await tx(async (session) => {
-      const upd = await ColorBet.updateOne({ _id: bet._id, status: 'pending' }, { status: won ? 'won' : 'lost', result: color, win }, { session })
-      if (upd.modifiedCount && win) await credit(session, bet.user, win, { type: 'win', game: GAME, ref: bet._id })
+      const upd = await ColorBet.updateOne({ _id: bet._id, status: 'pending' }, { status: 'refunded' }, { session })
+      if (upd.modifiedCount) {
+        await credit(session, bet.user, bet.amount, { type: 'refund', game: 'color', ref: bet._id, note: 'Color Prediction retired — bet refunded' })
+      }
     })
   }
-  periodOdds.delete(idx)
-}
-
-let ticking = false
-async function tick() {
-  if (ticking) return
-  const cur = periodIndex(Date.now())
-  if (cur === lastIdx) return
-  ticking = true
-  try {
-    periodOdds.set(cur, { ...getSettings('color').weights })
-    for (let idx = lastIdx; idx < cur; idx++) await resolvePeriod(idx)
-    lastIdx = cur
-    channel.broadcast()
-  } catch (err) {
-    console.error('Color tick failed:', err)
-  } finally {
-    ticking = false
-  }
-}
-
-// ── Snapshots ────────────────────────────────────────────────
-async function snapshotFor(userId) {
-  const now = Date.now()
-  const cur = periodIndex(now)
-  const prev = cur - 1
-  const [balance, prevResult, prevBets, history, current, records] = await Promise.all([
-    balanceOf(userId),
-    ColorResult.findById(prev).lean(),
-    ColorBet.find({ user: userId, period: prev }, { amount: 1, win: 1 }).lean(),
-    ColorResult.find().sort({ _id: -1 }).limit(30).lean(),
-    ColorBet.find({ user: userId, period: cur }).sort({ createdAt: 1 }).lean(),
-    ColorBet.find({ user: userId, status: { $ne: 'pending' } }).sort({ createdAt: -1 }).limit(30).lean(),
-  ])
-
-  const cfg = getSettings('color')
-  return {
-    serverNow: now,
-    balance: toRupees(balance),
-    // Published game rules: chances for this period, current payouts, limits and availability
-    rules: { enabled: cfg.enabled, chances: oddsFor(cur), multipliers: cfg.multipliers, minBet: cfg.minBet, maxBet: cfg.maxBet },
-    period: { id: cur, label: periodLabel(cur), endsAt: (cur + 1) * PERIOD_MS, periodMs: PERIOD_MS, lockMs: LOCK_MS },
-    history: history.reverse().map((r) => ({ period: periodLabel(r._id), color: r.color })),
-    bets: current.map((b) => ({ id: String(b._id), color: b.color, amount: toRupees(b.amount), multiplier: b.multiplier ?? DEFAULTS.color.multipliers[b.color] })),
-    records: records.map((b) => ({
-      id: String(b._id),
-      period: periodLabel(b.period),
-      color: b.color,
-      amount: toRupees(b.amount),
-      result: b.result,
-      win: toRupees(b.win),
-    })),
-    lastResult: prevResult
-      ? {
-          id: prev,
-          period: periodLabel(prev),
-          color: prevResult.color,
-          played: prevBets.length > 0,
-          staked: toRupees(prevBets.reduce((t, b) => t + b.amount, 0)),
-          winnings: toRupees(prevBets.reduce((t, b) => t + b.win, 0)),
-        }
-      : null,
-  }
-}
-
-const channel = createChannel(snapshotFor)
-
-// ── Routes ───────────────────────────────────────────────────
-export const colorRouter = Router()
-colorRouter.use(requireAuth)
-
-colorRouter.get('/state', async (req, res) => res.json(await snapshotFor(req.userId)))
-colorRouter.get('/stream', (req, res) => channel.connect(req, res))
-
-colorRouter.post('/bet', async (req, res) => {
-  const cfg = getSettings('color')
-  if (!cfg.enabled) throw new HttpError(403, 'Color Prediction is paused. Please try again later.')
-  const { color } = req.body ?? {}
-  if (!COLOR_KEYS.includes(color)) throw new HttpError(400, 'Pick red, green or violet')
-  const paise = toPaise(req.body?.amount)
-  if (!Number.isInteger(paise) || paise < Math.round(cfg.minBet * 100)) throw new HttpError(400, `Minimum bet is ₹${cfg.minBet.toLocaleString('en-IN')}`)
-  if (paise > Math.round(cfg.maxBet * 100)) throw new HttpError(400, `Maximum bet is ₹${cfg.maxBet.toLocaleString('en-IN')}`)
-
-  const now = Date.now()
-  const cur = periodIndex(now)
-  if ((cur + 1) * PERIOD_MS - now <= LOCK_MS) throw new HttpError(409, 'Betting is closed for this period')
-
-  await tx(async (session) => {
-    await debit(session, req.userId, paise, { type: 'bet', game: GAME })
-    await ColorBet.create([{ user: req.userId, period: cur, color, amount: paise, multiplier: cfg.multipliers[color] }], { session })
-  })
-  channel.sendTo(req.userId)
-  res.json(await snapshotFor(req.userId))
-})
-
-// ── Lifecycle ────────────────────────────────────────────────
-export async function startColor() {
-  const cur = periodIndex(Date.now())
-  // Settle anything left pending from a previous server run
-  const stale = await ColorBet.distinct('period', { status: 'pending', period: { $lt: cur } })
-  for (const p of stale) await resolvePeriod(p)
-  // Seed a little history on first boot so the board isn't empty
-  if ((await ColorResult.estimatedDocumentCount()) === 0) {
-    for (let i = 10; i >= 1; i--) await resolvePeriod(cur - i)
-  }
-  lastIdx = cur
-  periodOdds.set(cur, { ...getSettings('color').weights })
-  // Limits / payouts / pause apply immediately; chances apply from the next period
-  onSettingsChange('color', () => channel.broadcast())
-  setInterval(tick, 200)
+  if (pending.length) console.log(`Refunded ${pending.length} unsettled Color Prediction bet(s)`)
 }
