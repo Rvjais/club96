@@ -1,4 +1,6 @@
+import crypto from 'node:crypto'
 import { Router } from 'express'
+import mongoose from 'mongoose'
 import { tx } from '../db.js'
 import { requireAuth } from '../auth.js'
 import { Deposit, Transaction, User, Withdrawal } from '../models/index.js'
@@ -16,9 +18,11 @@ walletRouter.get('/', async (req, res) => {
   res.json({ balance: toRupees(balance), transactions: txs.map(serializeTx) })
 })
 
-// ── Deposits: the player pays the admin's UPI QR, then submits the UTR. An admin checks the
-// payment arrived and approves it, crediting the amount received.
+// ── Deposits: the player opens an order for an amount, pays the admin's UPI QR, then submits the
+// UTR. An admin checks the payment arrived and approves it, crediting the amount received.
 const UTR_RE = /^\d{12}$/
+export const ORDER_MINUTES = 15 // countdown shown to the player
+const ORDER_GRACE_MS = 30 * 60 * 1000 // a late UTR is still accepted this long after the countdown ends
 
 function depositRules() {
   const c = getSettings('platform')
@@ -36,9 +40,12 @@ function depositRules() {
 function serializeDeposit(d) {
   return {
     id: String(d._id),
+    orderNo: d.orderNo ?? null,
     amount: toRupees(d.amount),
     credited: d.credited == null ? null : toRupees(d.credited),
-    utr: d.utr,
+    utr: d.utr ?? null,
+    method: 'UPI_QR',
+    expiresAt: d.expiresAt ?? null,
     status: d.status,
     note: d.adminNote ?? null,
     createdAt: d.createdAt,
@@ -51,25 +58,86 @@ walletRouter.get('/deposit-info', (req, res) => {
   res.json({ ...r, upiId: r.enabled ? r.upiId : null })
 })
 
+/** Mark this player's unpaid orders that are past the grace period as expired. */
+const expireOrders = (userId) =>
+  Deposit.updateMany({ user: userId, status: 'unpaid', expiresAt: { $lt: new Date(Date.now() - ORDER_GRACE_MS) } }, { status: 'expired' })
+
+/** RC + YYYYMMDDhhmmss (India time) + 12 random hex characters */
+function orderNumber() {
+  const ist = new Date(Date.now() + 5.5 * 60 * 60 * 1000).toISOString().replace(/\D/g, '').slice(0, 14)
+  return `RC${ist}${crypto.randomBytes(6).toString('hex')}`
+}
+
+async function ownOrder(req) {
+  if (!mongoose.isValidObjectId(req.params.id)) throw new HttpError(404, 'Order not found')
+  await expireOrders(req.userId)
+  const d = await Deposit.findOne({ _id: req.params.id, user: req.userId }).lean()
+  if (!d) throw new HttpError(404, 'Order not found')
+  return d
+}
+
 walletRouter.get('/deposits', async (req, res) => {
+  await expireOrders(req.userId)
   const rows = await Deposit.find({ user: req.userId }).sort({ createdAt: -1 }).limit(50).lean()
   res.json({ items: rows.map(serializeDeposit) })
 })
 
+// Open a deposit order; the player then pays it on the order page
 walletRouter.post('/deposits', async (req, res) => {
   const r = depositRules()
   if (!r.enabled) throw new HttpError(403, 'Deposits are not available right now. Please try again later.')
   const paise = toPaise(req.body?.amount)
   if (!Number.isInteger(paise) || paise < Math.round(r.min * 100)) throw new HttpError(400, `Minimum deposit is ₹${r.min.toLocaleString('en-IN')}`)
   if (paise > Math.round(r.max * 100)) throw new HttpError(400, `Maximum deposit is ₹${r.max.toLocaleString('en-IN')}`)
-  const utr = String(req.body?.utr ?? '').replace(/\s/g, '')
-  if (!UTR_RE.test(utr)) throw new HttpError(400, 'Enter the 12-digit UTR / UPI reference number from your payment app')
-  if (await Deposit.exists({ utr, status: { $ne: 'rejected' } })) throw new HttpError(409, 'This UTR has already been submitted')
+  await expireOrders(req.userId)
+  if (await Deposit.exists({ user: req.userId, status: 'unpaid' })) throw new HttpError(409, 'You have an unpaid order. Pay or cancel it first.')
   if ((await Deposit.countDocuments({ user: req.userId, status: 'pending' })) >= r.maxPending) {
     throw new HttpError(409, `You already have ${r.maxPending} deposit${r.maxPending === 1 ? '' : 's'} waiting for confirmation`)
   }
-  const d = await Deposit.create({ user: req.userId, amount: paise, utr, upiId: r.upiId })
+  const d = await Deposit.create({
+    user: req.userId,
+    orderNo: orderNumber(),
+    amount: paise,
+    upiId: r.upiId,
+    payeeName: r.payeeName,
+    status: 'unpaid',
+    expiresAt: new Date(Date.now() + ORDER_MINUTES * 60 * 1000),
+  })
   res.status(201).json({ deposit: serializeDeposit(d.toObject()) })
+})
+
+// One order, with what the pay page needs to draw the QR
+walletRouter.get('/deposits/:id', async (req, res) => {
+  const d = await ownOrder(req)
+  const r = depositRules()
+  res.json({
+    deposit: serializeDeposit(d),
+    pay: d.status === 'unpaid' ? { upiId: d.upiId, payeeName: d.payeeName || r.payeeName, note: r.note } : null,
+  })
+})
+
+// Submit the UTR for an unpaid order → it goes to the admins for confirmation
+walletRouter.post('/deposits/:id/utr', async (req, res) => {
+  const d = await ownOrder(req)
+  if (d.status === 'expired') throw new HttpError(409, 'This order has expired. Please create a new deposit order.')
+  if (d.status !== 'unpaid') throw new HttpError(409, 'This order has already been submitted')
+  const utr = String(req.body?.utr ?? '').replace(/\s/g, '')
+  if (!UTR_RE.test(utr)) throw new HttpError(400, 'Enter the 12-digit UTR / UPI reference number from your payment app')
+  if (await Deposit.exists({ utr, status: { $in: ['pending', 'approved'] } })) throw new HttpError(409, 'This UTR has already been submitted')
+  const r = depositRules()
+  if ((await Deposit.countDocuments({ user: req.userId, status: 'pending' })) >= r.maxPending) {
+    throw new HttpError(409, `You already have ${r.maxPending} deposit${r.maxPending === 1 ? '' : 's'} waiting for confirmation`)
+  }
+  const updated = await Deposit.findOneAndUpdate({ _id: d._id, status: 'unpaid' }, { status: 'pending', utr }, { new: true }).lean()
+  if (!updated) throw new HttpError(409, 'This order has already been submitted')
+  res.json({ deposit: serializeDeposit(updated) })
+})
+
+walletRouter.post('/deposits/:id/cancel', async (req, res) => {
+  const d = await ownOrder(req)
+  const updated = await Deposit.findOneAndUpdate({ _id: d._id, status: 'unpaid' }, { status: 'cancelled' }, { new: true }).lean()
+  if (!updated) throw new HttpError(409, 'Only unpaid orders can be cancelled')
+  res.json({ deposit: serializeDeposit(updated) })
 })
 
 // ── Bank account: where withdrawals are paid. Players add it once; admins see it on the profile.

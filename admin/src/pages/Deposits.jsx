@@ -156,7 +156,7 @@ export default function Deposits({ onCountChange }) {
         </div>
         <div className="input dep-search">
           <Icon name="search" size={16} />
-          <input placeholder="Search UTR" inputMode="numeric" value={q} onChange={(e) => setQ(e.target.value.replace(/\D/g, ''))} />
+          <input placeholder="Search UTR or order number" value={q} onChange={(e) => setQ(e.target.value.replace(/\s/g, ''))} />
         </div>
       </div>
 
@@ -201,6 +201,7 @@ export default function Deposits({ onCountChange }) {
               <span className="payout-kind">UPI</span>
               <div><span className="muted">UTR</span> <CopyText value={d.utr} /></div>
               <div><span className="muted">Player says they paid</span> <strong>{money(d.amount)}</strong></div>
+              {d.orderNo && <div><span className="muted">Order</span> <CopyText value={d.orderNo} /></div>}
               {d.upiId && <div><span className="muted">To</span> <span className="mono">{d.upiId}</span></div>}
             </div>
 

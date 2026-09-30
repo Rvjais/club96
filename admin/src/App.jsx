@@ -9,6 +9,7 @@ import GameSettings from './pages/GameSettings'
 import Withdrawals from './pages/Withdrawals'
 import Deposits from './pages/Deposits'
 import Support from './pages/Support'
+import Dashboard from './pages/Dashboard'
 
 function Layout({ admin, onLogout, pending, pendingDeposits, unreadChats, children }) {
   return (
@@ -22,23 +23,26 @@ function Layout({ admin, onLogout, pending, pendingDeposits, unreadChats, childr
           </div>
         </div>
         <nav className="nav">
+          <NavLink to="/dashboard" className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}>
+            <Icon name="barChart" /> <span>Dashboard</span>
+          </NavLink>
           <NavLink to="/" end className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}>
-            <Icon name="users" /> Users
+            <Icon name="users" /> <span>Users</span>
           </NavLink>
           <NavLink to="/deposits" className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}>
-            <Icon name="wallet" /> Deposits
+            <Icon name="wallet" /> <span>Deposits</span>
             {pendingDeposits > 0 && <em className="nav-badge">{pendingDeposits}</em>}
           </NavLink>
           <NavLink to="/withdrawals" className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}>
-            <Icon name="banknote" /> Withdrawals
+            <Icon name="banknote" /> <span data-short="Payouts">Withdrawals</span>
             {pending > 0 && <em className="nav-badge">{pending}</em>}
           </NavLink>
           <NavLink to="/support" className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}>
-            <Icon name="message" /> Customer chat
+            <Icon name="message" /> <span data-short="Chat">Customer chat</span>
             {unreadChats > 0 && <em className="nav-badge nav-badge-green">{unreadChats}</em>}
           </NavLink>
           <NavLink to="/games" className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}>
-            <Icon name="sliders" /> Game settings
+            <Icon name="sliders" /> <span data-short="Settings">Game settings</span>
           </NavLink>
         </nav>
         <div className="sidebar-foot">
@@ -132,6 +136,7 @@ export default function App() {
         <Layout admin={admin} onLogout={onLogout} pending={pending} pendingDeposits={pendingDeposits} unreadChats={unreadChats}>
           <Routes>
             <Route path="/" element={<Users />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/users/:id" element={<UserDetail />} />
             <Route path="/games" element={<GameSettings />} />
             <Route path="/deposits" element={<Deposits onCountChange={setPendingDeposits} />} />

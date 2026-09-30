@@ -3,155 +3,12 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Icon } from '../components/Icons'
 import BottomNav from '../components/BottomNav'
 import Sheet from '../components/Sheet'
-import QRCode from 'qrcode'
 import { useAuth } from '../auth/authContext'
 import { api } from '../lib/api'
 import { money, stamp } from '../lib/format'
 import { gameImages } from '../games'
 import { useSupportUnread } from '../lib/supportUnread'
 import './Account.css'
-
-const DEPOSIT_PRESETS = [100, 200, 500, 1000, 2000, 5000, 10000, 20000]
-
-/** upi://pay link for the admin's UPI ID with the amount filled in. */
-function upiLink({ upiId, payeeName }, amount, uid) {
-  // The UPI ID is left unencoded: some UPI apps reject a percent-encoded "@"
-  const note = encodeURIComponent(`Deposit UID ${uid ?? ''}`.trim())
-  return `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${amount.toFixed(2)}&cu=INR&tn=${note}`
-}
-
-function DepositSheet({ onDone, toast }) {
-  const { user } = useAuth()
-  const [info, setInfo] = useState(null)
-  const [step, setStep] = useState('amount') // amount | pay | done
-  const [amount, setAmount] = useState('500')
-  const [qr, setQr] = useState('')
-  const [utr, setUtr] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [copied, setCopied] = useState(false)
-  const value = Number(amount) || 0
-
-  useEffect(() => {
-    let cancelled = false
-    api.get('/wallet/deposit-info').then((d) => !cancelled && setInfo(d), (err) => toast('error', err.message))
-    return () => { cancelled = true }
-  }, [toast])
-
-  const link = info?.enabled && value > 0 ? upiLink(info, value, user?.uid) : ''
-  useEffect(() => {
-    if (step !== 'pay' || !link) return
-    let cancelled = false
-    QRCode.toDataURL(link, { width: 480, margin: 1, errorCorrectionLevel: 'M' }).then((url) => !cancelled && setQr(url), () => {})
-    return () => { cancelled = true }
-  }, [step, link])
-
-  if (!info) return <div className="ac-loading"><span className="ac-spinner ac-spinner-red" /></div>
-
-  if (!info.enabled) {
-    return (
-      <div className="ac-form">
-        <div className="ac-notice"><Icon name="clock" size={18} /> Deposits are not available right now. Please try again later or contact customer service.</div>
-      </div>
-    )
-  }
-
-  const valid = value >= info.min && value <= info.max
-  const presets = DEPOSIT_PRESETS.filter((p) => p >= info.min && p <= info.max)
-
-  const copyUpi = () => {
-    navigator.clipboard?.writeText(info.upiId)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1200)
-  }
-
-  const submit = async () => {
-    setBusy(true)
-    try {
-      await api.post('/wallet/deposits', { amount: value, utr })
-      setStep('done')
-    } catch (err) {
-      toast('error', err.message)
-    }
-    setBusy(false)
-  }
-
-  if (step === 'done') {
-    return (
-      <div className="ac-form ac-dep-done">
-        <span className="ac-dep-done-icon"><Icon name="circleCheck" size={34} /></span>
-        <strong>Payment submitted</strong>
-        <p>We’re confirming your payment of <b>{money(value)}</b>. It will be added to your wallet as soon as it’s verified, usually within a few minutes.</p>
-        <button type="button" className="ac-btn ac-btn-primary" onClick={onDone}>Done</button>
-      </div>
-    )
-  }
-
-  if (step === 'pay') {
-    const utrOk = /^\d{12}$/.test(utr)
-    return (
-      <div className="ac-form">
-        <div className="ac-qr-card">
-          <span className="ac-qr-label">Scan &amp; pay</span>
-          <strong className="ac-qr-amount">{money(value)}</strong>
-          <div className="ac-qr-img">
-            {qr ? <img src={qr} alt={`UPI QR code to pay ${money(value)} to ${info.upiId}`} /> : <span className="ac-spinner ac-spinner-red" />}
-          </div>
-          <button type="button" className="ac-qr-upi" onClick={copyUpi} title="Copy UPI ID">
-            <span>{info.payeeName} · <b>{info.upiId}</b></span>
-            <Icon name={copied ? 'check' : 'copy'} size={14} strokeWidth={2.2} />
-          </button>
-          <a className="ac-qr-app" href={link}>
-            <Icon name="phone" size={15} /> Open UPI app
-          </a>
-        </div>
-
-        {info.note && <p className="ac-hint"><Icon name="info" size={13} /> {info.note}</p>}
-
-        <label className="ac-label">UTR / UPI reference number</label>
-        <div className="ac-input">
-          <input
-            placeholder="12-digit number from your payment app"
-            inputMode="numeric"
-            maxLength={12}
-            value={utr}
-            onChange={(e) => setUtr(e.target.value.replace(/\D/g, ''))}
-            autoComplete="off"
-            aria-label="UTR number"
-          />
-          <span className="ac-count">{utr.length}/12</span>
-        </div>
-
-        <button type="button" className="ac-btn ac-btn-primary" onClick={submit} disabled={busy || !utrOk}>
-          {busy ? <span className="ac-spinner" /> : 'I have paid — submit'}
-        </button>
-        <button type="button" className="ac-btn ac-btn-ghost" onClick={() => { setStep('amount'); setQr('') }} disabled={busy}>
-          Change amount
-        </button>
-      </div>
-    )
-  }
-
-  return (
-    <div className="ac-form">
-      <label className="ac-label">Select amount</label>
-      <div className="ac-presets">
-        {presets.map((p) => (
-          <button type="button" key={p} className={value === p ? 'is-active' : ''} onClick={() => setAmount(String(p))}>
-            ₹{p.toLocaleString('en-IN')}
-          </button>
-        ))}
-      </div>
-      <div className="ac-input">
-        <span>₹</span>
-        <input type="number" inputMode="numeric" min={info.min} max={info.max} value={amount} onChange={(e) => setAmount(e.target.value)} aria-label="Deposit amount" />
-      </div>
-      <p className="ac-hint"><Icon name="info" size={13} /> Pay by any UPI app. Deposits {money(info.min)} – {money(info.max)}.</p>
-      <button type="button" className="ac-btn ac-btn-primary" onClick={() => setStep('pay')} disabled={!valid}>
-        {value > info.max ? `Maximum is ${money(info.max)}` : value < info.min ? `Minimum is ${money(info.min)}` : `Pay ${money(value)}`}
-      </button>
-    </div>
-  )
-}
 
 // ── Sheets ───────────────────────────────────────────────────
 function BankCard({ bank, onChange }) {
@@ -370,6 +227,90 @@ function NameSheet({ current, onDone, toast }) {
   )
 }
 
+function DeleteSheet({ onDeleted, toast }) {
+  const [check, setCheck] = useState(null)
+  const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [reason, setReason] = useState('')
+  const [agreed, setAgreed] = useState(false)
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    api.get('/account/delete').then((d) => !cancelled && setCheck(d), (e) => toast('error', e.message))
+    return () => { cancelled = true }
+  }, [toast])
+
+  if (!check) return <div className="ac-loading"><span className="ac-spinner ac-spinner-red" /></div>
+
+  const submit = async () => {
+    setBusy(true)
+    try {
+      await api.post('/account/delete', { password, confirm, reason })
+      onDeleted()
+    } catch (err) {
+      toast('error', err.message)
+      setBusy(false)
+    }
+  }
+
+  const loses = check.balance + check.commission
+  return (
+    <div className="ac-form">
+      <div className="ac-notice ac-notice-danger">
+        <Icon name="circleAlert" size={18} />
+        <div>
+          <strong>This can&apos;t be undone.</strong> Your account is closed and you are logged out. You can then register
+          again with the same phone number and start fresh with a new ID.
+        </div>
+      </div>
+      <ul className="ac-del-list">
+        <li>
+          {check.balance > 0
+            ? <>Your balance of <b>{money(check.balance)}</b> will be <b>forfeited</b>. Withdraw it first if you want to keep it.</>
+            : 'Your wallet is empty, so no money will be lost.'}
+        </li>
+        {check.commission > 0 && <li>Unclaimed agency commission of <b>{money(check.commission)}</b> will be lost.</li>}
+        <li>Your game, deposit and withdrawal history and your agency team stay with the old account.</li>
+        <li>A new account on the same phone number does not get the welcome bonus again.</li>
+      </ul>
+
+      {check.blockers.length > 0 ? (
+        <div className="ac-notice ac-notice-warn">
+          <Icon name="clock" size={18} />
+          <div>
+            <strong>You can&apos;t delete your account yet:</strong>
+            {check.blockers.map((b) => <div key={b}>{b}</div>)}
+          </div>
+        </div>
+      ) : (
+        <>
+          <label className="ac-label">Password</label>
+          <div className="ac-input">
+            <Icon name="lock" size={15} />
+            <input type="password" placeholder="Your current password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" aria-label="Password" />
+          </div>
+          <label className="ac-label">Why are you leaving? (optional)</label>
+          <div className="ac-input">
+            <input placeholder="Reason" maxLength={200} value={reason} onChange={(e) => setReason(e.target.value)} aria-label="Reason" />
+          </div>
+          <label className="ac-label">Type DELETE to confirm</label>
+          <div className="ac-input">
+            <input placeholder="DELETE" value={confirm} onChange={(e) => setConfirm(e.target.value.toUpperCase())} autoCapitalize="characters" autoComplete="off" aria-label="Type DELETE to confirm" />
+          </div>
+          <label className="ac-check">
+            <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
+            {loses > 0 ? `I understand I will lose ${money(loses)}` : 'I understand this cannot be undone'}
+          </label>
+          <button type="button" className="ac-btn ac-btn-danger" onClick={submit} disabled={busy || !password || confirm !== 'DELETE' || !agreed}>
+            {busy ? <span className="ac-spinner" /> : 'Delete my account'}
+          </button>
+        </>
+      )}
+    </div>
+  )
+}
+
 function PasswordSheet({ onDone, toast }) {
   const [form, setForm] = useState({ current: '', next: '', confirm: '' })
   const [show, setShow] = useState(false)
@@ -457,7 +398,7 @@ export default function Account() {
   const [params, setParams] = useSearchParams()
   const { user, balance, setBalance, logout } = useAuth()
   const [profile, setProfile] = useState(null)
-  const [sheet, setSheet] = useState(() => params.get('open'))
+  const [sheet, setSheet] = useState(() => (params.get('open') === 'deposit' ? null : params.get('open')))
   const [toast, setToast] = useState(null)
   const [spinning, setSpinning] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -488,8 +429,9 @@ export default function Account() {
 
   // Clear ?open= once the sheet it asked for is shown
   useEffect(() => {
-    if (params.get('open')) setParams({}, { replace: true })
-  }, [params, setParams])
+    if (params.get('open') === 'deposit') navigate('/deposit', { replace: true })
+    else if (params.get('open')) setParams({}, { replace: true })
+  }, [params, setParams, navigate])
 
   const closeSheet = useCallback(() => setSheet(null), [])
   const refresh = async () => {
@@ -555,7 +497,7 @@ export default function Account() {
             <button type="button" onClick={() => navigate('/account/history/transactions')}>
               <span className="ac-q ac-q-red"><Icon name="wallet" size={20} /></span>Wallet
             </button>
-            <button type="button" onClick={() => setSheet('deposit')}>
+            <button type="button" onClick={() => navigate('/deposit')}>
               <span className="ac-q ac-q-orange"><Icon name="deposit" size={20} /></span>Deposit
             </button>
             <button type="button" onClick={() => setSheet('withdraw')}>
@@ -627,12 +569,12 @@ export default function Account() {
         <button type="button" className="ac-logout" onClick={onLogout}>
           <Icon name="logout" size={18} /> Log out
         </button>
+        <button type="button" className="ac-delete" onClick={() => setSheet('delete')}>
+          Delete account
+        </button>
       </main>
 
       {/* ── Sheets ─────────────────────────────────────────── */}
-      <Sheet open={sheet === 'deposit'} title="Deposit" onClose={closeSheet}>
-        <DepositSheet toast={showToast} onDone={() => { closeSheet(); navigate('/account/history/deposits') }} />
-      </Sheet>
       <Sheet open={sheet === 'withdraw'} title="Withdraw" onClose={closeSheet}>
         <WithdrawSheet toast={showToast} balance={balance} onAddBank={() => setSheet('bank')} onDone={() => { closeSheet(); load().catch(() => {}) }} />
       </Sheet>
@@ -641,6 +583,9 @@ export default function Account() {
       </Sheet>
       <Sheet open={sheet === 'name'} title="Edit name" onClose={closeSheet}>
         <NameSheet current={name} toast={showToast} onDone={(nu) => { closeSheet(); setProfile((p) => p && { ...p, user: nu }) }} />
+      </Sheet>
+      <Sheet open={sheet === 'delete'} title="Delete account" onClose={closeSheet}>
+        <DeleteSheet toast={showToast} onDeleted={async () => { await logout(); navigate('/', { replace: true }) }} />
       </Sheet>
       <Sheet open={sheet === 'password'} title="Change password" onClose={closeSheet}>
         <PasswordSheet toast={showToast} onDone={closeSheet} />

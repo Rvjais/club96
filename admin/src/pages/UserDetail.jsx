@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { api, dateTime, money, signedMoney, timeAgo } from '../api'
 import { Icon } from '../Icons'
 
-const TX_LABELS = { bonus: 'Bonus', commission: 'Referral commission', deposit: 'Deposit', bet: 'Bet', win: 'Win', refund: 'Refund', adjustment: 'Admin adjustment', withdraw: 'Withdrawal', withdraw_refund: 'Withdrawal refund' }
+const TX_LABELS = { bonus: 'Bonus', commission: 'Referral commission', forfeit: 'Forfeited on deletion', deposit: 'Deposit', bet: 'Bet', win: 'Win', refund: 'Refund', adjustment: 'Admin adjustment', withdraw: 'Withdrawal', withdraw_refund: 'Withdrawal refund' }
 const WD_LABEL = { pending: 'Pending', approved: 'Paid', rejected: 'Rejected' }
 const GAME_LABELS = { aviator: 'Aviator', wingo: 'Win Go', color: 'Color Prediction', mines: 'Mines', tower: 'Tower', plinko: 'Plinko', dice: 'Dice', wheel: 'Wheel', spin: 'Lucky Spin', poker: 'Poker' }
 // Games that share the generic bet table (one tab each)
@@ -255,7 +255,7 @@ export default function UserDetail() {
             <p className="mono">UID {u.uid ?? '—'} · {u.phone} · joined {dateTime(u.createdAt)}</p>
           </div>
         </div>
-        <div className="profile-actions">
+        {u.status !== 'deleted' && <div className="profile-actions">
           <Link to={`/support/${u.id}`} className="btn btn-ghost">
             <Icon name="message" size={16} /> Message
           </Link>
@@ -281,8 +281,43 @@ export default function UserDetail() {
               <Icon name="checkCircle" size={16} /> Unblock user
             </button>
           )}
-        </div>
+        </div>}
       </header>
+
+      {u.status === 'deleted' && (
+        <div className="alert alert-deleted">
+          <Icon name="trash" size={18} />
+          <div>
+            <strong>The player deleted this account on {dateTime(u.deletedAt)}.</strong>
+            <span>
+              {u.deletedBalance > 0 ? `${money(u.deletedBalance)} balance was forfeited` : 'The wallet was empty'}
+              {u.deletedCommission > 0 && ` · ${money(u.deletedCommission)} unclaimed commission dropped`}
+              {u.deleteReason && ` · Reason: “${u.deleteReason}”`}
+            </span>
+            <span>Kept read-only with its full history. The phone number is free for a new sign-up.</span>
+          </div>
+        </div>
+      )}
+
+      {data.linked?.length > 0 && (
+        <section className="card">
+          <h2 className="card-title"><Icon name="repeat" size={16} /> Other accounts on this phone number</h2>
+          <div className="linked-list">
+            {data.linked.map((a) => (
+              <Link key={a.id} to={`/users/${a.id}`} className="linked-item">
+                <span className={`badge badge-${a.status}`}>{a.status}</span>
+                <strong className="mono">UID {a.uid ?? '—'}</strong>
+                <span className="muted">
+                  joined {dateTime(a.createdAt)}
+                  {a.deletedAt && ` · deleted ${dateTime(a.deletedAt)}`}
+                  {a.forfeited > 0 && ` · forfeited ${money(a.forfeited)}`}
+                </span>
+                <Icon name="chevronRight" size={16} />
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="grid">
         {/* Wallet */}
@@ -292,7 +327,7 @@ export default function UserDetail() {
             <span>Current balance</span>
             <strong>{money(u.balance)}</strong>
           </div>
-          <BalanceForm userId={u.id} onDone={reload} />
+          {u.status !== 'deleted' && <BalanceForm userId={u.id} onDone={reload} />}
         </section>
 
         {/* Lifetime stats */}
@@ -306,6 +341,7 @@ export default function UserDetail() {
             <div><span>Total won</span><strong className="pos">{money(s.won)}</strong></div>
             <div><span>Player net</span><strong className={s.net >= 0 ? 'pos' : 'neg'}>{signedMoney(s.net)}</strong></div>
             <div><span>Admin adjustments</span><strong>{signedMoney(s.adjustments)}</strong></div>
+            {s.forfeited > 0 && <div><span>Forfeited on deletion</span><strong>{money(s.forfeited)}</strong></div>}
             <div><span>Aviator bets</span><strong>{s.aviatorBets}</strong></div>
             <div><span>Color bets</span><strong>{s.colorBets}</strong></div>
             {OTHER_GAMES.map((g) => (
@@ -372,7 +408,7 @@ export default function UserDetail() {
             Passwords are stored as one-way hashes, so nobody (including admins) can view them. If a user forgets
             theirs, set a new one below and share it with them.
           </p>
-          <PasswordForm userId={u.id} onDone={reload} />
+          {u.status !== 'deleted' && <PasswordForm userId={u.id} onDone={reload} />}
         </section>
       </div>
 

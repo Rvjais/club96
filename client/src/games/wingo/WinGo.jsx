@@ -171,7 +171,7 @@ export default function WinGo() {
           <span className="wg-wallet-label"><Icon name="wallet" size={14} /> Wallet balance</span>
           <div className="wg-wallet-actions">
             <button type="button" className="wg-btn-withdraw" onClick={() => navigate('/account?open=withdraw')}>Withdraw</button>
-            <button type="button" className="wg-btn-deposit" onClick={() => navigate('/account?open=deposit')}>Deposit</button>
+            <button type="button" className="wg-btn-deposit" onClick={() => navigate('/deposit')}>Deposit</button>
           </div>
         </section>
 

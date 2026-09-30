@@ -59,6 +59,8 @@ export async function ensureUid(user) {
   return user
 }
 
+export const clearSession = (res) => res.clearCookie(COOKIE, { path: '/' })
+
 export function setSession(res, user) {
   const token = jwt.sign({ sub: String(user._id), v: user.sessionVersion }, JWT_SECRET, { expiresIn: `${SESSION_DAYS}d` })
   res.cookie(COOKIE, token, {
@@ -85,6 +87,10 @@ export async function requireAuth(req, res, next) {
   if (!user || user.sessionVersion !== payload.v) {
     res.clearCookie(COOKIE, { path: '/' })
     return next(new HttpError(401, 'Session expired, please log in again'))
+  }
+  if (user.status === 'deleted') {
+    res.clearCookie(COOKIE, { path: '/' })
+    return next(new HttpError(401, 'This account was deleted'))
   }
   if (user.status === 'blocked') {
     res.clearCookie(COOKIE, { path: '/' })
@@ -150,9 +156,13 @@ authRouter.post('/signup', async (req, res) => {
   const code = typeof inviteCode === 'string' ? inviteCode.trim().slice(0, 32) : ''
   const upline = await referralFields(code)
 
+  // Signing up again after deleting an account: link the old account(s), and no second welcome bonus
+  const previous = await User.find({ deletedPhone: fullPhone }, { _id: 1 }).sort({ deletedAt: 1 }).lean()
+  const extra = previous.length ? { ...upline, previousAccounts: previous.map((p) => p._id) } : upline
+
   const cfg = getSettings('platform')
-  const bonusPaise = toPaise(cfg.signupBonus)
-  const user = await createUser({ phone: fullPhone, password, inviteCode: code || null, ip: req.ip }, bonusPaise, upline)
+  const bonusPaise = previous.length ? 0 : toPaise(cfg.signupBonus)
+  const user = await createUser({ phone: fullPhone, password, inviteCode: code || null, ip: req.ip }, bonusPaise, extra)
   const fresh = await User.findByIdAndUpdate(user._id, { lastLoginAt: new Date(), lastLoginIp: req.ip, $inc: { loginCount: 1 } }, { new: true })
   setSession(res, fresh)
   res.status(201).json({

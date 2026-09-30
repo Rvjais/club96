@@ -35,7 +35,15 @@ const userSchema = new Schema({
     }, { _id: false }),
     default: undefined,
   },
-  status: { type: String, enum: ['active', 'blocked'], default: 'active' },
+  status: { type: String, enum: ['active', 'blocked', 'deleted'], default: 'active' },
+  // ── Deleted by the player: the account and its history stay for the admins; the phone is released
+  // (phone becomes "deleted:<id>") so the player can sign up again with a new ID.
+  deletedAt: Date,
+  deletedPhone: String, // the phone the account had
+  deletedBalance: Number, // paise forfeited on deletion
+  deletedCommission: Number, // unclaimed referral commission (paise) dropped on deletion
+  deleteReason: String,
+  previousAccounts: { type: [ObjectId], default: undefined }, // earlier deleted accounts with the same phone
   signupIp: String,
   lastLoginAt: Date,
   lastLoginIp: String,
@@ -43,17 +51,20 @@ const userSchema = new Schema({
 }, { timestamps: true })
 
 userSchema.index({ ancestors: 1 })
+userSchema.index({ deletedPhone: 1 }, { sparse: true })
+userSchema.index({ status: 1, deletedAt: -1 })
 
 const transactionSchema = new Schema({
   user: { type: ObjectId, ref: 'User', required: true, index: true },
   amount: { type: Number, required: true }, // signed
   balanceAfter: { type: Number, required: true },
-  type: { type: String, required: true }, // bonus | deposit | bet | win | refund | adjustment | withdraw | withdraw_refund
+  type: { type: String, required: true }, // bonus | deposit | bet | win | refund | adjustment | withdraw | withdraw_refund | commission | forfeit
   game: String,
   ref: String,
   note: String,
 }, { timestamps: { createdAt: true, updatedAt: false } })
 transactionSchema.index({ user: 1, createdAt: -1 })
+transactionSchema.index({ createdAt: -1 }) // admin dashboard ranges
 
 const aviatorRoundSchema = new Schema({
   _id: Number,
@@ -261,13 +272,17 @@ const withdrawalSchema = new Schema({
 }, { timestamps: true })
 withdrawalSchema.index({ status: 1, createdAt: -1 })
 
-// ── Deposits: the player pays the admin's UPI QR, then submits the UTR; an admin confirms and credits
+// ── Deposits: the player opens an order, pays the admin's UPI QR, then submits the UTR; an admin confirms and credits.
+// unpaid (order open, no UTR yet) → pending (UTR submitted) → approved | rejected; unpaid orders can also be cancelled or expire.
 const depositSchema = new Schema({
   user: { type: ObjectId, ref: 'User', required: true, index: true },
+  orderNo: { type: String, unique: true, sparse: true }, // shown to the player, e.g. RC20261001032237a1b2c3d4e5f6
   amount: { type: Number, required: true }, // paise the player said they paid
-  utr: { type: String, required: true }, // UPI transaction reference from the player's app
+  utr: String, // UPI transaction reference from the player's app (set when the order is paid)
   upiId: String, // the UPI ID shown to the player at the time
-  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending', index: true },
+  payeeName: String,
+  expiresAt: Date, // pay-by time for an unpaid order
+  status: { type: String, enum: ['unpaid', 'pending', 'approved', 'rejected', 'cancelled', 'expired'], default: 'pending', index: true },
   credited: Number, // paise actually credited on approval (the amount received)
   adminNote: String,
   processedBy: String,

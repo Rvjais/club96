@@ -47,7 +47,7 @@ export async function referralFields(code) {
   const clean = String(code ?? '').trim()
   if (!clean) return fields
   const inviter = /^\d{6,14}$/.test(clean)
-    ? await User.findOne({ referralCode: clean }, { ancestors: 1 }).lean()
+    ? await User.findOne({ referralCode: clean, status: { $ne: 'deleted' } }, { ancestors: 1 }).lean()
     : null
   if (!inviter) throw new HttpError(400, 'Invite code not found. Check the code or leave it empty.')
   fields.referredBy = inviter._id
@@ -88,6 +88,9 @@ async function processBatch() {
   ).lean()
   const byId = new Map(players.map((u) => [String(u._id), u]))
   const cfg = getSettings('referral')
+  // Upline members who deleted their account earn nothing
+  const uplineIds = [...new Set(players.flatMap((u) => u.ancestors.map(String)))]
+  const gone = new Set((await User.find({ _id: { $in: uplineIds }, status: 'deleted' }, { _id: 1 }).lean()).map((u) => String(u._id)))
   const next = String(txs.at(-1)._id)
 
   await tx(async (session) => {
@@ -119,7 +122,7 @@ async function processBatch() {
         const b = buckets.get(key) ?? { user: earner, from: u._id, level: i + 1, day, bet: 0, betComm: 0, deposit: 0, depositComm: 0 }
         b.bet += bet
         b.deposit += deposit
-        if (cfg.enabled) {
+        if (cfg.enabled && !gone.has(String(earner))) {
           b.betComm += (bet * rate.bet) / 100
           b.depositComm += (deposit * rate.deposit) / 100
         }
@@ -245,7 +248,7 @@ promotionRouter.get('/subordinates', async (req, res) => {
   const filter = level >= 1 && level <= REFERRAL_MAX_LEVELS ? { [`ancestors.${level - 1}`]: me } : { ancestors: me }
   const [total, rows] = await Promise.all([
     User.countDocuments(filter),
-    User.find(filter, { uid: 1, phone: 1, ancestors: 1, depositTotal: 1, createdAt: 1 })
+    User.find(filter, { uid: 1, phone: 1, deletedPhone: 1, ancestors: 1, depositTotal: 1, createdAt: 1 })
       .sort({ createdAt: -1 }).skip((page - 1) * PAGE_SIZE).limit(PAGE_SIZE).lean(),
   ])
   const sums = await Commission.aggregate([
@@ -259,7 +262,7 @@ promotionRouter.get('/subordinates', async (req, res) => {
     total,
     items: rows.map((r) => ({
       uid: r.uid ?? null,
-      phone: maskPhone(r.phone),
+      phone: maskPhone(r.deletedPhone ?? r.phone),
       level: r.ancestors.findIndex((a) => a.equals(me)) + 1,
       joinedAt: r.createdAt,
       deposit: toRupees(r.depositTotal ?? 0),

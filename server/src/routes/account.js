@@ -2,9 +2,10 @@
 import { Router } from 'express'
 import mongoose from 'mongoose'
 import bcrypt from 'bcryptjs'
-import { ensureUid, publicUser, requireAuth, setSession, validatePassword } from '../auth.js'
-import { AviatorBet, AviatorRound, ColorBet, DiceBet, MinesBet, PlinkoBet, PokerTable, TowerBet, Transaction, User, SpinBet, WheelBet, WingoBet, Withdrawal } from '../models/index.js'
-import { HttpError, serializeTx, toRupees } from '../wallet.js'
+import { tx } from '../db.js'
+import { clearSession, ensureUid, publicUser, requireAuth, setSession, validatePassword } from '../auth.js'
+import { AviatorBet, AviatorRound, ColorBet, Deposit, DiceBet, MinesBet, PlinkoBet, PokerTable, TowerBet, Transaction, User, SpinBet, WheelBet, WingoBet, Withdrawal } from '../models/index.js'
+import { HttpError, debit, serializeTx, toRupees } from '../wallet.js'
 import { periodLabel } from '../games/color.js'
 import { describeMines } from '../games/mines.js'
 import { describeTower } from '../games/tower.js'
@@ -153,4 +154,68 @@ accountRouter.get('/stats', async (req, res) => {
     color: game('color'),
     ...Object.fromEntries(OTHER_GAMES.map((g) => [g.game, game(g.game)])),
   })
+})
+
+// ── Delete account ───────────────────────────────────────────
+// The player starts over: the account is closed (kept for the admins with all its history),
+// any balance left is forfeited and the phone number is freed for a new sign-up with a new ID.
+async function deleteBlockers(userId) {
+  const [withdrawal, deposit, mines, tower, poker, aviator, wingo] = await Promise.all([
+    Withdrawal.exists({ user: userId, status: 'pending' }),
+    Deposit.exists({ user: userId, status: 'pending' }),
+    MinesBet.exists({ user: userId, status: 'active' }),
+    TowerBet.exists({ user: userId, status: 'active' }),
+    PokerTable.exists({ user: userId, status: 'active' }),
+    AviatorBet.exists({ user: userId, status: { $in: ['queued', 'active'] } }),
+    WingoBet.exists({ user: userId, status: 'pending' }),
+  ])
+  const list = []
+  if (withdrawal) list.push('You have a withdrawal waiting to be paid.')
+  if (deposit) list.push('You have a deposit waiting for confirmation.')
+  if (mines || tower || poker) list.push('Finish your game in progress (Mines, Tower or Poker) first.')
+  if (aviator || wingo) list.push('Wait for your open Aviator / Win Go bets to finish.')
+  return list
+}
+
+accountRouter.get('/delete', async (req, res) => {
+  const user = await User.findById(req.userId, { balance: 1, commission: 1 }).lean()
+  res.json({
+    balance: toRupees(user.balance),
+    commission: toRupees(user.commission ?? 0),
+    blockers: await deleteBlockers(req.userId),
+  })
+})
+
+accountRouter.post('/delete', async (req, res) => {
+  const { password, confirm } = req.body ?? {}
+  if (confirm !== 'DELETE') throw new HttpError(400, 'Type DELETE to confirm')
+  const user = await User.findById(req.userId)
+  if (typeof password !== 'string' || !(await bcrypt.compare(password, user.passwordHash))) {
+    throw new HttpError(400, 'Password is incorrect')
+  }
+  const blockers = await deleteBlockers(req.userId)
+  if (blockers.length) throw new HttpError(409, blockers[0])
+  const reason = String(req.body?.reason ?? '').trim().slice(0, 200)
+
+  await tx(async (session) => {
+    const u = await User.findOne({ _id: req.userId, status: { $ne: 'deleted' } }, { balance: 1, phone: 1, commission: 1 }).session(session).lean()
+    if (!u) throw new HttpError(409, 'This account is already deleted')
+    if (u.balance > 0) await debit(session, u._id, u.balance, { type: 'forfeit', note: 'Account deleted by the player — balance forfeited' })
+    await User.updateOne({ _id: u._id }, {
+      $set: {
+        status: 'deleted',
+        deletedAt: new Date(),
+        deletedPhone: u.phone,
+        phone: `deleted:${u._id}`,
+        deletedBalance: u.balance,
+        deletedCommission: u.commission ?? 0,
+        commission: 0,
+        deleteReason: reason || undefined,
+      },
+      $inc: { sessionVersion: 1 },
+    }, { session })
+    await Deposit.updateMany({ user: u._id, status: 'unpaid' }, { status: 'cancelled' }, { session })
+  })
+  clearSession(res)
+  res.json({ ok: true })
 })

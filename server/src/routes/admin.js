@@ -31,6 +31,7 @@ const OTHER_GAMES = [
 ]
 import { DEFAULTS, GAMES, SITE_SETTINGS, getSettings, settingsLog, updateSettings } from '../settings.js'
 import { adminReferralInfo } from '../referral.js'
+import { dashboard } from './dashboard.js'
 
 const COOKIE = 'asid'
 const COOKIE_PATH = '/api/admin'
@@ -96,6 +97,8 @@ adminRouter.use(requireAdmin)
 
 adminRouter.get('/me', (req, res) => res.json({ admin: { username: req.admin.username } }))
 
+adminRouter.get('/dashboard', dashboard)
+
 // ── Dashboard stats ──────────────────────────────────────────
 const sumBy = async (match) => {
   const [r] = await Transaction.aggregate([{ $match: match }, { $group: { _id: null, total: { $sum: '$amount' } } }])
@@ -106,7 +109,7 @@ adminRouter.get('/stats', async (req, res) => {
   const midnight = new Date(); midnight.setHours(0, 0, 0, 0)
   const dayAgo = new Date(Date.now() - 24 * 3600 * 1000)
   const [users, newToday, active24h, blocked, balanceAgg, wagered, paid] = await Promise.all([
-    User.estimatedDocumentCount(),
+    User.countDocuments({ status: { $ne: 'deleted' } }),
     User.countDocuments({ createdAt: { $gte: midnight } }),
     User.countDocuments({ lastLoginAt: { $gte: dayAgo } }),
     User.countDocuments({ status: 'blocked' }),
@@ -141,9 +144,11 @@ function listUser(u) {
     uid: u.uid ?? null,
     username: u.username,
     displayName: u.displayName || null,
-    phone: u.phone,
+    phone: u.deletedPhone ?? u.phone,
     balance: toRupees(u.balance),
     status: u.status,
+    recreated: Boolean(u.previousAccounts?.length),
+    deletedAt: u.deletedAt ?? null,
     createdAt: u.createdAt,
     lastLoginAt: u.lastLoginAt ?? null,
   }
@@ -156,11 +161,12 @@ adminRouter.get('/users', async (req, res) => {
   const q = String(req.query.q ?? '').trim()
   if (q) {
     const rx = new RegExp(escapeRegex(q), 'i')
-    filter.$or = [{ username: rx }, { phone: rx }, { displayName: rx }]
+    filter.$or = [{ username: rx }, { phone: rx }, { deletedPhone: rx }, { displayName: rx }]
     if (/^\d{7}$/.test(q)) filter.$or.push({ uid: Number(q) })
     if (/^\d{12}$/.test(q)) filter.$or.push({ referralCode: q })
   }
-  if (req.query.status === 'active' || req.query.status === 'blocked') filter.status = req.query.status
+  if (['active', 'blocked', 'deleted'].includes(req.query.status)) filter.status = req.query.status
+  if (req.query.status === 'recreated') filter['previousAccounts.0'] = { $exists: true }
 
   const [total, users] = await Promise.all([
     User.countDocuments(filter),
@@ -176,11 +182,34 @@ async function loadUser(id) {
   return user
 }
 
+/** loadUser for actions that change the account — not allowed once the player deleted it. */
+async function loadLiveUser(id) {
+  const user = await loadUser(id)
+  if (user.status === 'deleted') throw new HttpError(409, 'The player deleted this account. It is kept read-only for your records.')
+  return user
+}
+
+/** Every account that has used this account's phone number (deleted ones and the current one), oldest first. */
+async function linkedAccounts(user) {
+  const phone = user.deletedPhone ?? user.phone
+  const rows = await User.find({ _id: { $ne: user._id }, $or: [{ phone }, { deletedPhone: phone }] }, { uid: 1, status: 1, createdAt: 1, deletedAt: 1, deletedBalance: 1 })
+    .sort({ createdAt: 1 }).lean()
+  return rows.map((u) => ({
+    id: String(u._id),
+    uid: u.uid ?? null,
+    status: u.status,
+    createdAt: u.createdAt,
+    deletedAt: u.deletedAt ?? null,
+    forfeited: toRupees(u.deletedBalance ?? 0),
+  }))
+}
+
 adminRouter.get('/users/:id', async (req, res) => {
   const user = await loadUser(req.params.id)
   const uid = user._id
 
-  const [referral, byType, txs, aviator, color, aviatorCount, colorCount, biggest, withdrawals, ...others] = await Promise.all([
+  const [linked, referral, byType, txs, aviator, color, aviatorCount, colorCount, biggest, withdrawals, ...others] = await Promise.all([
+    linkedAccounts(user),
     adminReferralInfo(user),
     Transaction.aggregate([{ $match: { user: uid } }, { $group: { _id: '$type', total: { $sum: '$amount' }, count: { $sum: 1 } } }]),
     Transaction.find({ user: uid }).sort({ createdAt: -1 }).limit(100).lean(),
@@ -214,7 +243,11 @@ adminRouter.get('/users/:id', async (req, res) => {
       uid: user.uid ?? null,
       username: user.username,
       displayName: user.displayName || null,
-      phone: user.phone,
+      phone: user.deletedPhone ?? user.phone,
+      deletedAt: user.deletedAt ?? null,
+      deletedBalance: toRupees(user.deletedBalance ?? 0),
+      deletedCommission: toRupees(user.deletedCommission ?? 0),
+      deleteReason: user.deleteReason ?? null,
       inviteCode: user.inviteCode ?? null,
       balance: toRupees(user.balance),
       status: user.status,
@@ -232,6 +265,7 @@ adminRouter.get('/users/:id', async (req, res) => {
       bonuses: toRupees(t.bonus ?? 0),
       withdrawn: toRupees(-(t.withdraw ?? 0) - (t.withdraw_refund ?? 0)),
       adjustments: toRupees(t.adjustment ?? 0),
+      forfeited: toRupees(-(t.forfeit ?? 0)),
       commission: toRupees(t.commission ?? 0),
       wagered: toRupees(wagered),
       won: toRupees(t.win ?? 0),
@@ -242,6 +276,7 @@ adminRouter.get('/users/:id', async (req, res) => {
       biggestWin: toRupees(biggest?.amount ?? 0),
     },
     referral,
+    linked,
     transactions: txs.map(serializeTx),
     aviatorBets: aviator.map((b) => ({
       id: String(b._id),
@@ -272,7 +307,7 @@ adminRouter.get('/users/:id', async (req, res) => {
 
 // Credit (positive) or debit (negative) a user's wallet with a note
 adminRouter.post('/users/:id/balance', async (req, res) => {
-  const user = await loadUser(req.params.id)
+  const user = await loadLiveUser(req.params.id)
   const paise = toPaise(req.body?.amount)
   const note = String(req.body?.note ?? '').trim().slice(0, 200)
   if (!Number.isInteger(paise) || paise === 0) throw new HttpError(400, 'Enter a non-zero amount')
@@ -285,7 +320,7 @@ adminRouter.post('/users/:id/balance', async (req, res) => {
 })
 
 adminRouter.post('/users/:id/status', async (req, res) => {
-  const user = await loadUser(req.params.id)
+  const user = await loadLiveUser(req.params.id)
   const { status } = req.body ?? {}
   if (status !== 'active' && status !== 'blocked') throw new HttpError(400, 'Invalid status')
   user.status = status
@@ -295,7 +330,7 @@ adminRouter.post('/users/:id/status', async (req, res) => {
 })
 
 adminRouter.post('/users/:id/password', async (req, res) => {
-  const user = await loadUser(req.params.id)
+  const user = await loadLiveUser(req.params.id)
   validatePassword(req.body?.password)
   user.passwordHash = await bcrypt.hash(req.body.password, 10)
   user.passwordChangedAt = new Date()
@@ -306,7 +341,7 @@ adminRouter.post('/users/:id/password', async (req, res) => {
 
 // Remove saved bank details so the player can add new ones
 adminRouter.post('/users/:id/bank/remove', async (req, res) => {
-  const user = await loadUser(req.params.id)
+  const user = await loadLiveUser(req.params.id)
   if (await Withdrawal.exists({ user: user._id, status: 'pending' })) {
     throw new HttpError(409, "Process this player's pending withdrawals first")
   }
@@ -316,7 +351,7 @@ adminRouter.post('/users/:id/bank/remove', async (req, res) => {
 })
 
 adminRouter.post('/users/:id/logout', async (req, res) => {
-  const user = await loadUser(req.params.id)
+  const user = await loadLiveUser(req.params.id)
   user.sessionVersion += 1
   await user.save()
   res.json({ ok: true })
@@ -329,6 +364,7 @@ function serializeDepositAdmin(d) {
     amount: toRupees(d.amount),
     credited: d.credited == null ? null : toRupees(d.credited),
     utr: d.utr,
+    orderNo: d.orderNo ?? null,
     upiId: d.upiId ?? null,
     status: d.status,
     note: d.adminNote ?? null,
@@ -340,9 +376,10 @@ function serializeDepositAdmin(d) {
 
 adminRouter.get('/deposits', async (req, res) => {
   const status = ['pending', 'approved', 'rejected'].includes(req.query.status) ? req.query.status : undefined
-  const filter = status ? { status } : {}
+  // Orders the player never paid (unpaid / cancelled / expired) aren't the admins' concern
+  const filter = { status: status ?? { $in: ['pending', 'approved', 'rejected'] } }
   const q = String(req.query.q ?? '').replace(/\s/g, '')
-  if (q) filter.utr = { $regex: escapeRegex(q) }
+  if (q) filter.$or = [{ utr: { $regex: escapeRegex(q) } }, { orderNo: { $regex: escapeRegex(q), $options: 'i' } }]
   const [rows, pendingCount, pendingSum] = await Promise.all([
     Deposit.find(filter).sort({ createdAt: status === 'pending' ? 1 : -1 }).limit(200).populate('user', 'username displayName phone uid balance status').lean(),
     Deposit.countDocuments({ status: 'pending' }),

@@ -160,7 +160,7 @@ export default function GamingPage() {
               <Icon name="withdraw" size={18} strokeWidth={2.4} />
               Withdraw
             </button>
-            <button type="button" className="gp-btn-deposit" onClick={() => navigate('/account?open=deposit')}>
+            <button type="button" className="gp-btn-deposit" onClick={() => navigate('/deposit')}>
               <Icon name="deposit" size={18} strokeWidth={2.4} />
               Deposit
             </button>
@@ -303,7 +303,7 @@ export default function GamingPage() {
         title="Add money to play"
         onClose={() => setLowBalance(false)}
         actions={[
-          { label: 'Deposit now', primary: true, onClick: () => navigate('/account?open=deposit') },
+          { label: 'Deposit now', primary: true, onClick: () => navigate('/deposit') },
           { label: 'Not now', onClick: () => setLowBalance(false) },
         ]}
       >

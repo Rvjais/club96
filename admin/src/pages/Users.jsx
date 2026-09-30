@@ -100,6 +100,8 @@ export default function Users() {
             <option value="">All statuses</option>
             <option value="active">Active</option>
             <option value="blocked">Blocked</option>
+            <option value="deleted">Deleted by player</option>
+            <option value="recreated">Re-registered</option>
           </select>
           <select value={sort} onChange={(e) => { setSort(e.target.value); setPage(1) }} aria-label="Sort">
             <option value="newest">Newest first</option>
@@ -114,7 +116,7 @@ export default function Users() {
         )}
 
         <div className={`table-wrap ${loading ? 'is-loading' : ''}`}>
-          <table className="table table-click">
+          <table className="table table-click table-cards">
             <thead>
               <tr>
                 <th>User</th>
@@ -138,11 +140,14 @@ export default function Users() {
                       </div>
                     </div>
                   </td>
-                  <td className="mono">{u.phone}</td>
-                  <td className="num strong">{money(u.balance)}</td>
-                  <td><span className={`badge badge-${u.status}`}>{u.status}</span></td>
-                  <td title={dateTime(u.createdAt)}>{new Date(u.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
-                  <td className="muted" title={dateTime(u.lastLoginAt)}>{timeAgo(u.lastLoginAt)}</td>
+                  <td className="mono" data-label="Phone">{u.phone}</td>
+                  <td className="num strong" data-label="Balance">{money(u.balance)}</td>
+                  <td data-label="Status">
+                    <span className={`badge badge-${u.status}`}>{u.status}</span>
+                    {u.recreated && <span className="badge badge-recreated" title="Signed up again after deleting an earlier account">re-registered</span>}
+                  </td>
+                  <td data-label="Joined" title={dateTime(u.createdAt)}>{new Date(u.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                  <td className="muted" data-label={u.deletedAt ? 'Deleted' : 'Last login'} title={dateTime(u.deletedAt ?? u.lastLoginAt)}>{timeAgo(u.deletedAt ?? u.lastLoginAt)}</td>
                   <td className="chev"><Icon name="chevronRight" size={16} /></td>
                 </tr>
               ))}

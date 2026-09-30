@@ -16,6 +16,7 @@ const TABS = [
 const TX_LABELS = {
   bonus: 'Bonus',
   commission: 'Agency commission',
+  forfeit: 'Balance forfeited',
   deposit: 'Deposit',
   bet: 'Bet',
   win: 'Win',
@@ -27,7 +28,7 @@ const TX_LABELS = {
 const GAME_LABELS = { aviator: 'Aviator', wingo: 'Win Go', color: 'Color Prediction', mines: 'Mines', tower: 'Tower', plinko: 'Plinko', dice: 'Dice', wheel: 'Wheel', spin: 'Lucky Spin', poker: 'Poker' }
 const GAME_ICONS = { aviator: 'plane', wingo: 'timer', color: 'palette', mines: 'bomb', tower: 'layers', plinko: 'pyramid', dice: 'dices', wheel: 'wheel', spin: 'gift', poker: 'club' }
 const STATUS = { pending: 'In review', approved: 'Paid', rejected: 'Rejected' }
-const DEPOSIT_STATUS = { pending: 'Confirming', approved: 'Added', rejected: 'Rejected' }
+const DEPOSIT_STATUS = { unpaid: 'To be paid', pending: 'Confirming', approved: 'Added', rejected: 'Rejected', cancelled: 'Cancelled', expired: 'Expired' }
 
 function Empty({ text }) {
   return (
@@ -145,7 +146,7 @@ export default function History() {
               <span className="hs-icon hs-icon-green"><Icon name="deposit" size={18} /></span>
               <div className="hs-main">
                 <strong>{money(d.credited ?? d.amount)}</strong>
-                <span>UPI · UTR {d.utr}</span>
+                <span>UPI · {d.utr ? `UTR ${d.utr}` : d.orderNo}</span>
                 <small>{stamp(d.createdAt)}</small>
               </div>
               <span className={`hs-status hs-status-${d.status}`}>{DEPOSIT_STATUS[d.status]}</span>
