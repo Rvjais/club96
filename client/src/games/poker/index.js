@@ -1,4 +1,5 @@
 import { lazy } from 'react'
+import image from '../icons/poker.png'
 
 // Card + route metadata for the Poker game (consumed by src/games/index.js)
 export default {
@@ -8,6 +9,7 @@ export default {
   category: 'cards',
   path: '/games/poker',
   icon: 'club',
+  image, // lobby / history artwork (src/games/icons)
   bg: 'linear-gradient(160deg,#1b854e 0%,#0c4225 50%,#1e2940 100%)',
   glow: '#34d399',
   badge: 'NEW',

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Icon } from '../components/Icons'
 import { api } from '../lib/api'
 import { money, stamp } from '../lib/format'
+import { gameImages } from '../games'
 import './Account.css'
 
 const TABS = [
@@ -100,9 +101,13 @@ export default function History() {
 
         {tab === 'games' && items.map((g) => (
           <div key={g.id} className="hs-item">
-            <span className={`hs-icon hs-icon-${g.game}`}>
-              <Icon name={GAME_ICONS[g.game] ?? 'gamepad'} size={18} />
-            </span>
+            {gameImages[g.game] ? (
+              <img className="hs-icon hs-icon-img" src={gameImages[g.game]} alt="" />
+            ) : (
+              <span className={`hs-icon hs-icon-${g.game}`}>
+                <Icon name={GAME_ICONS[g.game] ?? 'gamepad'} size={18} />
+              </span>
+            )}
             <div className="hs-main">
               <strong>{GAME_LABELS[g.game]}</strong>
               <span>{g.detail}</span>

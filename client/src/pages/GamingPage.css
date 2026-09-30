@@ -397,6 +397,16 @@ body {
   box-shadow: 0 0 0 2px #ffb300;
 }
 
+.gp-feature-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
 .gp-feature-crown {
   color: #ffd54f;
   flex-shrink: 0;
@@ -629,7 +639,7 @@ body {
 
 .gp-root .gp-play-card {
   position: relative;
-  aspect-ratio: 3 / 4.1;
+  aspect-ratio: 3 / 4.35;
   border-radius: 12px;
   overflow: hidden;
   display: flex;
@@ -652,22 +662,21 @@ body {
 
 .gp-play-art {
   position: absolute;
-  inset: 0 0 40% 0;
-  display: grid;
-  place-items: center;
-  color: #fff;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
+  inset: 0 0 auto 0;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
 }
-.gp-play-art .icon { transform: rotate(-12deg); }
 
 .gp-play-info {
   position: relative;
   z-index: 1;
-  padding: 16px 6px 8px;
+  padding: 7px 6px 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.6), transparent);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.15));
 }
 
 .gp-play-name {
@@ -769,11 +778,9 @@ body {
   width: 50px;
   height: 50px;
   border-radius: 50%;
-  display: grid;
-  place-items: center;
-  color: #fff;
-  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.12) 60%);
-  box-shadow: inset 0 -4px 10px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.15);
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 .gp-lottery-name {

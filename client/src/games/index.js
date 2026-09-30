@@ -12,6 +12,9 @@ import poker from './poker'
 
 export const games = [wingo, aviator, poker, mines, tower, plinko, wheel, dice]
 
+// Artwork per game id, for history and stats lists
+export const gameImages = Object.fromEntries(games.map((g) => [g.id, g.image]))
+
 // Lobby tabs / sections; every game's index.js names one of these keys as its `category`
 export const gameCategories = [
   { key: 'all', label: 'Lobby', icon: 'home' },

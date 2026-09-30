@@ -7,6 +7,7 @@ import BottomNav from '../components/BottomNav'
 import './GamingPage.css'
 
 const wingo = games.find((g) => g.id === 'wingo')
+const wheel = games.find((g) => g.id === 'wheel')
 const ROOM_STYLES = {
   '30s': { bg: 'linear-gradient(135deg,#ff6b6b,#e02020)', label: 'Draw every 30 seconds' },
   '1m': { bg: 'linear-gradient(135deg,#ff9800,#ffb74d)', label: 'Draw every minute' },
@@ -147,15 +148,11 @@ export default function GamingPage() {
         {/* Feature cards row */}
         <section className="gp-feature-row">
           <button type="button" className="gp-feature-card gp-fortune" onClick={() => navigate('/games/wheel')}>
-            <div className="gp-feature-wheel">
-              <div className="gp-wheel-inner" />
-            </div>
+            <img className="gp-feature-img" src={wheel.image} alt="" />
             <span className="gp-feature-label">Wheel<br />of fortune</span>
           </button>
           <button type="button" className="gp-feature-card gp-vip" onClick={() => navigate('/games/wingo?room=30s')}>
-            <div className="gp-feature-crown">
-              <Icon name="timer" size={30} strokeWidth={1.9} />
-            </div>
+            <img className="gp-feature-img" src={wingo.image} alt="" />
             <span className="gp-feature-label">Win Go<br />30s rounds</span>
           </button>
         </section>
@@ -212,9 +209,7 @@ export default function GamingPage() {
                       style={{ background: ROOM_STYLES[room.key].bg }}
                       onClick={() => navigate(`${wingo.path}?room=${room.key}`)}
                     >
-                      <div className="gp-lottery-ball">
-                        <Icon name="timer" size={26} strokeWidth={2} />
-                      </div>
+                      <img className="gp-lottery-ball" src={wingo.image} alt="" />
                       <div className="gp-lottery-name">{room.label}</div>
                       <div className="gp-lottery-label">{ROOM_STYLES[room.key].label}</div>
                     </button>
@@ -235,12 +230,9 @@ export default function GamingPage() {
                           <Icon name="flame" size={10} strokeWidth={2.6} /> {g.badge}
                         </span>
                       )}
-                      <div className="gp-play-art">
-                        <Icon name={g.icon} size={46} strokeWidth={1.6} />
-                      </div>
+                      <img className="gp-play-art" src={g.image} alt="" />
                       <div className="gp-play-info">
                         <div className="gp-play-name">{g.name}</div>
-                        <div className="gp-play-tag">{g.tagline}</div>
                         <span className="gp-play-btn">
                           <Icon name="play" size={10} strokeWidth={2.6} fill="currentColor" /> Play
                         </span>

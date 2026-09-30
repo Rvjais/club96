@@ -6,6 +6,7 @@ import Sheet from '../components/Sheet'
 import { useAuth } from '../auth/authContext'
 import { api } from '../lib/api'
 import { money, stamp } from '../lib/format'
+import { gameImages } from '../games'
 import './Account.css'
 
 const DEPOSIT_PRESETS = [100, 200, 500, 1000, 2000, 5000]
@@ -205,9 +206,11 @@ function StatsSheet() {
   }, [])
   if (!stats) return <div className="ac-loading"><span className="ac-spinner ac-spinner-red" /></div>
 
-  const game = (label, icon, g) => (
+  const game = (label, icon, g, key) => (
     <div className="ac-stat-game">
-      <div className="ac-stat-game-head"><Icon name={icon} size={16} /> {label} <em>{g.bets} bets</em></div>
+      <div className="ac-stat-game-head">
+        {gameImages[key] ? <img className="ac-stat-game-img" src={gameImages[key]} alt="" /> : <Icon name={icon} size={16} />} {label} <em>{g.bets} bets</em>
+      </div>
       <div className="ac-stat-row"><span>Total bet</span><strong>{money(g.wagered)}</strong></div>
       <div className="ac-stat-row"><span>Total won</span><strong className="pos">{money(g.won)}</strong></div>
       <div className="ac-stat-row"><span>Net</span><strong className={g.net >= 0 ? 'pos' : 'neg'}>{g.net >= 0 ? '+' : '−'}{money(Math.abs(g.net))}</strong></div>
@@ -220,16 +223,16 @@ function StatsSheet() {
         <div><span>Total deposits</span><strong>{money(stats.deposits)}</strong></div>
         <div><span>Total withdrawn</span><strong>{money(stats.withdrawals)}</strong></div>
       </div>
-      {game('Aviator', 'plane', stats.aviator)}
-      {game('Win Go', 'timer', stats.wingo)}
+      {game('Aviator', 'plane', stats.aviator, 'aviator')}
+      {game('Win Go', 'timer', stats.wingo, 'wingo')}
       {stats.color?.bets > 0 && game('Color Prediction', 'palette', stats.color)}
-      {game('Mines', 'bomb', stats.mines)}
-      {game('Tower', 'layers', stats.tower)}
-      {game('Plinko', 'pyramid', stats.plinko)}
-      {game('Dice', 'dices', stats.dice)}
-      {game('Wheel', 'wheel', stats.wheel)}
+      {game('Mines', 'bomb', stats.mines, 'mines')}
+      {game('Tower', 'layers', stats.tower, 'tower')}
+      {game('Plinko', 'pyramid', stats.plinko, 'plinko')}
+      {game('Dice', 'dices', stats.dice, 'dice')}
+      {game('Wheel', 'wheel', stats.wheel, 'wheel')}
       {stats.spin?.bets > 0 && game('Lucky Spin', 'gift', stats.spin)}
-      {game('Poker', 'club', stats.poker)}
+      {game('Poker', 'club', stats.poker, 'poker')}
     </div>
   )
 }

@@ -1,4 +1,5 @@
 import { lazy } from 'react'
+import image from '../icons/dice.png'
 
 // Card + route metadata for the Dice game (consumed by src/games/index.js)
 export default {
@@ -8,6 +9,7 @@ export default {
   category: 'probability',
   path: '/games/dice',
   icon: 'dices',
+  image, // lobby / history artwork (src/games/icons)
   bg: 'linear-gradient(160deg,#60a5fa 0%,#1d4ed8 45%,#0f1528 100%)',
   glow: '#93c5fd',
   badge: 'NEW',
