@@ -158,6 +158,91 @@ function PlayerList({ rows, empty }) {
   )
 }
 
+const COLLECTION_NAMES = {
+  transactions: 'Wallet transactions', users: 'Users', aviatorbets: 'Aviator bets', aviatorrounds: 'Aviator rounds',
+  wingobets: 'Win Go bets', wingoresults: 'Win Go results', colorbets: 'Color bets', colorresults: 'Color results',
+  minesbets: 'Mines bets', towerbets: 'Tower bets', plinkobets: 'Plinko bets', dicebets: 'Dice bets', wheelbets: 'Wheel bets',
+  spinbets: 'Lucky Spin bets', pokertables: 'Poker tables', deposits: 'Deposits', withdrawals: 'Withdrawals',
+  supportmessages: 'Chat messages', commissions: 'Referral commission', gamesettings: 'Game settings', settingslogs: 'Settings history',
+  admins: 'Admins', metas: 'System',
+}
+const mbText = (n) => (n == null ? '—' : `${n.toLocaleString('en-IN', { maximumFractionDigits: 2 })} MB`)
+
+/** How much of the MongoDB plan's storage is used, with the biggest collections. */
+function StorageCard() {
+  const [tick, setTick] = useState(0)
+  const [result, setResult] = useState({ tick: -1, data: null, error: '' })
+  const [all, setAll] = useState(false)
+  const busy = result.tick !== tick
+  const { data, error } = result
+
+  useEffect(() => {
+    let cancelled = false
+    api.get(`/storage${tick ? '?fresh=1' : ''}`).then(
+      (d) => !cancelled && setResult({ tick, data: d, error: '' }),
+      (e) => !cancelled && setResult((r) => ({ ...r, tick, error: e.message })),
+    )
+    return () => { cancelled = true }
+  }, [tick])
+
+  const level = !data ? '' : data.percent >= 90 ? 'is-danger' : data.percent >= 70 ? 'is-warn' : ''
+  const rows = data ? (all ? data.collections : data.collections.slice(0, 5)) : []
+
+  return (
+    <section className="card">
+      <div className="card-title-row">
+        <h2 className="card-title"><Icon name="layers" size={16} /> Database storage</h2>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => setTick((n) => n + 1)} disabled={busy} aria-label="Refresh storage">
+          <Icon name="refresh" size={14} />
+        </button>
+      </div>
+      {error && <div className="alert alert-error"><Icon name="alert" size={16} /> {error}</div>}
+      {!data && !error && <div className="empty empty-sm"><span className="spinner" /></div>}
+      {data && (
+        <>
+          <div className="storage-head">
+            <strong>{mbText(data.usedMb)}</strong>
+            <span>of {data.limitMb.toLocaleString('en-IN')} MB used · {data.percent}%</span>
+          </div>
+          <div className={`storage-bar ${level}`} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, data.percent)} aria-label="Database storage used">
+            <i style={{ width: `${Math.min(100, data.percent)}%` }} />
+          </div>
+          {data.percent >= 70 && (
+            <p className={`storage-warn ${level}`}>
+              <Icon name="alert" size={14} /> {data.percent >= 90 ? 'Almost full — writes will fail when the limit is reached. Upgrade the plan or clear old data.' : 'Getting full. Plan an upgrade or clean-up soon.'}
+            </p>
+          )}
+          <div className="mini-stats">
+            <div><span>Data</span><strong>{mbText(data.dataMb)}</strong></div>
+            <div><span>Indexes</span><strong>{mbText(data.indexMb)}</strong></div>
+            <div><span>Free</span><strong>{mbText(Math.max(0, Math.round((data.limitMb - data.usedMb) * 100) / 100))}</strong></div>
+            <div><span>Records</span><strong>{data.documents.toLocaleString('en-IN')}</strong></div>
+            <div><span>On disk (compressed)</span><strong>{mbText(data.onDiskMb)}</strong></div>
+            <div><span>Checked</span><strong>{new Date(data.checkedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</strong></div>
+          </div>
+          <div className="dash-list">
+            {rows.map((c) => (
+              <div key={c.name} className="dash-item dash-item-static">
+                <div className="dash-item-main">
+                  <strong>{COLLECTION_NAMES[c.name] ?? c.name}</strong>
+                  <span>{c.documents == null ? 'Size not available on this plan' : `${c.documents.toLocaleString('en-IN')} records · data ${mbText(c.data)} · indexes ${mbText(c.indexes)}`}</span>
+                </div>
+                <strong className="dash-item-amt">{mbText(c.total)}</strong>
+              </div>
+            ))}
+          </div>
+          {data.collections.length > 5 && (
+            <button type="button" className="btn btn-ghost btn-sm storage-more" onClick={() => setAll((v) => !v)}>
+              {all ? 'Show top 5' : `Show all ${data.collections.length} collections`}
+            </button>
+          )}
+          <p className="muted small">Used = data + indexes, which is what MongoDB Atlas counts against your plan. Set DB_STORAGE_LIMIT_MB on the server if your plan isn&apos;t the free 512 MB tier.</p>
+        </>
+      )}
+    </section>
+  )
+}
+
 // ── Page ─────────────────────────────────────────────────────
 export default function Dashboard() {
   const [preset, setPreset] = useState('7d')
@@ -365,6 +450,8 @@ export default function Dashboard() {
                 Deposit orders in this period: {d.cash.orders.created} created · {d.cash.orders.approved} approved · {d.cash.orders.rejected} rejected · {d.cash.orders.abandoned} never paid
               </p>
             </section>
+
+            <StorageCard />
 
             {/* ── Deleted & re-registered ── */}
             <section className="card dash-wide">

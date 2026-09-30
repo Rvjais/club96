@@ -31,7 +31,7 @@ const OTHER_GAMES = [
 ]
 import { DEFAULTS, GAMES, SITE_SETTINGS, getSettings, settingsLog, updateSettings } from '../settings.js'
 import { adminReferralInfo } from '../referral.js'
-import { dashboard } from './dashboard.js'
+import { dashboard, storage } from './dashboard.js'
 
 const COOKIE = 'asid'
 const COOKIE_PATH = '/api/admin'
@@ -98,6 +98,7 @@ adminRouter.use(requireAdmin)
 adminRouter.get('/me', (req, res) => res.json({ admin: { username: req.admin.username } }))
 
 adminRouter.get('/dashboard', dashboard)
+adminRouter.get('/storage', storage)
 
 // ── Dashboard stats ──────────────────────────────────────────
 const sumBy = async (match) => {

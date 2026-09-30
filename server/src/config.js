@@ -39,4 +39,7 @@ function loadSecret() {
 
 export const JWT_SECRET = loadSecret()
 export const SESSION_DAYS = 7
+
+// Database storage quota shown on the admin dashboard (MB). Atlas free tier (M0) = 512.
+export const DB_STORAGE_LIMIT_MB = Number(process.env.DB_STORAGE_LIMIT_MB) || 512
 export const ADMIN_SESSION_HOURS = 12

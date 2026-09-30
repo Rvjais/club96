@@ -3,6 +3,8 @@
 // Everything is worked out from the wallet ledger (Transaction), so it matches
 // what players actually saw. Days are India time.
 // ─────────────────────────────────────────────────────────────
+import mongoose from 'mongoose'
+import { DB_STORAGE_LIMIT_MB } from '../config.js'
 import { Deposit, Transaction, User, Withdrawal } from '../models/index.js'
 import { GAMES } from '../settings.js'
 import { HttpError, toRupees } from '../wallet.js'
@@ -247,4 +249,44 @@ export async function dashboard(req, res) {
       }),
     })),
   })
+}
+
+// ── Database storage ─────────────────────────────────────────
+// Atlas counts data + indexes against the plan's limit. Cached for a minute: dbStats is cheap but not free.
+const MB = 1024 * 1024
+const mb = (bytes) => Math.round((bytes / MB) * 100) / 100
+let storageCache = null
+
+export async function storage(req, res) {
+  if (!storageCache || Date.now() - storageCache.at > 60_000 || req.query.fresh) {
+    const db = mongoose.connection.db
+    const s = await db.stats()
+    const names = (await db.listCollections({}, { nameOnly: true }).toArray()).map((c) => c.name).filter((n) => !n.startsWith('system.'))
+    const collections = await Promise.all(names.map(async (name) => {
+      try {
+        const col = db.collection(name)
+        const [[c], documents] = await Promise.all([col.aggregate([{ $collStats: { storageStats: {} } }]).toArray(), col.estimatedDocumentCount()])
+        const st = c?.storageStats ?? {}
+        return { name, documents, data: mb(st.size ?? 0), indexes: mb(st.totalIndexSize ?? 0), total: mb((st.size ?? 0) + (st.totalIndexSize ?? 0)) }
+      } catch {
+        return { name, documents: null, data: null, indexes: null, total: null } // not allowed on some shared plans
+      }
+    }))
+    const used = (s.dataSize ?? 0) + (s.indexSize ?? 0)
+    storageCache = {
+      at: Date.now(),
+      data: {
+        usedMb: mb(used),
+        dataMb: mb(s.dataSize ?? 0),
+        indexMb: mb(s.indexSize ?? 0),
+        onDiskMb: mb((s.storageSize ?? 0) + (s.indexSize ?? 0)),
+        limitMb: DB_STORAGE_LIMIT_MB,
+        percent: Math.round((used / (DB_STORAGE_LIMIT_MB * MB)) * 1000) / 10,
+        documents: s.objects ?? 0,
+        collections: collections.sort((a, b) => (b.total ?? -1) - (a.total ?? -1)),
+        checkedAt: new Date(),
+      },
+    }
+  }
+  res.json(storageCache.data)
 }
