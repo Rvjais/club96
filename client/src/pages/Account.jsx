@@ -228,6 +228,7 @@ function StatsSheet() {
       {game('Plinko', 'pyramid', stats.plinko)}
       {game('Dice', 'dices', stats.dice)}
       {game('Wheel', 'wheel', stats.wheel)}
+      {stats.spin?.bets > 0 && game('Lucky Spin', 'gift', stats.spin)}
       {game('Poker', 'club', stats.poker)}
     </div>
   )

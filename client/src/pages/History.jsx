@@ -22,8 +22,8 @@ const TX_LABELS = {
   withdraw: 'Withdrawal',
   withdraw_refund: 'Withdrawal returned',
 }
-const GAME_LABELS = { aviator: 'Aviator', wingo: 'Win Go', color: 'Color Prediction', mines: 'Mines', tower: 'Tower', plinko: 'Plinko', dice: 'Dice', wheel: 'Wheel', poker: 'Poker' }
-const GAME_ICONS = { aviator: 'plane', wingo: 'timer', color: 'palette', mines: 'bomb', tower: 'layers', plinko: 'pyramid', dice: 'dices', wheel: 'wheel', poker: 'club' }
+const GAME_LABELS = { aviator: 'Aviator', wingo: 'Win Go', color: 'Color Prediction', mines: 'Mines', tower: 'Tower', plinko: 'Plinko', dice: 'Dice', wheel: 'Wheel', spin: 'Lucky Spin', poker: 'Poker' }
+const GAME_ICONS = { aviator: 'plane', wingo: 'timer', color: 'palette', mines: 'bomb', tower: 'layers', plinko: 'pyramid', dice: 'dices', wheel: 'wheel', spin: 'gift', poker: 'club' }
 const STATUS = { pending: 'In review', approved: 'Paid', rejected: 'Rejected' }
 
 function Empty({ text }) {

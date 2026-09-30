@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken'
 import { ADMIN_PASSWORD, ADMIN_SESSION_HOURS, ADMIN_USERNAME, IS_PROD, JWT_SECRET } from '../config.js'
 import { tx } from '../db.js'
 import { checkRateLimit, clearFailures, recordFailure, validatePassword } from '../auth.js'
-import { Admin, AviatorBet, AviatorRound, ColorBet, DiceBet, MinesBet, PlinkoBet, PokerTable, TowerBet, Transaction, User, WheelBet, WingoBet, Withdrawal } from '../models/index.js'
+import { Admin, AviatorBet, AviatorRound, ColorBet, DiceBet, MinesBet, PlinkoBet, PokerTable, TowerBet, Transaction, User, SpinBet, WheelBet, WingoBet, Withdrawal } from '../models/index.js'
 import { HttpError, credit, debit, serializeTx, toPaise, toRupees } from '../wallet.js'
 import { periodLabel } from '../games/color.js'
 import { describeMines } from '../games/mines.js'
@@ -13,6 +13,7 @@ import { describeTower } from '../games/tower.js'
 import { describePlinko } from '../games/plinko.js'
 import { describeDice } from '../games/dice.js'
 import { describeWheel } from '../games/wheel.js'
+import { describeSpin } from '../games/spin.js'
 import { describeWingo } from '../games/wingo.js'
 import { describePoker } from '../games/poker.js'
 
@@ -23,6 +24,7 @@ const OTHER_GAMES = [
   { game: 'plinko', model: PlinkoBet, describe: describePlinko },
   { game: 'dice', model: DiceBet, describe: describeDice },
   { game: 'wheel', model: WheelBet, describe: describeWheel },
+  { game: 'spin', model: SpinBet, describe: describeSpin },
   { game: 'poker', model: PokerTable, describe: describePoker },
 ]
 import { DEFAULTS, GAMES, getSettings, settingsLog, updateSettings } from '../settings.js'

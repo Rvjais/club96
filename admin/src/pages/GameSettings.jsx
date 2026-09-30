@@ -8,6 +8,7 @@ import TowerSettings from './settings/TowerSettings'
 import PlinkoSettings from './settings/PlinkoSettings'
 import DiceSettings from './settings/DiceSettings'
 import WheelSettings from './settings/WheelSettings'
+import SpinSettings from './settings/SpinSettings'
 import PokerSettings from './settings/PokerSettings'
 
 
@@ -28,7 +29,7 @@ const FIELD_LABELS = {
   'payouts.size': 'Big / Small payout', 'payouts.color': 'Green / Red payout', 'payouts.colorSplit': 'Green / Red on 5 / 0 payout',
   'payouts.violet': 'Violet payout', 'payouts.number': 'Number payout',
   smallBlind: 'Small blind', bigBlind: 'Big blind', minBuyIn: 'Min buy-in', maxBuyIn: 'Max buy-in', rake: 'Rake %', rakeCap: 'Rake cap',
-  bots: 'Opponents', botSkill: 'Bot skill', botAggression: 'Bot aggression', botBluff: 'Bot bluffing', turnSeconds: 'Time to act',
+  cost: 'Price per spin', bots: 'Opponents', botSkill: 'Bot skill', botAggression: 'Bot aggression', botBluff: 'Bot bluffing', turnSeconds: 'Time to act',
 }
 
 function fieldLabel(key) {
@@ -45,6 +46,8 @@ function fieldLabel(key) {
   if (m) return `${m[1]} level ${Number(m[2]) + 1} payout`
   m = key.match(/^curve\.(\d+)\.(mult|chance)$/)
   if (m) return `Odds point ${Number(m[1]) + 1} ${m[2] === 'mult' ? 'multiplier' : 'chance'}`
+  m = key.match(/^prizes\.(\d+)\.(amount|chance)$/)
+  if (m) return `Prize ${Number(m[1]) + 1} ${m[2]}`
   m = key.match(/^risks\.(\w+)\.(\d+)\.(mult|count)$/)
   if (m) return `${m[1]} wheel group ${Number(m[2]) + 1} ${m[3] === 'mult' ? 'payout' : 'segments'}`
   return key
@@ -59,7 +62,7 @@ function changes(before, after) {
     .map(([k, v]) => `${fieldLabel(k)}: ${b[k] === undefined ? '—' : fmt(k, b[k])} → ${fmt(k, v)}`)
   // Wheel groups removed / custom payouts switched back to the formula
   for (const [k, v] of flatten(before)) {
-    if (!(k in a) && (k.startsWith('risks.') || k.startsWith('custom.') || k.startsWith('curve.'))) list.push(`${fieldLabel(k)}: ${fmt(k, v)} → ${k.startsWith('custom.') ? 'formula' : 'removed'}`)
+    if (!(k in a) && (k.startsWith('risks.') || k.startsWith('prizes.') || k.startsWith('custom.') || k.startsWith('curve.'))) list.push(`${fieldLabel(k)}: ${fmt(k, v)} → ${k.startsWith('custom.') ? 'formula' : 'removed'}`)
   }
   return list
 }
@@ -73,6 +76,7 @@ const GAMES = [
   { key: 'plinko', label: 'Plinko', icon: 'pyramid', Card: PlinkoSettings },
   { key: 'dice', label: 'Dice', icon: 'dices', Card: DiceSettings },
   { key: 'wheel', label: 'Wheel', icon: 'wheel', Card: WheelSettings },
+  { key: 'spin', label: 'Lucky Spin', icon: 'coins', Card: SpinSettings },
   { key: 'poker', label: 'Poker', icon: 'club', Card: PokerSettings },
 ]
 const GAME_NAMES = Object.fromEntries(GAMES.map((g) => [g.key, g.label]))

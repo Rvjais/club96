@@ -3,7 +3,7 @@ import { Router } from 'express'
 import mongoose from 'mongoose'
 import bcrypt from 'bcryptjs'
 import { ensureUid, publicUser, requireAuth, setSession, validatePassword } from '../auth.js'
-import { AviatorBet, AviatorRound, ColorBet, DiceBet, MinesBet, PlinkoBet, PokerTable, TowerBet, Transaction, User, WheelBet, WingoBet, Withdrawal } from '../models/index.js'
+import { AviatorBet, AviatorRound, ColorBet, DiceBet, MinesBet, PlinkoBet, PokerTable, TowerBet, Transaction, User, SpinBet, WheelBet, WingoBet, Withdrawal } from '../models/index.js'
 import { HttpError, serializeTx, toRupees } from '../wallet.js'
 import { periodLabel } from '../games/color.js'
 import { describeMines } from '../games/mines.js'
@@ -11,6 +11,7 @@ import { describeTower } from '../games/tower.js'
 import { describePlinko } from '../games/plinko.js'
 import { describeDice } from '../games/dice.js'
 import { describeWheel } from '../games/wheel.js'
+import { describeSpin } from '../games/spin.js'
 import { describePoker } from '../games/poker.js'
 import { describeWingo, periodLabel as wingoPeriod } from '../games/wingo.js'
 
@@ -22,6 +23,7 @@ const OTHER_GAMES = [
   { game: 'plinko', model: PlinkoBet, settled: {}, describe: describePlinko },
   { game: 'dice', model: DiceBet, settled: {}, describe: describeDice },
   { game: 'wheel', model: WheelBet, settled: {}, describe: describeWheel },
+  { game: 'spin', model: SpinBet, settled: {}, describe: describeSpin },
   // A poker sitting: amount = buy-ins, win = cash-out; it's a win only when the player left with more
   { game: 'poker', model: PokerTable, settled: { status: { $in: ['won', 'lost'] } }, describe: describePoker, ref: (b) => `Table ${String(b._id).slice(-8).toUpperCase()}`, won: (b) => b.win > b.amount },
 ]

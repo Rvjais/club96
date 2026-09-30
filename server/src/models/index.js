@@ -158,6 +158,18 @@ const wheelBetSchema = new Schema({
 }, { timestamps: { createdAt: true, updatedAt: false } })
 wheelBetSchema.index({ user: 1, createdAt: -1 })
 
+// ── Lucky Spin: fixed price, fixed ₹ prizes, settled instantly
+const spinBetSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true },
+  amount: { type: Number, required: true }, // price paid (paise)
+  index: Number, // prize segment landed on
+  prizes: [Number], // the wheel's ₹ prizes (paise) at spin time
+  chance: Number, // % chance of the prize landed on
+  multiplier: { type: Number, default: 0 }, // win ÷ price
+  win: { type: Number, default: 0 },
+}, { timestamps: { createdAt: true, updatedAt: false } })
+spinBetSchema.index({ user: 1, createdAt: -1 })
+
 // ── Win Go: a digit 0–9 is drawn at the end of every period, in four rooms (30s / 1m / 3m / 5m)
 const wingoResultSchema = new Schema({
   _id: String, // "<room>:<period index>"
@@ -251,6 +263,7 @@ export const TowerBet = model('TowerBet', towerBetSchema)
 export const PlinkoBet = model('PlinkoBet', plinkoBetSchema)
 export const DiceBet = model('DiceBet', diceBetSchema)
 export const WheelBet = model('WheelBet', wheelBetSchema)
+export const SpinBet = model('SpinBet', spinBetSchema)
 export const WingoResult = model('WingoResult', wingoResultSchema)
 export const WingoBet = model('WingoBet', wingoBetSchema)
 export const PokerTable = model('PokerTable', pokerTableSchema)

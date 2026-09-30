@@ -102,6 +102,21 @@ export const DEFAULTS = {
     maxBet: 10000,
     maxWin: 500000,
   },
+  // Lucky Spin — the wheel on the bottom bar: pay a fixed price, win one of the prizes
+  spin: {
+    enabled: true,
+    cost: 100, // ₹ per spin
+    // Fixed ₹ prizes, one wheel segment each; `chance` = % of spins that land on it (must total 100)
+    prizes: [
+      { amount: 0, chance: 40 },
+      { amount: 20, chance: 20 },
+      { amount: 50, chance: 15 },
+      { amount: 100, chance: 12 },
+      { amount: 200, chance: 8 },
+      { amount: 500, chance: 4 },
+      { amount: 1000, chance: 1 },
+    ],
+  },
   poker: {
     enabled: true,
     smallBlind: 5,
@@ -220,6 +235,22 @@ export function validate(game, input) {
     if (s.bigBlind < s.smallBlind) throw new HttpError(400, 'Big blind must be at least the small blind')
     if (s.minBuyIn < s.bigBlind * 10) throw new HttpError(400, 'Minimum buy-in must be at least 10 big blinds')
     if (s.maxBuyIn < s.minBuyIn) throw new HttpError(400, 'Maximum buy-in must be at least the minimum buy-in')
+    return s
+  }
+
+  if (game === 'spin') {
+    const prizes = input.prizes
+    if (!Array.isArray(prizes) || prizes.length < 2 || prizes.length > 12) throw new HttpError(400, 'The wheel needs 2–12 prizes')
+    const s = {
+      enabled: Boolean(input.enabled),
+      cost: num(input.cost, 'Price per spin', 1, 1_000_000),
+      prizes: prizes.map((p, i) => ({
+        amount: num(p?.amount, `Prize ${i + 1} amount`, 0, 10_000_000),
+        chance: num(p?.chance, `Prize ${i + 1} chance`, 0, 100),
+      })),
+    }
+    const total = round2(s.prizes.reduce((t, p) => t + p.chance, 0))
+    if (Math.abs(total - 100) > 0.001) throw new HttpError(400, `Prize chances must add up to 100% (currently ${total}%)`)
     return s
   }
 
