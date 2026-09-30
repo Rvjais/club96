@@ -1,0 +1,80 @@
+.pp-overlay { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 24px; font-family: 'Segoe UI', Arial, sans-serif; }
+.pp-backdrop { position: absolute; inset: 0; background: rgba(17, 17, 17, 0.55); animation: pp-fade 0.2s ease-out; }
+.pp-card {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  padding: 0 22px 20px;
+  border-radius: 22px;
+  background: #fff;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  animation: pp-pop 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.25);
+}
+.pp-card button { font-family: inherit; cursor: pointer; border: none; }
+.pp-close {
+  position: absolute; top: 10px; right: 10px; z-index: 2;
+  width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: rgba(255, 255, 255, 0.25); color: #fff;
+}
+.pp-close .icon { display: block; }
+
+.pp-top {
+  position: relative;
+  height: 108px;
+  margin: 0 -22px 14px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(160deg, #ff6b5e 0%, #e02020 100%);
+  overflow: hidden;
+}
+.pp-warn .pp-top { background: linear-gradient(160deg, #ffb347 0%, #f57c00 100%); }
+.pp-rays {
+  position: absolute; left: 50%; top: 50%;
+  width: 360px; height: 360px; margin: -180px 0 0 -180px;
+  background: repeating-conic-gradient(rgba(255, 255, 255, 0.14) 0 12deg, transparent 12deg 24deg);
+  animation: pp-spin 18s linear infinite;
+}
+.pp-badge {
+  position: relative;
+  width: 72px; height: 72px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: #fff; color: #e02020;
+  box-shadow: 0 8px 24px rgba(120, 0, 0, 0.3);
+}
+.pp-warn .pp-badge { color: #f57c00; }
+.pp-badge .icon { display: block; }
+
+.pp-kicker { font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #e02020; }
+.pp-warn .pp-kicker { color: #f57c00; }
+.pp-title { margin: 4px 0 0; font-size: 20px; font-weight: 800; color: #111; }
+.pp-amount {
+  margin: 8px 0 2px;
+  font-size: 38px; font-weight: 900; letter-spacing: -0.5px;
+  color: #e02020;
+  font-variant-numeric: tabular-nums;
+}
+.pp-text { margin-top: 8px; font-size: 13.5px; line-height: 1.5; color: #555; }
+.pp-text strong { color: #111; }
+
+.pp-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; }
+.pp-btn {
+  width: 100%; padding: 12px; border-radius: 999px;
+  font-size: 15px; font-weight: 700;
+  background: #f3f3f7; color: #444;
+}
+.pp-btn-primary {
+  background: linear-gradient(180deg, #ff6b5e, #e02020); color: #fff;
+  box-shadow: 0 6px 16px rgba(224, 32, 32, 0.3);
+}
+.pp-warn .pp-btn-primary { background: linear-gradient(180deg, #ffb347, #f57c00); box-shadow: 0 6px 16px rgba(245, 124, 0, 0.3); }
+.pp-btn:active { transform: scale(0.98); }
+
+@keyframes pp-fade { from { opacity: 0; } }
+@keyframes pp-pop { from { opacity: 0; transform: scale(0.85); } }
+@keyframes pp-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .pp-card, .pp-backdrop, .pp-rays { animation: none; }
+}

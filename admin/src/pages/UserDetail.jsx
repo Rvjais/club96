@@ -217,6 +217,9 @@ export default function UserDetail() {
           </div>
         </div>
         <div className="profile-actions">
+          <Link to={`/support/${u.id}`} className="btn btn-ghost">
+            <Icon name="message" size={16} /> Message
+          </Link>
           <button
             type="button"
             className="btn btn-ghost"

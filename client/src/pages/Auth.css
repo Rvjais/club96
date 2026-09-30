@@ -345,61 +345,6 @@ body {
   text-align: center;
 }
 
-/* ─── Admin test hint ────────────────────────────────────────── */
-.admin-hint {
-  margin: 18px 0 16px;
-  padding: 12px 14px;
-  background: #fff;
-  border: 1px dashed rgba(232,82,74,0.55);
-  border-radius: 12px;
-  font-size: 13px;
-  color: #555;
-}
-
-.admin-hint-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-  color: #e8524a;
-  margin-bottom: 8px;
-}
-
-.admin-hint-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 3px 0;
-}
-
-.admin-hint-row code {
-  font-family: ui-monospace, Consolas, monospace;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: #222;
-  background: #f5f5fa;
-  padding: 2px 8px;
-  border-radius: 6px;
-}
-
-.admin-hint-fill {
-  width: 100%;
-  margin-top: 10px;
-  padding: 8px;
-  border: none;
-  border-radius: 8px;
-  background: #fff0ef;
-  color: #e8524a;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.admin-hint-fill:hover { background: #ffe1de; }
-
 /* ─── Submit spinner ─────────────────────────────────────────── */
 .btn-main:disabled { cursor: wait; filter: saturate(0.8); }
 .btn-spinner {

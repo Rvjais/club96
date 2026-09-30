@@ -239,6 +239,17 @@ const withdrawalSchema = new Schema({
 }, { timestamps: true })
 withdrawalSchema.index({ status: 1, createdAt: -1 })
 
+// ── Customer service chat: one conversation per player with the admins
+const supportMessageSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true }, // the player whose conversation this is
+  from: { type: String, enum: ['user', 'admin'], required: true },
+  admin: String, // admin username, on admin replies
+  text: { type: String, required: true },
+  readAt: Date, // when the other side opened it
+}, { timestamps: { createdAt: true, updatedAt: false } })
+supportMessageSchema.index({ user: 1, createdAt: -1 })
+supportMessageSchema.index({ from: 1, readAt: 1 })
+
 const gameSettingsSchema = new Schema({
   _id: String, // game key
   data: { type: Schema.Types.Mixed, required: true },
@@ -269,5 +280,6 @@ export const WingoBet = model('WingoBet', wingoBetSchema)
 export const PokerTable = model('PokerTable', pokerTableSchema)
 export const Admin = model('Admin', adminSchema)
 export const Withdrawal = model('Withdrawal', withdrawalSchema)
+export const SupportMessage = model('SupportMessage', supportMessageSchema)
 export const GameSettings = model('GameSettings', gameSettingsSchema)
 export const SettingsLog = model('SettingsLog', settingsLogSchema)

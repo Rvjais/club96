@@ -22,5 +22,3 @@ services:
         sync: false
       - key: ADMIN_PASSWORD
         sync: false
-      - key: SEED_DEMO_USER
-        value: "false"

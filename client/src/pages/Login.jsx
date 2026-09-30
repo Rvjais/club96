@@ -4,12 +4,6 @@ import { Icon } from '../components/Icons'
 import { useAuth } from '../auth/authContext'
 import './Auth.css'
 
-// Demo account seeded by the backend (disable with SEED_DEMO_USER=false)
-const DEMO_ACCOUNT = {
-  phone: '9999999999',
-  password: 'admin123',
-}
-
 export default function Login() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -41,13 +35,6 @@ export default function Login() {
     }
   }
 
-  const fillDemo = () => {
-    setCountryCode('+91')
-    setPhone(DEMO_ACCOUNT.phone)
-    setPassword(DEMO_ACCOUNT.password)
-    setError('')
-  }
-
   return (
     <div className="auth-page">
       <div className="auth-card">
@@ -73,22 +60,6 @@ export default function Login() {
 
         {/* ── Body ── */}
         <div className="auth-body">
-
-          {/* Admin test credentials box */}
-          <div className="admin-hint">
-            <div className="admin-hint-title"><Icon name="key" size={15} /> Demo Account</div>
-            <div className="admin-hint-row">
-              <span>Phone:</span>
-              <code>{DEMO_ACCOUNT.phone}</code>
-            </div>
-            <div className="admin-hint-row">
-              <span>Password:</span>
-              <code>{DEMO_ACCOUNT.password}</code>
-            </div>
-            <button type="button" className="admin-hint-fill" onClick={fillDemo}>
-              Auto-fill credentials
-            </button>
-          </div>
 
           {/* Tab strip */}
           <div className="auth-tab-strip">

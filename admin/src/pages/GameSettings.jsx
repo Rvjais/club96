@@ -10,6 +10,7 @@ import DiceSettings from './settings/DiceSettings'
 import WheelSettings from './settings/WheelSettings'
 import SpinSettings from './settings/SpinSettings'
 import PokerSettings from './settings/PokerSettings'
+import PlatformSettings from './settings/PlatformSettings'
 
 
 // ── Change log ───────────────────────────────────────────────
@@ -28,6 +29,7 @@ const FIELD_LABELS = {
   lockSeconds: 'Betting lock', fee: 'Service fee',
   'payouts.size': 'Big / Small payout', 'payouts.color': 'Green / Red payout', 'payouts.colorSplit': 'Green / Red on 5 / 0 payout',
   'payouts.violet': 'Violet payout', 'payouts.number': 'Number payout',
+  signupBonus: 'Sign-up bonus', bonusPopup: 'Welcome pop-up', bonusTitle: 'Pop-up title', bonusMessage: 'Pop-up message', minPlayBalance: 'Min balance to play',
   smallBlind: 'Small blind', bigBlind: 'Big blind', minBuyIn: 'Min buy-in', maxBuyIn: 'Max buy-in', rake: 'Rake %', rakeCap: 'Rake cap',
   cost: 'Price per spin', bots: 'Opponents', botSkill: 'Bot skill', botAggression: 'Bot aggression', botBluff: 'Bot bluffing', turnSeconds: 'Time to act',
 }
@@ -52,7 +54,7 @@ function fieldLabel(key) {
   if (m) return `${m[1]} wheel group ${Number(m[2]) + 1} ${m[3] === 'mult' ? 'payout' : 'segments'}`
   return key
 }
-const fmt = (key, v) => (key === 'enabled' ? (v ? 'Live' : 'Paused') : key.startsWith('rooms.') ? (v ? 'Open' : 'Closed') : String(v))
+const fmt = (key, v) => (key === 'enabled' ? (v ? 'Live' : 'Paused') : key === 'bonusPopup' ? (v ? 'Shown' : 'Hidden') : key.startsWith('rooms.') ? (v ? 'Open' : 'Closed') : String(v))
 
 function changes(before, after) {
   const b = Object.fromEntries(flatten(before))
@@ -69,6 +71,7 @@ function changes(before, after) {
 
 // ── Page ─────────────────────────────────────────────────────
 const GAMES = [
+  { key: 'platform', label: 'Bonus & limits', icon: 'gift', Card: PlatformSettings, site: true },
   { key: 'aviator', label: 'Aviator', icon: 'plane', Card: AviatorSettings },
   { key: 'wingo', label: 'Win Go', icon: 'clock', Card: WingoSettings },
   { key: 'mines', label: 'Mines', icon: 'bomb', Card: MinesSettings },
@@ -116,7 +119,7 @@ export default function GameSettings() {
   if (error) return <div className="page"><div className="alert alert-error"><Icon name="alert" size={16} /> {error}</div></div>
   if (!data) return <div className="page"><div className="empty"><span className="spinner" /></div></div>
 
-  const { Card } = GAMES.find((g) => g.key === game)
+  const { Card, site } = GAMES.find((g) => g.key === game)
   const log = data.log.filter((l) => l.game === game)
 
   return (
@@ -124,7 +127,7 @@ export default function GameSettings() {
       <header className="page-head">
         <div>
           <h1>Game settings</h1>
-          <p>Odds, payouts, limits and the on/off switch for each game. Players see the current odds inside the game.</p>
+          <p>Odds, payouts, limits and the on/off switch for each game, plus the sign-up bonus and minimum balance to play under <strong>Bonus &amp; limits</strong>.</p>
         </div>
       </header>
 
@@ -133,20 +136,20 @@ export default function GameSettings() {
           <button type="button" role="tab" aria-selected={game === g.key} key={g.key} className={game === g.key ? 'is-active' : ''} onClick={() => setGame(g.key)}>
             <Icon name={g.icon} size={16} />
             {g.label}
-            <i className={`status-dot ${data.settings[g.key]?.enabled ? 'is-on' : ''}`} title={data.settings[g.key]?.enabled ? 'Live' : 'Paused'} />
+            {!g.site && <i className={`status-dot ${data.settings[g.key]?.enabled ? 'is-on' : ''}`} title={data.settings[g.key]?.enabled ? 'Live' : 'Paused'} />}
           </button>
         ))}
       </div>
 
       <GameStats s={data.stats?.[game]} />
 
-      <div className="note">
+      {!site && <div className="note">
         <Icon name="info" size={16} />
         <span>
           Changes apply from the <strong>next</strong> round, never to one already in progress, and every placed bet keeps
           the payout it was placed at. Results stay random within the odds you set.
         </span>
-      </div>
+      </div>}
 
       <Card key={`${game}${version}`} saved={data.settings[game]} defaults={data.defaults[game]} onSaved={onSaved} />
 

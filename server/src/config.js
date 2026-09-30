@@ -20,9 +20,8 @@ export const CLIENT_DIST = path.join(rootDir, 'client', 'dist')
 export const ADMIN_DIST = path.join(rootDir, 'admin', 'dist')
 
 // All money is stored in paise (integer) to avoid floating point errors.
-export const SIGNUP_BONUS_PAISE = Number(process.env.SIGNUP_BONUS ?? 1000) * 100
+// The sign-up bonus and minimum balance to play are set in the admin panel (settings.js → platform).
 export const DEMO_DEPOSITS = process.env.DEMO_DEPOSITS !== 'false'
-export const SEED_DEMO_USER = process.env.SEED_DEMO_USER !== 'false'
 
 export const ADMIN_USERNAME = process.env.ADMIN_USERNAME || (IS_PROD ? null : 'admin')
 export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || (IS_PROD ? null : 'admin123')

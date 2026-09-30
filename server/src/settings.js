@@ -7,6 +7,14 @@ import { GameSettings, SettingsLog } from './models/index.js'
 import { HttpError } from './wallet.js'
 
 export const DEFAULTS = {
+  // Site-wide rules (not a game): welcome bonus and the balance needed to play
+  platform: {
+    signupBonus: 25, // ₹ credited to every new account (0 = no bonus)
+    bonusPopup: true, // show new players a welcome pop-up announcing the bonus
+    bonusTitle: 'Welcome bonus!',
+    bonusMessage: 'Thanks for joining. Your bonus has been added to your wallet.',
+    minPlayBalance: 100, // ₹ a player must have in their wallet to place any bet (0 = no minimum)
+  },
   aviator: {
     enabled: true,
     houseEdge: 3, // % kept by the house on every cash-out target
@@ -133,7 +141,7 @@ export const DEFAULTS = {
   },
 }
 
-export const GAMES = Object.keys(DEFAULTS)
+export const GAMES = Object.keys(DEFAULTS).filter((k) => k !== 'platform')
 export const WINGO_ROOMS = ['30s', '1m', '3m', '5m']
 export const RISKS = ['low', 'medium', 'high']
 export const PLINKO_ROWS = [8, 12, 16]
@@ -186,6 +194,21 @@ function num(value, label, min, max) {
 /** Normalise and validate an admin-submitted settings object. */
 export function validate(game, input) {
   if (!input || typeof input !== 'object') throw new HttpError(400, 'Invalid settings')
+
+  if (game === 'platform') {
+    const text = (v, label, max) => {
+      const t = String(v ?? '').trim()
+      if (t.length > max) throw new HttpError(400, `${label} must be at most ${max} characters`)
+      return t
+    }
+    return {
+      signupBonus: num(input.signupBonus, 'Sign-up bonus', 0, 100_000),
+      bonusPopup: Boolean(input.bonusPopup),
+      bonusTitle: text(input.bonusTitle, 'Pop-up title', 60) || DEFAULTS.platform.bonusTitle,
+      bonusMessage: text(input.bonusMessage, 'Pop-up message', 300),
+      minPlayBalance: num(input.minPlayBalance, 'Minimum balance to play', 0, 1_000_000),
+    }
+  }
 
   if (game === 'aviator') {
     const s = {

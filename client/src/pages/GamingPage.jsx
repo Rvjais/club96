@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Icon } from '../components/Icons'
 import { gameCategories, games } from '../games'
 import { useAuth } from '../auth/authContext'
 import BottomNav from '../components/BottomNav'
+import Popup from '../components/Popup'
+import { money } from '../lib/format'
+import { useSiteConfig } from '../lib/siteConfig'
+import { useSupportUnread } from '../lib/supportUnread'
 import './GamingPage.css'
 
 const wingo = games.find((g) => g.id === 'wingo')
@@ -17,6 +21,12 @@ const ROOM_STYLES = {
 
 export default function GamingPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const config = useSiteConfig()
+  const unread = useSupportUnread()
+  // Shown once, right after sign-up (passed in the navigation state by Signup)
+  const [welcome, setWelcome] = useState(() => location.state?.welcomeBonus ?? null)
+  const [lowBalance, setLowBalance] = useState(false)
   const [activeTab, setActiveTab] = useState('all')
   const [spinning, setSpinning] = useState(false)
   const [toast, setToast] = useState(null)
@@ -60,6 +70,18 @@ export default function GamingPage() {
     setSpinning(false)
   }
 
+  const closeWelcome = () => {
+    setWelcome(null)
+    navigate(location.pathname, { replace: true, state: null }) // don't show it again on reload
+  }
+
+  // Games need the admin-set minimum balance in the wallet (the server enforces it too)
+  const minPlay = config?.minPlayBalance ?? 0
+  const play = (path) => {
+    if (balance < minPlay) setLowBalance(true)
+    else navigate(path)
+  }
+
 
   return (
     <div className="gp-root">
@@ -83,9 +105,9 @@ export default function GamingPage() {
             disclosing personal or financial information online.
           </p>
         </div>
-        <button type="button" className="gp-notice-mail" aria-label="Messages">
+        <button type="button" className="gp-notice-mail" aria-label="Customer service" onClick={() => navigate('/support')}>
           <Icon name="mail" size={18} />
-          <span className="gp-red-dot" />
+          {unread > 0 && <span className="gp-red-dot" />}
         </button>
       </div>
 
@@ -147,11 +169,11 @@ export default function GamingPage() {
 
         {/* Feature cards row */}
         <section className="gp-feature-row">
-          <button type="button" className="gp-feature-card gp-fortune" onClick={() => navigate('/games/wheel')}>
+          <button type="button" className="gp-feature-card gp-fortune" onClick={() => play('/games/wheel')}>
             <img className="gp-feature-img" src={wheel.image} alt="" />
             <span className="gp-feature-label">Wheel<br />of fortune</span>
           </button>
-          <button type="button" className="gp-feature-card gp-vip" onClick={() => navigate('/games/wingo?room=30s')}>
+          <button type="button" className="gp-feature-card gp-vip" onClick={() => play('/games/wingo?room=30s')}>
             <img className="gp-feature-img" src={wingo.image} alt="" />
             <span className="gp-feature-label">Win Go<br />30s rounds</span>
           </button>
@@ -207,7 +229,7 @@ export default function GamingPage() {
                       key={room.key}
                       className="gp-lottery-card"
                       style={{ background: ROOM_STYLES[room.key].bg }}
-                      onClick={() => navigate(`${wingo.path}?room=${room.key}`)}
+                      onClick={() => play(`${wingo.path}?room=${room.key}`)}
                     >
                       <img className="gp-lottery-ball" src={wingo.image} alt="" />
                       <div className="gp-lottery-name">{room.label}</div>
@@ -223,7 +245,7 @@ export default function GamingPage() {
                       key={g.id}
                       className="gp-play-card"
                       style={{ background: g.bg, '--glow': g.glow }}
-                      onClick={() => navigate(g.path)}
+                      onClick={() => play(g.path)}
                     >
                       {g.badge && (
                         <span className="gp-game-hot">
@@ -260,6 +282,34 @@ export default function GamingPage() {
           {toast.text}
         </div>
       )}
+
+      <Popup
+        open={Boolean(welcome)}
+        icon="gift"
+        kicker="Sign-up bonus"
+        title={welcome?.title}
+        amount={welcome && money(welcome.amount)}
+        onClose={closeWelcome}
+        actions={[{ label: 'Claim & start playing', primary: true, onClick: closeWelcome }]}
+      >
+        {welcome?.message}
+      </Popup>
+
+      <Popup
+        open={lowBalance}
+        tone="warn"
+        icon="wallet"
+        kicker="Minimum balance"
+        title="Add money to play"
+        onClose={() => setLowBalance(false)}
+        actions={[
+          { label: 'Deposit now', primary: true, onClick: () => navigate('/account?open=deposit') },
+          { label: 'Not now', onClick: () => setLowBalance(false) },
+        ]}
+      >
+        You need at least <strong>{money(minPlay)}</strong> in your wallet to play any game.
+        Your balance is <strong>{money(balance)}</strong>.
+      </Popup>
 
       <BottomNav onSoon={(text) => showToast('info', text)} />
     </div>

@@ -2,10 +2,11 @@ import crypto from 'node:crypto'
 import { Router } from 'express'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import { IS_PROD, JWT_SECRET, SEED_DEMO_USER, SESSION_DAYS, SIGNUP_BONUS_PAISE } from './config.js'
+import { IS_PROD, JWT_SECRET, SESSION_DAYS } from './config.js'
 import { tx } from './db.js'
 import { User } from './models/index.js'
-import { HttpError, credit, toRupees } from './wallet.js'
+import { HttpError, credit, toPaise, toRupees } from './wallet.js'
+import { getSettings } from './settings.js'
 
 const COOKIE = 'sid'
 const COUNTRY_CODES = new Set(['+91', '+1', '+44', '+971'])
@@ -128,14 +129,6 @@ async function createUser({ phone, password, inviteCode, ip }, bonusPaise) {
   throw new HttpError(500, 'Could not create account, please try again')
 }
 
-export async function seedDemoUser() {
-  if (!SEED_DEMO_USER) return
-  const phone = '+919999999999'
-  if (await User.exists({ phone })) return
-  await createUser({ phone, password: 'admin123' }, 10000 * 100)
-  console.log('Seeded demo player: 9999999999 / admin123 (₹10,000)')
-}
-
 export const authRouter = Router()
 
 authRouter.post('/signup', async (req, res) => {
@@ -144,13 +137,22 @@ authRouter.post('/signup', async (req, res) => {
   validatePassword(password)
   if (await User.exists({ phone: fullPhone })) throw new HttpError(409, 'An account with this phone number already exists')
 
+  const cfg = getSettings('platform')
+  const bonusPaise = toPaise(cfg.signupBonus)
   const user = await createUser(
     { phone: fullPhone, password, inviteCode: typeof inviteCode === 'string' ? inviteCode.slice(0, 32) : null, ip: req.ip },
-    SIGNUP_BONUS_PAISE,
+    bonusPaise,
   )
   const fresh = await User.findByIdAndUpdate(user._id, { lastLoginAt: new Date(), lastLoginIp: req.ip, $inc: { loginCount: 1 } }, { new: true })
   setSession(res, fresh)
-  res.status(201).json({ user: publicUser(fresh), balance: toRupees(fresh.balance) })
+  res.status(201).json({
+    user: publicUser(fresh),
+    balance: toRupees(fresh.balance),
+    // Shown once as a pop-up right after sign-up
+    welcomeBonus: bonusPaise > 0 && cfg.bonusPopup
+      ? { amount: toRupees(bonusPaise), title: cfg.bonusTitle, message: cfg.bonusMessage }
+      : null,
+  })
 })
 
 authRouter.post('/login', async (req, res) => {
@@ -178,6 +180,12 @@ authRouter.post('/login', async (req, res) => {
 authRouter.post('/logout', (req, res) => {
   res.clearCookie(COOKIE, { path: '/' })
   res.json({ ok: true })
+})
+
+// Public site rules the client needs before/without logging in
+authRouter.get('/config', (req, res) => {
+  const cfg = getSettings('platform')
+  res.json({ signupBonus: cfg.signupBonus, minPlayBalance: cfg.minPlayBalance })
 })
 
 authRouter.get('/me', requireAuth, async (req, res) => {

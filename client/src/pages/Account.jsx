@@ -7,6 +7,7 @@ import { useAuth } from '../auth/authContext'
 import { api } from '../lib/api'
 import { money, stamp } from '../lib/format'
 import { gameImages } from '../games'
+import { useSupportUnread } from '../lib/supportUnread'
 import './Account.css'
 
 const DEPOSIT_PRESETS = [100, 200, 500, 1000, 2000, 5000]
@@ -247,6 +248,7 @@ export default function Account() {
   const [toast, setToast] = useState(null)
   const [spinning, setSpinning] = useState(false)
   const [copied, setCopied] = useState(false)
+  const supportUnread = useSupportUnread()
 
   const showToast = useCallback((kind, text) => {
     const id = Date.now()
@@ -387,7 +389,10 @@ export default function Account() {
           <h2 className="ac-card-title">Service center</h2>
           <div className="ac-service">
             <button type="button" onClick={() => setSheet('name')}><Icon name="settings" size={22} />Settings</button>
-            <button type="button" onClick={() => soon('Customer service')}><Icon name="headset" size={22} />Customer Service</button>
+            <button type="button" className="ac-service-cs" onClick={() => navigate('/support')}>
+              <Icon name="headset" size={22} />Customer Service
+              {supportUnread > 0 && <em className="ac-badge">{supportUnread}</em>}
+            </button>
             <button type="button" onClick={() => soon("The beginner's guide")}><Icon name="bookOpen" size={22} />Beginner&apos;s Guide</button>
             <button type="button" onClick={() => navigate('/')}><Icon name="info" size={22} />About us</button>
           </div>

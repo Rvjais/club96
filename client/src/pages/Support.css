@@ -1,0 +1,133 @@
+.cs-root {
+  --cs-red: #e02020;
+  max-width: 420px;
+  height: 100vh;
+  height: 100dvh;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: #f4f1ec;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.06);
+}
+.cs-root button { font-family: inherit; cursor: pointer; border: none; }
+.cs-root .icon { display: block; flex-shrink: 0; }
+
+/* ─── Header ─────────────────────────────────────────────────── */
+.cs-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  padding-top: calc(10px + env(safe-area-inset-top));
+  background: linear-gradient(180deg, #f5584b, var(--cs-red));
+  color: #fff;
+  flex-shrink: 0;
+}
+.cs-back { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: rgba(255, 255, 255, 0.18); color: #fff; }
+.cs-agent {
+  position: relative;
+  width: 40px; height: 40px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: #fff; color: var(--cs-red);
+  flex-shrink: 0;
+}
+.cs-online { position: absolute; right: 0; bottom: 1px; width: 11px; height: 11px; border-radius: 50%; background: #22c55e; border: 2px solid #fff; }
+.cs-head-text { display: flex; flex-direction: column; min-width: 0; }
+.cs-head-text strong { font-size: 16px; font-weight: 800; }
+.cs-head-text span { font-size: 11.5px; opacity: 0.9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ─── Messages ───────────────────────────────────────────────── */
+.cs-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 12px 14px;
+  background-color: #f4f1ec;
+  background-image: radial-gradient(rgba(224, 32, 32, 0.06) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+.cs-day { display: flex; justify-content: center; margin: 12px 0 8px; }
+.cs-day span {
+  padding: 4px 12px; border-radius: 8px;
+  background: #fff; color: #666;
+  font-size: 11.5px; font-weight: 600;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.06);
+}
+.cs-row { display: flex; margin: 2px 0; }
+.cs-out { justify-content: flex-end; }
+.cs-bubble {
+  max-width: 80%;
+  padding: 7px 10px 6px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #111;
+  background: #fff;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08);
+  overflow-wrap: anywhere;
+}
+.cs-in .cs-bubble { border-top-left-radius: 4px; }
+.cs-out .cs-bubble { border-top-right-radius: 4px; background: #ffe3df; }
+.cs-from { display: block; font-size: 12px; font-weight: 700; color: var(--cs-red); margin-bottom: 1px; }
+.cs-text { white-space: pre-wrap; }
+.cs-meta {
+  float: right;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin: 6px 0 -2px 10px;
+  font-size: 10.5px;
+  color: #8a8a8a;
+}
+.cs-meta .icon { color: #9aa0a6; }
+.cs-meta .cs-seen { color: #2196f3; }
+
+.cs-loading { display: grid; place-items: center; padding: 30px; }
+
+/* ─── Composer ───────────────────────────────────────────────── */
+.cs-composer {
+  flex-shrink: 0;
+  padding: 8px 10px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  background: #f0ebe4;
+}
+.cs-compose-row { display: flex; align-items: flex-end; gap: 8px; }
+.cs-composer textarea {
+  flex: 1;
+  resize: none;
+  min-height: 44px;
+  max-height: 120px;
+  padding: 11px 16px;
+  border: none;
+  border-radius: 22px;
+  background: #fff;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.45;
+  color: #111;
+  outline: none;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.06);
+}
+.cs-send {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: grid; place-items: center;
+  flex-shrink: 0;
+  background: var(--cs-red); color: #fff;
+  box-shadow: 0 4px 12px rgba(224, 32, 32, 0.3);
+  transition: transform 0.1s, opacity 0.15s;
+}
+.cs-send:disabled { opacity: 0.45; cursor: default; box-shadow: none; }
+.cs-send:not(:disabled):active { transform: scale(0.92); }
+.cs-error {
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 6px; padding: 6px 10px; border-radius: 8px;
+  background: #fff0f0; color: #b91c1c; font-size: 12.5px;
+}
+
+.cs-spinner {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2.5px solid rgba(224, 32, 32, 0.2); border-top-color: var(--cs-red);
+  animation: cs-spin 0.7s linear infinite;
+}
+.cs-spinner-light { width: 18px; height: 18px; border-color: rgba(255, 255, 255, 0.35); border-top-color: #fff; }
+@keyframes cs-spin { to { transform: rotate(360deg); } }

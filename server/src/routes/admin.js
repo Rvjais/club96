@@ -5,7 +5,8 @@ import jwt from 'jsonwebtoken'
 import { ADMIN_PASSWORD, ADMIN_SESSION_HOURS, ADMIN_USERNAME, IS_PROD, JWT_SECRET } from '../config.js'
 import { tx } from '../db.js'
 import { checkRateLimit, clearFailures, recordFailure, validatePassword } from '../auth.js'
-import { Admin, AviatorBet, AviatorRound, ColorBet, DiceBet, MinesBet, PlinkoBet, PokerTable, TowerBet, Transaction, User, SpinBet, WheelBet, WingoBet, Withdrawal } from '../models/index.js'
+import { Admin, AviatorBet, AviatorRound, ColorBet, DiceBet, MinesBet, PlinkoBet, PokerTable, SupportMessage, TowerBet, Transaction, User, SpinBet, WheelBet, WingoBet, Withdrawal } from '../models/index.js'
+import { conversation, messageText, serializeMessage } from './support.js'
 import { HttpError, credit, debit, serializeTx, toPaise, toRupees } from '../wallet.js'
 import { periodLabel } from '../games/color.js'
 import { describeMines } from '../games/mines.js'
@@ -396,7 +397,7 @@ async function gameStats() {
 adminRouter.get('/settings', async (req, res) => {
   const [log, stats] = await Promise.all([settingsLog(), gameStats()])
   res.json({
-    settings: Object.fromEntries(GAMES.map((g) => [g, getSettings(g)])),
+    settings: Object.fromEntries([...GAMES, 'platform'].map((g) => [g, getSettings(g)])),
     defaults: DEFAULTS,
     stats,
     log,
@@ -406,4 +407,61 @@ adminRouter.get('/settings', async (req, res) => {
 adminRouter.post('/settings/:game', async (req, res) => {
   const saved = await updateSettings(req.params.game, req.body, req.admin.username)
   res.json({ settings: saved, log: await settingsLog() })
+})
+
+// ── Customer service chat ────────────────────────────────────
+const chatUser = (u) => u && {
+  id: String(u._id),
+  uid: u.uid ?? null,
+  name: u.displayName || u.username,
+  phone: u.phone,
+  status: u.status,
+}
+
+// Unread player messages across all conversations (sidebar badge)
+adminRouter.get('/support/unread', async (req, res) => {
+  res.json({ unread: await SupportMessage.countDocuments({ from: 'user', readAt: null }) })
+})
+
+// Conversations, most recent activity first, with the last message and unread count
+adminRouter.get('/support/threads', async (req, res) => {
+  const rows = await SupportMessage.aggregate([
+    { $sort: { _id: -1 } },
+    {
+      $group: {
+        _id: '$user',
+        last: { $first: '$$ROOT' },
+        unread: { $sum: { $cond: [{ $and: [{ $eq: ['$from', 'user'] }, { $eq: [{ $ifNull: ['$readAt', null] }, null] }] }, 1, 0] } },
+      },
+    },
+    { $sort: { 'last._id': -1 } },
+    { $limit: 500 },
+    { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'user', pipeline: [{ $project: { uid: 1, username: 1, displayName: 1, phone: 1, status: 1 } }] } },
+    { $unwind: '$user' },
+  ])
+  const q = String(req.query.q ?? '').trim().toLowerCase()
+  const threads = rows
+    .map((r) => ({ user: chatUser(r.user), last: serializeMessage(r.last), unread: r.unread }))
+    .filter((t) => !q || [t.user.name, t.user.phone, String(t.user.uid ?? '')].some((v) => v.toLowerCase().includes(q)))
+  res.json({ threads })
+})
+
+// One conversation; opening it marks the player's messages as read
+adminRouter.get('/support/threads/:id', async (req, res) => {
+  const user = await loadUser(req.params.id)
+  const messages = await conversation(user._id, req.query.after)
+  await SupportMessage.updateMany({ user: user._id, from: 'user', readAt: null }, { readAt: new Date() })
+  const [seen] = await SupportMessage.find({ user: user._id, from: 'admin', readAt: { $ne: null } }, { _id: 1 }).sort({ _id: -1 }).limit(1).lean()
+  res.json({
+    user: { ...chatUser(user), balance: toRupees(user.balance), createdAt: user.createdAt, lastLoginAt: user.lastLoginAt ?? null },
+    messages: messages.map(serializeMessage),
+    seenUpTo: seen ? String(seen._id) : null,
+  })
+})
+
+adminRouter.post('/support/threads/:id', async (req, res) => {
+  const user = await loadUser(req.params.id)
+  const text = messageText(req.body)
+  const m = await SupportMessage.create({ user: user._id, from: 'admin', admin: req.admin.username, text })
+  res.status(201).json({ message: serializeMessage(m.toObject()) })
 })

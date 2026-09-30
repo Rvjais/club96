@@ -4,7 +4,7 @@ import express from 'express'
 import cookieParser from 'cookie-parser'
 import { ADMIN_DIST, CLIENT_DIST, IS_PROD, PORT } from './config.js'
 import { connectDb } from './db.js'
-import { authRouter, seedDemoUser } from './auth.js'
+import { authRouter } from './auth.js'
 import { walletRouter } from './routes/wallet.js'
 import { accountRouter } from './routes/account.js'
 import { adminRouter, seedAdmin } from './routes/admin.js'
@@ -18,6 +18,7 @@ import { diceRouter } from './games/dice.js'
 import { wheelRouter } from './games/wheel.js'
 import { spinRouter } from './games/spin.js'
 import { pokerRouter } from './games/poker.js'
+import { supportRouter } from './routes/support.js'
 import { HttpError } from './wallet.js'
 import { loadSettings } from './settings.js'
 
@@ -32,6 +33,7 @@ app.get('/api/health', (req, res) => res.json({ ok: true }))
 app.use('/api/auth', authRouter)
 app.use('/api/wallet', walletRouter)
 app.use('/api/account', accountRouter)
+app.use('/api/support', supportRouter)
 app.use('/api/games/aviator', aviatorRouter)
 app.use('/api/games/wingo', wingoRouter)
 app.use('/api/games/mines', minesRouter)
@@ -69,7 +71,6 @@ app.use((err, req, res, next) => {
 await connectDb()
 await loadSettings()
 await seedAdmin()
-await seedDemoUser()
 await startAviator()
 await refundRetiredColorBets()
 await startWingo()

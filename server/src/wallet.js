@@ -1,4 +1,5 @@
 import { Transaction, User } from './models/index.js'
+import { getSettings } from './settings.js'
 
 export class HttpError extends Error {
   constructor(status, message) {
@@ -22,15 +23,24 @@ async function record(session, userId, amount, balanceAfter, meta) {
   )
 }
 
-/** Remove money atomically. Call inside tx(). Throws 400 when funds are short. */
+/**
+ * Remove money atomically. Call inside tx(). Throws 400 when funds are short.
+ * Bets also need the wallet to hold at least the admin-set minimum balance to play.
+ */
 export async function debit(session, userId, paise, meta) {
   if (!Number.isInteger(paise) || paise <= 0) throw new HttpError(400, 'Invalid amount')
+  const minPlay = meta.type === 'bet' ? Math.round(getSettings('platform').minPlayBalance * 100) : 0
   const u = await User.findOneAndUpdate(
-    { _id: userId, balance: { $gte: paise } },
+    { _id: userId, balance: { $gte: Math.max(paise, minPlay) } },
     { $inc: { balance: -paise } },
     { new: true, session, projection: { balance: 1 } },
   )
-  if (!u) throw new HttpError(400, 'Insufficient wallet balance')
+  if (!u) {
+    if (minPlay > paise && (await balanceOf(userId)) >= paise) {
+      throw new HttpError(400, `You need at least ₹${(minPlay / 100).toLocaleString('en-IN')} in your wallet to play. Please deposit.`)
+    }
+    throw new HttpError(400, 'Insufficient wallet balance')
+  }
   await record(session, userId, -paise, u.balance, meta)
   return u.balance
 }

@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { Icon } from '../components/Icons'
 import { useAuth } from '../auth/authContext'
+import { useSiteConfig } from '../lib/siteConfig'
 import './Auth.css'
 
 export default function Signup() {
   const navigate = useNavigate()
   const { signup, status } = useAuth()
+  const config = useSiteConfig()
   const [countryCode, setCountryCode] = useState('+91')
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
@@ -29,8 +31,8 @@ export default function Signup() {
     setError('')
     setSubmitting(true)
     try {
-      await signup({ countryCode, phone, password, inviteCode })
-      navigate('/game', { replace: true })
+      const { welcomeBonus } = await signup({ countryCode, phone, password, inviteCode })
+      navigate('/game', { replace: true, state: { welcomeBonus } })
     } catch (err) {
       setError(err.message)
       setSubmitting(false)
@@ -57,7 +59,11 @@ export default function Signup() {
             </div>
           </div>
           <div className="auth-header-title">Register</div>
-          <div className="auth-header-sub">Create your account and get a ₹1,000 welcome bonus</div>
+          <div className="auth-header-sub">
+            {config?.signupBonus > 0
+              ? `Create your account and get a ₹${config.signupBonus.toLocaleString('en-IN')} welcome bonus`
+              : 'Create your account to start playing'}
+          </div>
         </div>
 
         {/* ── Body ── */}

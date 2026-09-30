@@ -7,8 +7,9 @@ import Users from './pages/Users'
 import UserDetail from './pages/UserDetail'
 import GameSettings from './pages/GameSettings'
 import Withdrawals from './pages/Withdrawals'
+import Support from './pages/Support'
 
-function Layout({ admin, onLogout, pending, children }) {
+function Layout({ admin, onLogout, pending, unreadChats, children }) {
   return (
     <div className="shell">
       <aside className="sidebar">
@@ -26,6 +27,10 @@ function Layout({ admin, onLogout, pending, children }) {
           <NavLink to="/withdrawals" className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}>
             <Icon name="banknote" /> Withdrawals
             {pending > 0 && <em className="nav-badge">{pending}</em>}
+          </NavLink>
+          <NavLink to="/support" className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}>
+            <Icon name="message" /> Customer chat
+            {unreadChats > 0 && <em className="nav-badge nav-badge-green">{unreadChats}</em>}
           </NavLink>
           <NavLink to="/games" className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}>
             <Icon name="sliders" /> Game settings
@@ -53,6 +58,7 @@ export default function App() {
   const [admin, setAdmin] = useState(null)
   const [status, setStatus] = useState('loading') // loading | authed | guest
   const [pending, setPending] = useState(0)
+  const [unreadChats, setUnreadChats] = useState(0)
 
   // Keep the sidebar's pending-withdrawal badge fresh
   useEffect(() => {
@@ -63,6 +69,20 @@ export default function App() {
     const t = setInterval(poll, 30000)
     return () => { cancelled = true; clearInterval(t) }
   }, [status])
+
+  // Unread customer-service messages: sidebar badge + tab title
+  useEffect(() => {
+    if (status !== 'authed') return
+    let cancelled = false
+    const poll = () => api.get('/support/unread').then((d) => !cancelled && setUnreadChats(d.unread), () => {})
+    poll()
+    const t = setInterval(poll, 10000)
+    return () => { cancelled = true; clearInterval(t) }
+  }, [status])
+
+  useEffect(() => {
+    document.title = unreadChats > 0 ? `(${unreadChats}) 55CLUB Admin` : '55CLUB Admin'
+  }, [unreadChats])
 
   useEffect(() => {
     let cancelled = false
@@ -100,12 +120,14 @@ export default function App() {
           <Route path="*" element={<Login onLogin={onLogin} />} />
         </Routes>
       ) : (
-        <Layout admin={admin} onLogout={onLogout} pending={pending}>
+        <Layout admin={admin} onLogout={onLogout} pending={pending} unreadChats={unreadChats}>
           <Routes>
             <Route path="/" element={<Users />} />
             <Route path="/users/:id" element={<UserDetail />} />
             <Route path="/games" element={<GameSettings />} />
             <Route path="/withdrawals" element={<Withdrawals onCountChange={setPending} />} />
+            <Route path="/support" element={<Support onUnreadChange={setUnreadChats} />} />
+            <Route path="/support/:id" element={<Support onUnreadChange={setUnreadChats} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Layout>

@@ -228,6 +228,8 @@
 }
 .ac-root .ac-service button .icon { color: var(--red); }
 .ac-root .ac-service button:hover { background: #fafafc; }
+.ac-root .ac-service .ac-service-cs { position: relative; }
+.ac-service-cs .ac-badge { top: 2px; right: calc(50% - 24px); }
 
 .ac-root .ac-logout {
   display: flex;

@@ -24,11 +24,11 @@ npm install
 npm run dev
 ```
 
-On first start the server creates:
-- the **admin** account from `ADMIN_USERNAME` / `ADMIN_PASSWORD` (dev default `admin` / `admin123`)
-- a **demo player**: `9999999999` / `admin123` with ₹10,000 (disable with `SEED_DEMO_USER=false`)
+On first start the server creates the **admin** account from `ADMIN_USERNAME` / `ADMIN_PASSWORD`
+(dev default `admin` / `admin123`).
 
-New players get a ₹1,000 signup bonus.
+The sign-up bonus (default ₹25, with a welcome pop-up) and the minimum wallet balance needed to play
+(default ₹100) are set in the admin panel under **Game settings → Platform**.
 
 ## Production
 
@@ -69,6 +69,7 @@ server/src/
   wallet.js         atomic debit/credit (paise) + ledger
   auth.js           player signup / login / logout / me
   routes/wallet.js  balance, transactions, demo deposit
+  routes/support.js customer-service chat (player side; admin side in routes/admin.js)
   routes/admin.js   admin login + user management
   sse.js            live updates (server-sent events)
   games/aviator.js  crash game rounds, bets, cash-outs
@@ -86,9 +87,7 @@ ledger entry (Atlas clusters support transactions).
 | `ADMIN_USERNAME` / `ADMIN_PASSWORD` | `admin` / `admin123` in dev | **required** in production |
 | `JWT_SECRET` | generated into `server/.dev-secret` in dev | **required** in production |
 | `PORT` | `4000` | |
-| `SIGNUP_BONUS` | `1000` | rupees |
 | `DEMO_DEPOSITS` | `true` | `false` disables the demo deposit endpoint |
-| `SEED_DEMO_USER` | `true` | `false` skips the demo player |
 
 ## Adding a game
 
