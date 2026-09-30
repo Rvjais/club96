@@ -31,6 +31,7 @@ const FIELD_LABELS = {
   'payouts.size': 'Big / Small payout', 'payouts.color': 'Green / Red payout', 'payouts.colorSplit': 'Green / Red on 5 / 0 payout',
   'payouts.violet': 'Violet payout', 'payouts.number': 'Number payout',
   signupBonus: 'Sign-up bonus', bonusPopup: 'Welcome pop-up', bonusTitle: 'Pop-up title', bonusMessage: 'Pop-up message', minPlayBalance: 'Min balance to play',
+  depositEnabled: 'Deposits', upiId: 'UPI ID', payeeName: 'Payee name', minDeposit: 'Min deposit', maxDeposit: 'Max deposit', maxPendingDeposits: 'Deposits in review', depositNote: 'Deposit instructions',
   withdrawEnabled: 'Withdrawals', minWithdrawBalance: 'Balance needed to withdraw', minWithdraw: 'Min withdrawal', maxWithdraw: 'Max withdrawal', maxPendingWithdrawals: 'Requests in review', bankLocked: 'Bank details',
   smallBlind: 'Small blind', bigBlind: 'Big blind', minBuyIn: 'Min buy-in', maxBuyIn: 'Max buy-in', rake: 'Rake %', rakeCap: 'Rake cap',
   depositMode: 'Deposit commission on', minClaim: 'Minimum to claim',
@@ -61,7 +62,7 @@ function fieldLabel(key) {
   if (m) return `${m[1]} wheel group ${Number(m[2]) + 1} ${m[3] === 'mult' ? 'payout' : 'segments'}`
   return key
 }
-const fmt = (key, v) => (key === 'enabled' ? (v ? 'Live' : 'Paused') : key === 'bonusPopup' ? (v ? 'Shown' : 'Hidden') : key === 'withdrawEnabled' ? (v ? 'Open' : 'Paused') : key === 'bankLocked' ? (v ? 'Locked' : 'Editable') : key.startsWith('rooms.') ? (v ? 'Open' : 'Closed') : String(v))
+const fmt = (key, v) => (key === 'enabled' ? (v ? 'Live' : 'Paused') : key === 'bonusPopup' ? (v ? 'Shown' : 'Hidden') : key === 'withdrawEnabled' || key === 'depositEnabled' ? (v ? 'Open' : 'Paused') : key === 'bankLocked' ? (v ? 'Locked' : 'Editable') : key.startsWith('rooms.') ? (v ? 'Open' : 'Closed') : String(v))
 
 function changes(before, after) {
   const b = Object.fromEntries(flatten(before))

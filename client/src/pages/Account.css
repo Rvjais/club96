@@ -254,7 +254,7 @@
 .ac-form .icon { display: block; flex-shrink: 0; }
 .ac-label { font-size: 12.5px; font-weight: 700; color: #555; margin-bottom: -4px; }
 
-.ac-presets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.ac-presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .ac-presets button {
   padding: 11px 0;
   border-radius: 10px;
@@ -294,6 +294,20 @@
 .ac-available span { font-size: 12.5px; color: #666; font-weight: 600; }
 .ac-available strong { font-size: 18px; font-weight: 900; color: #e02020; font-variant-numeric: tabular-nums; }
 
+.ac-qr-card { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 14px 14px; border-radius: 18px; background: linear-gradient(180deg, #fff5f3, #fff); border: 1px solid #f5dede; }
+.ac-qr-label { font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #e02020; }
+.ac-qr-amount { font-size: 30px; font-weight: 900; color: #111; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.ac-qr-img { width: 220px; height: 220px; max-width: 100%; display: grid; place-items: center; padding: 10px; border-radius: 16px; background: #fff; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08); }
+.ac-qr-img img { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+.ac-root .ac-qr-upi { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 6px 12px; border: none; border-radius: 999px; background: #f5f5fa; font-size: 12.5px; color: #555; }
+.ac-qr-upi span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ac-qr-upi b { color: #111; }
+.ac-qr-app { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px; font-size: 13px; font-weight: 700; color: #e02020; background: #fff0f0; text-decoration: none; }
+.ac-root .ac-btn-ghost { color: #555; background: #f3f3f7; min-height: 44px; font-size: 14.5px; }
+.ac-dep-done { align-items: center; text-align: center; }
+.ac-dep-done-icon { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: linear-gradient(160deg, #6fd39a, #2e9d4f); }
+.ac-dep-done strong { font-size: 18px; color: #111; }
+.ac-dep-done p { margin: 0; font-size: 13.5px; color: #666; line-height: 1.5; }
 .ac-bank-card { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; border: 1px solid #f0e3e3; background: linear-gradient(135deg, #fff, #fff7f5); }
 .ac-bank-card > div { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .ac-bank-card strong { font-size: 14.5px; font-weight: 800; color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

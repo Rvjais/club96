@@ -261,6 +261,21 @@ const withdrawalSchema = new Schema({
 }, { timestamps: true })
 withdrawalSchema.index({ status: 1, createdAt: -1 })
 
+// ── Deposits: the player pays the admin's UPI QR, then submits the UTR; an admin confirms and credits
+const depositSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true, index: true },
+  amount: { type: Number, required: true }, // paise the player said they paid
+  utr: { type: String, required: true }, // UPI transaction reference from the player's app
+  upiId: String, // the UPI ID shown to the player at the time
+  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending', index: true },
+  credited: Number, // paise actually credited on approval (the amount received)
+  adminNote: String,
+  processedBy: String,
+  processedAt: Date,
+}, { timestamps: true })
+depositSchema.index({ status: 1, createdAt: -1 })
+depositSchema.index({ utr: 1 })
+
 // ── Customer service chat: one conversation per player with the admins
 const supportMessageSchema = new Schema({
   user: { type: ObjectId, ref: 'User', required: true }, // the player whose conversation this is
@@ -322,6 +337,7 @@ export const WingoBet = model('WingoBet', wingoBetSchema)
 export const PokerTable = model('PokerTable', pokerTableSchema)
 export const Admin = model('Admin', adminSchema)
 export const Withdrawal = model('Withdrawal', withdrawalSchema)
+export const Deposit = model('Deposit', depositSchema)
 export const SupportMessage = model('SupportMessage', supportMessageSchema)
 export const Commission = model('Commission', commissionSchema)
 export const Meta = model('Meta', metaSchema)

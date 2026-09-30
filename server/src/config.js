@@ -20,8 +20,7 @@ export const CLIENT_DIST = path.join(rootDir, 'client', 'dist')
 export const ADMIN_DIST = path.join(rootDir, 'admin', 'dist')
 
 // All money is stored in paise (integer) to avoid floating point errors.
-// The sign-up bonus and minimum balance to play are set in the admin panel (settings.js → platform).
-export const DEMO_DEPOSITS = process.env.DEMO_DEPOSITS !== 'false'
+// The sign-up bonus, minimum balance to play, UPI deposits and withdrawal rules are set in the admin panel (settings.js → platform).
 
 export const ADMIN_USERNAME = process.env.ADMIN_USERNAME || (IS_PROD ? null : 'admin')
 export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || (IS_PROD ? null : 'admin123')

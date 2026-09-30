@@ -1,10 +1,9 @@
 import { Router } from 'express'
-import { DEMO_DEPOSITS } from '../config.js'
 import { tx } from '../db.js'
 import { requireAuth } from '../auth.js'
-import { Transaction, User, Withdrawal } from '../models/index.js'
+import { Deposit, Transaction, User, Withdrawal } from '../models/index.js'
 import { getSettings } from '../settings.js'
-import { HttpError, balanceOf, credit, debit, serializeTx, toPaise, toRupees } from '../wallet.js'
+import { HttpError, balanceOf, debit, serializeTx, toPaise, toRupees } from '../wallet.js'
 
 export const walletRouter = Router()
 walletRouter.use(requireAuth)
@@ -17,15 +16,60 @@ walletRouter.get('/', async (req, res) => {
   res.json({ balance: toRupees(balance), transactions: txs.map(serializeTx) })
 })
 
-// Demo top-up (no payment provider yet). Disable with DEMO_DEPOSITS=false.
-walletRouter.post('/deposit', async (req, res) => {
-  if (!DEMO_DEPOSITS) throw new HttpError(403, 'Deposits are not available yet')
-  const paise = toPaise(req.body?.amount)
-  if (!Number.isInteger(paise) || paise < 100 * 100 || paise > 10000 * 100) {
-    throw new HttpError(400, 'Deposit between ₹100 and ₹10,000')
+// ── Deposits: the player pays the admin's UPI QR, then submits the UTR. An admin checks the
+// payment arrived and approves it, crediting the amount received.
+const UTR_RE = /^\d{12}$/
+
+function depositRules() {
+  const c = getSettings('platform')
+  return {
+    enabled: c.depositEnabled && Boolean(c.upiId),
+    upiId: c.upiId,
+    payeeName: c.payeeName,
+    min: c.minDeposit,
+    max: c.maxDeposit,
+    maxPending: c.maxPendingDeposits,
+    note: c.depositNote,
   }
-  const after = await tx((s) => credit(s, req.userId, paise, { type: 'deposit', ref: 'demo' }))
-  res.json({ balance: toRupees(after) })
+}
+
+function serializeDeposit(d) {
+  return {
+    id: String(d._id),
+    amount: toRupees(d.amount),
+    credited: d.credited == null ? null : toRupees(d.credited),
+    utr: d.utr,
+    status: d.status,
+    note: d.adminNote ?? null,
+    createdAt: d.createdAt,
+    processedAt: d.processedAt ?? null,
+  }
+}
+
+walletRouter.get('/deposit-info', (req, res) => {
+  const r = depositRules()
+  res.json({ ...r, upiId: r.enabled ? r.upiId : null })
+})
+
+walletRouter.get('/deposits', async (req, res) => {
+  const rows = await Deposit.find({ user: req.userId }).sort({ createdAt: -1 }).limit(50).lean()
+  res.json({ items: rows.map(serializeDeposit) })
+})
+
+walletRouter.post('/deposits', async (req, res) => {
+  const r = depositRules()
+  if (!r.enabled) throw new HttpError(403, 'Deposits are not available right now. Please try again later.')
+  const paise = toPaise(req.body?.amount)
+  if (!Number.isInteger(paise) || paise < Math.round(r.min * 100)) throw new HttpError(400, `Minimum deposit is ₹${r.min.toLocaleString('en-IN')}`)
+  if (paise > Math.round(r.max * 100)) throw new HttpError(400, `Maximum deposit is ₹${r.max.toLocaleString('en-IN')}`)
+  const utr = String(req.body?.utr ?? '').replace(/\s/g, '')
+  if (!UTR_RE.test(utr)) throw new HttpError(400, 'Enter the 12-digit UTR / UPI reference number from your payment app')
+  if (await Deposit.exists({ utr, status: { $ne: 'rejected' } })) throw new HttpError(409, 'This UTR has already been submitted')
+  if ((await Deposit.countDocuments({ user: req.userId, status: 'pending' })) >= r.maxPending) {
+    throw new HttpError(409, `You already have ${r.maxPending} deposit${r.maxPending === 1 ? '' : 's'} waiting for confirmation`)
+  }
+  const d = await Deposit.create({ user: req.userId, amount: paise, utr, upiId: r.upiId })
+  res.status(201).json({ deposit: serializeDeposit(d.toObject()) })
 })
 
 // ── Bank account: where withdrawals are paid. Players add it once; admins see it on the profile.

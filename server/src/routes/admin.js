@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken'
 import { ADMIN_PASSWORD, ADMIN_SESSION_HOURS, ADMIN_USERNAME, IS_PROD, JWT_SECRET } from '../config.js'
 import { tx } from '../db.js'
 import { checkRateLimit, clearFailures, recordFailure, validatePassword } from '../auth.js'
-import { Admin, AviatorBet, AviatorRound, ColorBet, DiceBet, MinesBet, PlinkoBet, PokerTable, SupportMessage, TowerBet, Transaction, User, SpinBet, WheelBet, WingoBet, Withdrawal } from '../models/index.js'
+import { Admin, Deposit, AviatorBet, AviatorRound, ColorBet, DiceBet, MinesBet, PlinkoBet, PokerTable, SupportMessage, TowerBet, Transaction, User, SpinBet, WheelBet, WingoBet, Withdrawal } from '../models/index.js'
 import { conversation, messageText, serializeMessage } from './support.js'
 import { serializeBank } from './wallet.js'
 import { HttpError, credit, debit, serializeTx, toPaise, toRupees } from '../wallet.js'
@@ -320,6 +320,86 @@ adminRouter.post('/users/:id/logout', async (req, res) => {
   user.sessionVersion += 1
   await user.save()
   res.json({ ok: true })
+})
+
+// ── Deposits (UPI QR) ────────────────────────────────────────
+function serializeDepositAdmin(d) {
+  return {
+    id: String(d._id),
+    amount: toRupees(d.amount),
+    credited: d.credited == null ? null : toRupees(d.credited),
+    utr: d.utr,
+    upiId: d.upiId ?? null,
+    status: d.status,
+    note: d.adminNote ?? null,
+    processedBy: d.processedBy ?? null,
+    processedAt: d.processedAt ?? null,
+    createdAt: d.createdAt,
+  }
+}
+
+adminRouter.get('/deposits', async (req, res) => {
+  const status = ['pending', 'approved', 'rejected'].includes(req.query.status) ? req.query.status : undefined
+  const filter = status ? { status } : {}
+  const q = String(req.query.q ?? '').replace(/\s/g, '')
+  if (q) filter.utr = { $regex: escapeRegex(q) }
+  const [rows, pendingCount, pendingSum] = await Promise.all([
+    Deposit.find(filter).sort({ createdAt: status === 'pending' ? 1 : -1 }).limit(200).populate('user', 'username displayName phone uid balance status').lean(),
+    Deposit.countDocuments({ status: 'pending' }),
+    Deposit.aggregate([{ $match: { status: 'pending' } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
+  ])
+  res.json({
+    pendingCount,
+    pendingTotal: toRupees(pendingSum[0]?.total ?? 0),
+    items: rows.map((d) => ({
+      ...serializeDepositAdmin(d),
+      user: d.user && {
+        id: String(d.user._id),
+        uid: d.user.uid ?? null,
+        username: d.user.username,
+        displayName: d.user.displayName || null,
+        phone: d.user.phone,
+        balance: toRupees(d.user.balance),
+        status: d.user.status,
+      },
+    })),
+  })
+})
+
+// Approve: credit the amount actually received (defaults to what the player entered)
+adminRouter.post('/deposits/:id/approve', async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) throw new HttpError(404, 'Deposit not found')
+  const note = String(req.body?.note ?? '').trim().slice(0, 200)
+  const deposit = await tx(async (session) => {
+    const d = await Deposit.findOne({ _id: req.params.id }, null, { session })
+    if (!d) throw new HttpError(404, 'Deposit not found')
+    if (d.status !== 'pending') throw new HttpError(409, 'This deposit was already processed')
+    const paise = req.body?.amount == null || req.body.amount === '' ? d.amount : toPaise(req.body.amount)
+    if (!Number.isInteger(paise) || paise <= 0) throw new HttpError(400, 'Enter the amount you received')
+    if (paise > 10_000_000 * 100) throw new HttpError(400, 'Amount is too large')
+    const updated = await Deposit.findOneAndUpdate(
+      { _id: d._id, status: 'pending' },
+      { status: 'approved', credited: paise, adminNote: note || undefined, processedBy: req.admin.username, processedAt: new Date() },
+      { new: true, session },
+    )
+    if (!updated) throw new HttpError(409, 'This deposit was already processed')
+    await credit(session, d.user, paise, { type: 'deposit', ref: d._id, note: `UPI deposit · UTR ${d.utr}` })
+    return updated
+  })
+  res.json({ deposit: serializeDepositAdmin(deposit) })
+})
+
+adminRouter.post('/deposits/:id/reject', async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) throw new HttpError(404, 'Deposit not found')
+  const note = String(req.body?.note ?? '').trim().slice(0, 200)
+  if (!note) throw new HttpError(400, 'Add a reason so the player knows why it was rejected')
+  const d = await Deposit.findOneAndUpdate(
+    { _id: req.params.id, status: 'pending' },
+    { status: 'rejected', adminNote: note, processedBy: req.admin.username, processedAt: new Date() },
+    { new: true },
+  )
+  if (!d) throw new HttpError(409, 'This deposit was already processed')
+  res.json({ deposit: serializeDepositAdmin(d) })
 })
 
 // ── Withdrawals ──────────────────────────────────────────────

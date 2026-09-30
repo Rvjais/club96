@@ -7,9 +7,10 @@ import Users from './pages/Users'
 import UserDetail from './pages/UserDetail'
 import GameSettings from './pages/GameSettings'
 import Withdrawals from './pages/Withdrawals'
+import Deposits from './pages/Deposits'
 import Support from './pages/Support'
 
-function Layout({ admin, onLogout, pending, unreadChats, children }) {
+function Layout({ admin, onLogout, pending, pendingDeposits, unreadChats, children }) {
   return (
     <div className="shell">
       <aside className="sidebar">
@@ -23,6 +24,10 @@ function Layout({ admin, onLogout, pending, unreadChats, children }) {
         <nav className="nav">
           <NavLink to="/" end className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}>
             <Icon name="users" /> Users
+          </NavLink>
+          <NavLink to="/deposits" className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}>
+            <Icon name="wallet" /> Deposits
+            {pendingDeposits > 0 && <em className="nav-badge">{pendingDeposits}</em>}
           </NavLink>
           <NavLink to="/withdrawals" className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}>
             <Icon name="banknote" /> Withdrawals
@@ -58,13 +63,17 @@ export default function App() {
   const [admin, setAdmin] = useState(null)
   const [status, setStatus] = useState('loading') // loading | authed | guest
   const [pending, setPending] = useState(0)
+  const [pendingDeposits, setPendingDeposits] = useState(0)
   const [unreadChats, setUnreadChats] = useState(0)
 
-  // Keep the sidebar's pending-withdrawal badge fresh
+  // Keep the sidebar's pending deposit / withdrawal badges fresh
   useEffect(() => {
     if (status !== 'authed') return
     let cancelled = false
-    const poll = () => api.get('/withdrawals?status=pending').then((d) => !cancelled && setPending(d.pendingCount), () => {})
+    const poll = () => {
+      api.get('/withdrawals?status=pending').then((d) => !cancelled && setPending(d.pendingCount), () => {})
+      api.get('/deposits?status=pending').then((d) => !cancelled && setPendingDeposits(d.pendingCount), () => {})
+    }
     poll()
     const t = setInterval(poll, 30000)
     return () => { cancelled = true; clearInterval(t) }
@@ -120,11 +129,12 @@ export default function App() {
           <Route path="*" element={<Login onLogin={onLogin} />} />
         </Routes>
       ) : (
-        <Layout admin={admin} onLogout={onLogout} pending={pending} unreadChats={unreadChats}>
+        <Layout admin={admin} onLogout={onLogout} pending={pending} pendingDeposits={pendingDeposits} unreadChats={unreadChats}>
           <Routes>
             <Route path="/" element={<Users />} />
             <Route path="/users/:id" element={<UserDetail />} />
             <Route path="/games" element={<GameSettings />} />
+            <Route path="/deposits" element={<Deposits onCountChange={setPendingDeposits} />} />
             <Route path="/withdrawals" element={<Withdrawals onCountChange={setPending} />} />
             <Route path="/support" element={<Support onUnreadChange={setUnreadChats} />} />
             <Route path="/support/:id" element={<Support onUnreadChange={setUnreadChats} />} />

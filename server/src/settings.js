@@ -14,6 +14,14 @@ export const DEFAULTS = {
     bonusTitle: 'Welcome bonus!',
     bonusMessage: 'Thanks for joining. Your bonus has been added to your wallet.',
     minPlayBalance: 100, // ₹ a player must have in their wallet to place any bet (0 = no minimum)
+    // Deposits: players scan a QR for this UPI ID, pay, and submit the UTR for an admin to confirm
+    depositEnabled: true,
+    upiId: '', // e.g. yourname@okaxis — deposits are unavailable until this is set
+    payeeName: '55CLUB', // name shown in the player's UPI app
+    minDeposit: 100,
+    maxDeposit: 50000,
+    maxPendingDeposits: 3,
+    depositNote: 'Pay the exact amount, then enter the 12-digit UTR / UPI reference number from your payment app.',
     // Withdrawals (paid to the bank account the player saved on their Account page)
     withdrawEnabled: true,
     minWithdrawBalance: 500, // ₹ the wallet must hold before a withdrawal can be requested
@@ -222,6 +230,29 @@ function num(value, label, min, max) {
   return round2(n)
 }
 
+export const UPI_RE = /^[\w.-]{2,256}@[a-zA-Z][a-zA-Z0-9]{1,63}$/
+
+/** Deposit (UPI QR) rules inside the platform settings. */
+function depositRules(input) {
+  const upiId = String(input.upiId ?? '').trim()
+  if (upiId && !UPI_RE.test(upiId)) throw new HttpError(400, 'Enter a valid UPI ID, e.g. yourname@okaxis')
+  const payeeName = String(input.payeeName ?? '').trim()
+  if (payeeName.length > 50) throw new HttpError(400, 'Payee name must be at most 50 characters')
+  const depositNote = String(input.depositNote ?? '').trim()
+  if (depositNote.length > 300) throw new HttpError(400, 'Deposit instructions must be at most 300 characters')
+  const s = {
+    depositEnabled: Boolean(input.depositEnabled),
+    upiId,
+    payeeName: payeeName || DEFAULTS.platform.payeeName,
+    minDeposit: num(input.minDeposit, 'Minimum deposit', 1, 10_000_000),
+    maxDeposit: num(input.maxDeposit, 'Maximum deposit', 1, 10_000_000),
+    maxPendingDeposits: Math.round(num(input.maxPendingDeposits, 'Deposits in review at once', 1, 20)),
+    depositNote,
+  }
+  if (s.maxDeposit < s.minDeposit) throw new HttpError(400, 'Maximum deposit must be at least the minimum deposit')
+  return s
+}
+
 /** Withdrawal rules inside the platform settings. */
 function withdrawRules(input) {
   const s = {
@@ -252,6 +283,7 @@ export function validate(game, input) {
       bonusTitle: text(input.bonusTitle, 'Pop-up title', 60) || DEFAULTS.platform.bonusTitle,
       bonusMessage: text(input.bonusMessage, 'Pop-up message', 300),
       minPlayBalance: num(input.minPlayBalance, 'Minimum balance to play', 0, 1_000_000),
+      ...depositRules(input),
       ...withdrawRules(input),
     }
   }

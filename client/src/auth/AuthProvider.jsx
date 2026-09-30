@@ -56,11 +56,6 @@ export function AuthProvider({ children }) {
         setBalance(0)
         setStatus('guest')
       },
-      deposit: async (amount) => {
-        const data = await api.post('/wallet/deposit', { amount })
-        setBalance(data.balance)
-        return data
-      },
     }),
     [user, balance, status, refresh, apply],
   )

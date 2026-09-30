@@ -27,6 +27,7 @@ const TX_LABELS = {
 const GAME_LABELS = { aviator: 'Aviator', wingo: 'Win Go', color: 'Color Prediction', mines: 'Mines', tower: 'Tower', plinko: 'Plinko', dice: 'Dice', wheel: 'Wheel', spin: 'Lucky Spin', poker: 'Poker' }
 const GAME_ICONS = { aviator: 'plane', wingo: 'timer', color: 'palette', mines: 'bomb', tower: 'layers', plinko: 'pyramid', dice: 'dices', wheel: 'wheel', spin: 'gift', poker: 'club' }
 const STATUS = { pending: 'In review', approved: 'Paid', rejected: 'Rejected' }
+const DEPOSIT_STATUS = { pending: 'Confirming', approved: 'Added', rejected: 'Rejected' }
 
 function Empty({ text }) {
   return (
@@ -40,8 +41,8 @@ function Empty({ text }) {
 function fetchTab(tab, page) {
   if (tab === 'games') return api.get(`/account/game-history?page=${page}`).then((d) => ({ items: d.items, more: d.hasMore, replace: true }))
   if (tab === 'withdrawals') return api.get('/wallet/withdrawals').then((d) => ({ items: d.items, more: false, replace: true }))
-  const type = tab === 'deposits' ? 'deposit' : 'all'
-  return api.get(`/account/transactions?type=${type}&page=${page}`).then((d) => ({ items: d.items, more: d.page * d.pageSize < d.total, replace: false }))
+  if (tab === 'deposits') return api.get('/wallet/deposits').then((d) => ({ items: d.items, more: false, replace: true }))
+  return api.get(`/account/transactions?type=all&page=${page}`).then((d) => ({ items: d.items, more: d.page * d.pageSize < d.total, replace: false }))
 }
 
 export default function History() {
@@ -121,7 +122,7 @@ export default function History() {
           </div>
         ))}
 
-        {(tab === 'transactions' || tab === 'deposits') && items.map((t) => (
+        {tab === 'transactions' && items.map((t) => (
           <div key={t.id} className="hs-item">
             <span className={`hs-icon ${t.amount >= 0 ? 'hs-icon-green' : 'hs-icon-red'}`}>
               <Icon name={t.amount >= 0 ? 'deposit' : 'withdraw'} size={18} />
@@ -135,6 +136,26 @@ export default function History() {
               <strong className={t.amount >= 0 ? 'pos' : 'neg'}>{t.amount >= 0 ? '+' : '−'}{money(Math.abs(t.amount))}</strong>
               <small>Balance {money(t.balanceAfter)}</small>
             </div>
+          </div>
+        ))}
+
+        {tab === 'deposits' && items.map((d) => (
+          <div key={d.id} className="hs-item hs-item-col">
+            <div className="hs-row">
+              <span className="hs-icon hs-icon-green"><Icon name="deposit" size={18} /></span>
+              <div className="hs-main">
+                <strong>{money(d.credited ?? d.amount)}</strong>
+                <span>UPI · UTR {d.utr}</span>
+                <small>{stamp(d.createdAt)}</small>
+              </div>
+              <span className={`hs-status hs-status-${d.status}`}>{DEPOSIT_STATUS[d.status]}</span>
+            </div>
+            {(d.note || (d.credited != null && d.credited !== d.amount)) && (
+              <div className="hs-note">
+                {d.credited != null && d.credited !== d.amount && <span>You entered {money(d.amount)}; {money(d.credited)} was received</span>}
+                {d.note && <span>{d.status === 'rejected' ? 'Reason' : 'Note'}: {d.note}</span>}
+              </div>
+            )}
           </div>
         ))}
 

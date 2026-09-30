@@ -27,8 +27,13 @@ npm run dev
 On first start the server creates the **admin** account from `ADMIN_USERNAME` / `ADMIN_PASSWORD`
 (dev default `admin` / `admin123`).
 
-The sign-up bonus (default ₹25, with a welcome pop-up) and the minimum wallet balance needed to play
-(default ₹100) are set in the admin panel under **Game settings → Platform**.
+The sign-up bonus (default ₹25, with a welcome pop-up), the minimum wallet balance needed to play
+(default ₹100), UPI deposits and withdrawal rules are set in the admin panel under
+**Game settings → Bonus & limits**.
+
+**Deposits** work without a payment gateway: players scan a QR for the UPI ID set in the admin panel,
+pay, and submit the 12-digit UTR. An admin checks the money arrived and approves it under **Deposits**,
+which credits the amount received. Deposits are unavailable until a UPI ID is saved.
 
 ## Production
 
@@ -68,7 +73,7 @@ server/src/
   models/index.js   User, Transaction, AviatorRound, AviatorBet, ColorResult, ColorBet, Admin
   wallet.js         atomic debit/credit (paise) + ledger
   auth.js           player signup / login / logout / me
-  routes/wallet.js  balance, transactions, demo deposit
+  routes/wallet.js  balance, transactions, UPI QR deposits, bank account, withdrawals
   routes/support.js customer-service chat (player side; admin side in routes/admin.js)
   routes/admin.js   admin login + user management
   sse.js            live updates (server-sent events)
@@ -87,7 +92,6 @@ ledger entry (Atlas clusters support transactions).
 | `ADMIN_USERNAME` / `ADMIN_PASSWORD` | `admin` / `admin123` in dev | **required** in production |
 | `JWT_SECRET` | generated into `server/.dev-secret` in dev | **required** in production |
 | `PORT` | `4000` | |
-| `DEMO_DEPOSITS` | `true` | `false` disables the demo deposit endpoint |
 
 ## Adding a game
 

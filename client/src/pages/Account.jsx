@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Icon } from '../components/Icons'
 import BottomNav from '../components/BottomNav'
 import Sheet from '../components/Sheet'
+import QRCode from 'qrcode'
 import { useAuth } from '../auth/authContext'
 import { api } from '../lib/api'
 import { money, stamp } from '../lib/format'
@@ -10,32 +11,131 @@ import { gameImages } from '../games'
 import { useSupportUnread } from '../lib/supportUnread'
 import './Account.css'
 
-const DEPOSIT_PRESETS = [100, 200, 500, 1000, 2000, 5000]
+const DEPOSIT_PRESETS = [100, 200, 500, 1000, 2000, 5000, 10000, 20000]
 
-// ── Sheets ───────────────────────────────────────────────────
+/** upi://pay link for the admin's UPI ID with the amount filled in. */
+function upiLink({ upiId, payeeName }, amount, uid) {
+  // The UPI ID is left unencoded: some UPI apps reject a percent-encoded "@"
+  const note = encodeURIComponent(`Deposit UID ${uid ?? ''}`.trim())
+  return `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${amount.toFixed(2)}&cu=INR&tn=${note}`
+}
+
 function DepositSheet({ onDone, toast }) {
-  const { deposit } = useAuth()
+  const { user } = useAuth()
+  const [info, setInfo] = useState(null)
+  const [step, setStep] = useState('amount') // amount | pay | done
   const [amount, setAmount] = useState('500')
+  const [qr, setQr] = useState('')
+  const [utr, setUtr] = useState('')
   const [busy, setBusy] = useState(false)
+  const [copied, setCopied] = useState(false)
   const value = Number(amount) || 0
+
+  useEffect(() => {
+    let cancelled = false
+    api.get('/wallet/deposit-info').then((d) => !cancelled && setInfo(d), (err) => toast('error', err.message))
+    return () => { cancelled = true }
+  }, [toast])
+
+  const link = info?.enabled && value > 0 ? upiLink(info, value, user?.uid) : ''
+  useEffect(() => {
+    if (step !== 'pay' || !link) return
+    let cancelled = false
+    QRCode.toDataURL(link, { width: 480, margin: 1, errorCorrectionLevel: 'M' }).then((url) => !cancelled && setQr(url), () => {})
+    return () => { cancelled = true }
+  }, [step, link])
+
+  if (!info) return <div className="ac-loading"><span className="ac-spinner ac-spinner-red" /></div>
+
+  if (!info.enabled) {
+    return (
+      <div className="ac-form">
+        <div className="ac-notice"><Icon name="clock" size={18} /> Deposits are not available right now. Please try again later or contact customer service.</div>
+      </div>
+    )
+  }
+
+  const valid = value >= info.min && value <= info.max
+  const presets = DEPOSIT_PRESETS.filter((p) => p >= info.min && p <= info.max)
+
+  const copyUpi = () => {
+    navigator.clipboard?.writeText(info.upiId)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1200)
+  }
 
   const submit = async () => {
     setBusy(true)
     try {
-      await deposit(value)
-      toast('success', `${money(value)} added to your wallet`)
-      onDone()
+      await api.post('/wallet/deposits', { amount: value, utr })
+      setStep('done')
     } catch (err) {
       toast('error', err.message)
     }
     setBusy(false)
   }
 
+  if (step === 'done') {
+    return (
+      <div className="ac-form ac-dep-done">
+        <span className="ac-dep-done-icon"><Icon name="circleCheck" size={34} /></span>
+        <strong>Payment submitted</strong>
+        <p>We’re confirming your payment of <b>{money(value)}</b>. It will be added to your wallet as soon as it’s verified, usually within a few minutes.</p>
+        <button type="button" className="ac-btn ac-btn-primary" onClick={onDone}>Done</button>
+      </div>
+    )
+  }
+
+  if (step === 'pay') {
+    const utrOk = /^\d{12}$/.test(utr)
+    return (
+      <div className="ac-form">
+        <div className="ac-qr-card">
+          <span className="ac-qr-label">Scan &amp; pay</span>
+          <strong className="ac-qr-amount">{money(value)}</strong>
+          <div className="ac-qr-img">
+            {qr ? <img src={qr} alt={`UPI QR code to pay ${money(value)} to ${info.upiId}`} /> : <span className="ac-spinner ac-spinner-red" />}
+          </div>
+          <button type="button" className="ac-qr-upi" onClick={copyUpi} title="Copy UPI ID">
+            <span>{info.payeeName} · <b>{info.upiId}</b></span>
+            <Icon name={copied ? 'check' : 'copy'} size={14} strokeWidth={2.2} />
+          </button>
+          <a className="ac-qr-app" href={link}>
+            <Icon name="phone" size={15} /> Open UPI app
+          </a>
+        </div>
+
+        {info.note && <p className="ac-hint"><Icon name="info" size={13} /> {info.note}</p>}
+
+        <label className="ac-label">UTR / UPI reference number</label>
+        <div className="ac-input">
+          <input
+            placeholder="12-digit number from your payment app"
+            inputMode="numeric"
+            maxLength={12}
+            value={utr}
+            onChange={(e) => setUtr(e.target.value.replace(/\D/g, ''))}
+            autoComplete="off"
+            aria-label="UTR number"
+          />
+          <span className="ac-count">{utr.length}/12</span>
+        </div>
+
+        <button type="button" className="ac-btn ac-btn-primary" onClick={submit} disabled={busy || !utrOk}>
+          {busy ? <span className="ac-spinner" /> : 'I have paid — submit'}
+        </button>
+        <button type="button" className="ac-btn ac-btn-ghost" onClick={() => { setStep('amount'); setQr('') }} disabled={busy}>
+          Change amount
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="ac-form">
       <label className="ac-label">Select amount</label>
       <div className="ac-presets">
-        {DEPOSIT_PRESETS.map((p) => (
+        {presets.map((p) => (
           <button type="button" key={p} className={value === p ? 'is-active' : ''} onClick={() => setAmount(String(p))}>
             ₹{p.toLocaleString('en-IN')}
           </button>
@@ -43,16 +143,17 @@ function DepositSheet({ onDone, toast }) {
       </div>
       <div className="ac-input">
         <span>₹</span>
-        <input type="number" inputMode="numeric" min="100" max="10000" value={amount} onChange={(e) => setAmount(e.target.value)} aria-label="Deposit amount" />
+        <input type="number" inputMode="numeric" min={info.min} max={info.max} value={amount} onChange={(e) => setAmount(e.target.value)} aria-label="Deposit amount" />
       </div>
-      <p className="ac-hint"><Icon name="info" size={13} /> Demo mode: the amount is added instantly. Deposits ₹100 – ₹10,000.</p>
-      <button type="button" className="ac-btn ac-btn-primary" onClick={submit} disabled={busy || value < 100}>
-        {busy ? <span className="ac-spinner" /> : `Deposit ${money(value)}`}
+      <p className="ac-hint"><Icon name="info" size={13} /> Pay by any UPI app. Deposits {money(info.min)} – {money(info.max)}.</p>
+      <button type="button" className="ac-btn ac-btn-primary" onClick={() => setStep('pay')} disabled={!valid}>
+        {value > info.max ? `Maximum is ${money(info.max)}` : value < info.min ? `Minimum is ${money(info.min)}` : `Pay ${money(value)}`}
       </button>
     </div>
   )
 }
 
+// ── Sheets ───────────────────────────────────────────────────
 function BankCard({ bank, onChange }) {
   return (
     <div className="ac-bank-card">
@@ -530,7 +631,7 @@ export default function Account() {
 
       {/* ── Sheets ─────────────────────────────────────────── */}
       <Sheet open={sheet === 'deposit'} title="Deposit" onClose={closeSheet}>
-        <DepositSheet toast={showToast} onDone={closeSheet} />
+        <DepositSheet toast={showToast} onDone={() => { closeSheet(); navigate('/account/history/deposits') }} />
       </Sheet>
       <Sheet open={sheet === 'withdraw'} title="Withdraw" onClose={closeSheet}>
         <WithdrawSheet toast={showToast} balance={balance} onAddBank={() => setSheet('bank')} onDone={() => { closeSheet(); load().catch(() => {}) }} />

@@ -676,3 +676,10 @@ select:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 3px rg
 }
 .nav-badge-green { background: #00a884; }
 .bank-remove { margin-top: 12px; }
+.dep-toolbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
+.dep-toolbar .tabs { border-bottom: none; }
+.dep-search { width: 220px; margin-bottom: 6px; }
+.qr-preview { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px; border-radius: 14px; background: #fff; text-align: center; }
+.qr-preview img { width: 180px; height: 180px; image-rendering: pixelated; }
+.qr-preview strong { font-size: 14px; color: var(--ink); }
+.qr-preview span { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }

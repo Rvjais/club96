@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react'
+import QRCode from 'qrcode'
 import { money } from '../../api'
 import { Icon } from '../../Icons'
 import { FormSaveBar, NumberField } from './controls'
@@ -12,7 +14,42 @@ function Switch({ on, onChange, labels = ['On', 'Off'] }) {
   )
 }
 
-/** Site-wide rules: sign-up bonus + welcome pop-up, minimum balance to play. */
+const UPI_RE = /^[\w.-]{2,256}@[a-zA-Z][a-zA-Z0-9]{1,63}$/
+
+/** The QR players will scan, for checking the UPI ID before saving. */
+function QrPreview({ upiId, payeeName }) {
+  const [qr, setQr] = useState({ key: '', url: '' })
+  const valid = UPI_RE.test(upiId)
+  const key = `${upiId}|${payeeName}`
+
+  useEffect(() => {
+    if (!valid) return
+    let cancelled = false
+    const link = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName || '')}&cu=INR`
+    QRCode.toDataURL(link, { width: 360, margin: 1 }).then((url) => !cancelled && setQr({ key, url }), () => {})
+    return () => { cancelled = true }
+  }, [valid, upiId, payeeName, key])
+
+  return (
+    <div className="popup-preview">
+      <span className="preview-caption">QR players scan (amount is added per deposit)</span>
+      {valid && qr.key === key ? (
+        <div className="qr-preview">
+          <img src={qr.url} alt={`UPI QR for ${upiId}`} />
+          <strong>{payeeName}</strong>
+          <span className="mono">{upiId}</span>
+        </div>
+      ) : (
+        <div className="popup-off">
+          <Icon name="alert" size={22} />
+          {upiId ? 'That doesn’t look like a UPI ID (e.g. yourname@okaxis)' : 'Add your UPI ID to turn on deposits'}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** Site-wide rules: sign-up bonus + welcome pop-up, minimum balance to play, deposits, withdrawals. */
 export default function PlatformSettings({ saved, defaults, onSaved }) {
   const f = useSettingsForm('platform', saved, defaults, onSaved, 'Saved. Applies to new sign-ups and the next bet.')
   const bonus = toNum(f.form.signupBonus)
@@ -79,6 +116,43 @@ export default function PlatformSettings({ saved, defaults, onSaved }) {
               {bonus > 0 && minPlay > bonus && <> A new player&apos;s {money(bonus)} bonus alone is not enough to play.</>}
             </span>
           </div>
+        </div>
+
+        <div className="game-card-head platform-divider">
+          <h2 className="card-title"><Icon name="wallet" size={16} /> UPI deposits</h2>
+          <Switch on={f.form.depositEnabled === true} onChange={f.set('depositEnabled')} labels={['Open', 'Paused']} />
+        </div>
+        <div className="platform-grid">
+          <div className="platform-fields">
+            <label className="field">
+              <span>UPI ID players pay</span>
+              <div className="input">
+                <input placeholder="yourname@okaxis" value={f.form.upiId} onChange={(e) => f.set('upiId')(e.target.value.trim())} autoCapitalize="off" spellCheck={false} />
+              </div>
+              <small className="field-hint">Every deposit QR pays this UPI ID</small>
+            </label>
+            <label className="field">
+              <span>Payee name</span>
+              <div className="input"><input maxLength={50} value={f.form.payeeName} onChange={(e) => f.set('payeeName')(e.target.value)} /></div>
+              <small className="field-hint">Shown in the player’s UPI app</small>
+            </label>
+            <NumberField label="Minimum deposit" prefix="₹" value={f.form.minDeposit} onChange={f.set('minDeposit')} />
+            <NumberField label="Maximum deposit" prefix="₹" value={f.form.maxDeposit} onChange={f.set('maxDeposit')} />
+            <NumberField label="Deposits in review at once" value={f.form.maxPendingDeposits} onChange={f.set('maxPendingDeposits')} step="1" hint="Per player" />
+            <label className="field">
+              <span>Instructions shown under the QR</span>
+              <textarea className="textarea" rows={3} maxLength={300} value={f.form.depositNote} onChange={(e) => f.set('depositNote')(e.target.value)} />
+            </label>
+          </div>
+          <QrPreview upiId={String(f.form.upiId ?? '')} payeeName={String(f.form.payeeName ?? '')} />
+        </div>
+        <div className="note">
+          <Icon name="info" size={16} />
+          <span>
+            {f.form.depositEnabled && f.form.upiId
+              ? <>Players pick an amount, scan the QR and pay, then enter the 12-digit UTR. Check the payment arrived and approve it under <strong>Deposits</strong>; the amount you enter there is what gets credited.</>
+              : 'Deposits are unavailable to players until they are open and a UPI ID is saved.'}
+          </span>
         </div>
 
         <div className="game-card-head platform-divider">
