@@ -14,6 +14,35 @@ export const DEFAULTS = {
     bonusTitle: 'Welcome bonus!',
     bonusMessage: 'Thanks for joining. Your bonus has been added to your wallet.',
     minPlayBalance: 100, // ₹ a player must have in their wallet to place any bet (0 = no minimum)
+    // Withdrawals (paid to the bank account the player saved on their Account page)
+    withdrawEnabled: true,
+    minWithdrawBalance: 500, // ₹ the wallet must hold before a withdrawal can be requested
+    minWithdraw: 100, // ₹ smallest / largest single withdrawal
+    maxWithdraw: 50000,
+    maxPendingWithdrawals: 3, // requests a player can have awaiting review at once
+    bankLocked: false, // true = players can't change bank details once saved (an admin can remove them)
+  },
+  // Referral / agency programme: commission on the team's bets and deposits, plus partner rewards
+  referral: {
+    enabled: true,
+    // % paid to the upline per level (level 1 = the player's direct inviter).
+    // `bet` = % of every bet the subordinate places; `deposit` = % of their deposits.
+    levels: [
+      { bet: 0.6, deposit: 5 },
+      { bet: 0.18, deposit: 2 },
+      { bet: 0.054, deposit: 1 },
+    ],
+    depositMode: 'first', // first = only a subordinate's first deposit earns commission; all = every deposit
+    minClaim: 1, // ₹ of commission needed before it can be moved to the wallet
+    // Partner rewards: one-off ₹ bonus once `invites` direct invitees have each deposited at least `deposit` ₹
+    tiers: [
+      { invites: 1, deposit: 300, reward: 55 },
+      { invites: 3, deposit: 300, reward: 155 },
+      { invites: 10, deposit: 500, reward: 555 },
+      { invites: 30, deposit: 800, reward: 1555 },
+      { invites: 50, deposit: 1200, reward: 2955 },
+      { invites: 100, deposit: 1200, reward: 5655 },
+    ],
   },
   aviator: {
     enabled: true,
@@ -141,7 +170,9 @@ export const DEFAULTS = {
   },
 }
 
-export const GAMES = Object.keys(DEFAULTS).filter((k) => k !== 'platform')
+export const SITE_SETTINGS = ['platform', 'referral'] // not games
+export const GAMES = Object.keys(DEFAULTS).filter((k) => !SITE_SETTINGS.includes(k))
+export const REFERRAL_MAX_LEVELS = 10
 export const WINGO_ROOMS = ['30s', '1m', '3m', '5m']
 export const RISKS = ['low', 'medium', 'high']
 export const PLINKO_ROWS = [8, 12, 16]
@@ -191,6 +222,20 @@ function num(value, label, min, max) {
   return round2(n)
 }
 
+/** Withdrawal rules inside the platform settings. */
+function withdrawRules(input) {
+  const s = {
+    withdrawEnabled: Boolean(input.withdrawEnabled),
+    minWithdrawBalance: num(input.minWithdrawBalance, 'Balance needed to withdraw', 0, 10_000_000),
+    minWithdraw: num(input.minWithdraw, 'Minimum withdrawal', 1, 10_000_000),
+    maxWithdraw: num(input.maxWithdraw, 'Maximum withdrawal', 1, 10_000_000),
+    maxPendingWithdrawals: Math.round(num(input.maxPendingWithdrawals, 'Requests in review at once', 1, 20)),
+    bankLocked: Boolean(input.bankLocked),
+  }
+  if (s.maxWithdraw < s.minWithdraw) throw new HttpError(400, 'Maximum withdrawal must be at least the minimum withdrawal')
+  return s
+}
+
 /** Normalise and validate an admin-submitted settings object. */
 export function validate(game, input) {
   if (!input || typeof input !== 'object') throw new HttpError(400, 'Invalid settings')
@@ -207,7 +252,38 @@ export function validate(game, input) {
       bonusTitle: text(input.bonusTitle, 'Pop-up title', 60) || DEFAULTS.platform.bonusTitle,
       bonusMessage: text(input.bonusMessage, 'Pop-up message', 300),
       minPlayBalance: num(input.minPlayBalance, 'Minimum balance to play', 0, 1_000_000),
+      ...withdrawRules(input),
     }
+  }
+
+  if (game === 'referral') {
+    const levels = input.levels
+    if (!Array.isArray(levels) || levels.length < 1 || levels.length > REFERRAL_MAX_LEVELS) {
+      throw new HttpError(400, `Set 1–${REFERRAL_MAX_LEVELS} commission levels`)
+    }
+    const tiers = Array.isArray(input.tiers) ? input.tiers : []
+    if (tiers.length > 20) throw new HttpError(400, 'Use at most 20 partner reward tiers')
+    const s = {
+      enabled: Boolean(input.enabled),
+      levels: levels.map((l, i) => ({
+        bet: num(l?.bet, `Level ${i + 1} bet commission`, 0, 10),
+        deposit: num(l?.deposit, `Level ${i + 1} deposit commission`, 0, 100),
+      })),
+      depositMode: input.depositMode === 'all' ? 'all' : 'first',
+      minClaim: num(input.minClaim, 'Minimum claim', 0, 100_000),
+      tiers: tiers.map((t, i) => ({
+        invites: Math.round(num(t?.invites, `Tier ${i + 1} invitees`, 1, 100_000)),
+        deposit: num(t?.deposit, `Tier ${i + 1} deposit per invitee`, 0, 10_000_000),
+        reward: num(t?.reward, `Tier ${i + 1} reward`, 0.01, 10_000_000),
+      })),
+    }
+    const total = (key) => round2(s.levels.reduce((t, l) => t + l[key], 0))
+    if (total('bet') > 10) throw new HttpError(400, `Bet commission across all levels can be at most 10% (currently ${total('bet')}%)`)
+    if (total('deposit') > 100) throw new HttpError(400, `Deposit commission across all levels can be at most 100% (currently ${total('deposit')}%)`)
+    const keys = new Set(s.tiers.map((t) => `${t.invites}:${t.deposit}`))
+    if (keys.size !== s.tiers.length) throw new HttpError(400, 'Two partner reward tiers have the same invitees and deposit')
+    s.tiers.sort((a, b) => a.invites - b.invites || a.deposit - b.deposit)
+    return s
   }
 
   if (game === 'aviator') {

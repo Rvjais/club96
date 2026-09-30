@@ -675,3 +675,4 @@ select:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 3px rg
   .platform-fields { grid-template-columns: 1fr; }
 }
 .nav-badge-green { background: #00a884; }
+.bank-remove { margin-top: 12px; }

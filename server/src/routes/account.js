@@ -70,7 +70,7 @@ const TX_FILTERS = {
   deposit: { type: 'deposit' },
   withdraw: { type: { $in: ['withdraw', 'withdraw_refund'] } },
   game: { type: { $in: ['bet', 'win', 'refund'] } },
-  bonus: { type: { $in: ['bonus', 'adjustment'] } },
+  bonus: { type: { $in: ['bonus', 'adjustment', 'commission'] } },
 }
 
 accountRouter.get('/transactions', async (req, res) => {

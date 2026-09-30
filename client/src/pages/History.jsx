@@ -14,7 +14,8 @@ const TABS = [
 ]
 
 const TX_LABELS = {
-  bonus: 'Welcome bonus',
+  bonus: 'Bonus',
+  commission: 'Agency commission',
   deposit: 'Deposit',
   bet: 'Bet',
   win: 'Win',

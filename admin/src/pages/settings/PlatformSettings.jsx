@@ -80,6 +80,30 @@ export default function PlatformSettings({ saved, defaults, onSaved }) {
             </span>
           </div>
         </div>
+
+        <div className="game-card-head platform-divider">
+          <h2 className="card-title"><Icon name="banknote" size={16} /> Withdrawals</h2>
+          <Switch on={f.form.withdrawEnabled === true} onChange={f.set('withdrawEnabled')} labels={['Open', 'Paused']} />
+        </div>
+        <div className="settings-grid">
+          <NumberField label="Balance needed to withdraw" prefix="₹" value={f.form.minWithdrawBalance} onChange={f.set('minWithdrawBalance')} hint="Wallet must hold at least this to request" />
+          <NumberField label="Minimum withdrawal" prefix="₹" value={f.form.minWithdraw} onChange={f.set('minWithdraw')} />
+          <NumberField label="Maximum withdrawal" prefix="₹" value={f.form.maxWithdraw} onChange={f.set('maxWithdraw')} hint="Per request" />
+          <NumberField label="Requests in review at once" value={f.form.maxPendingWithdrawals} onChange={f.set('maxPendingWithdrawals')} step="1" />
+          <label className="field">
+            <span>Bank details</span>
+            <div><Switch on={f.form.bankLocked === true} onChange={f.set('bankLocked')} labels={['Locked', 'Editable']} /></div>
+            <small className="field-hint">{f.form.bankLocked ? 'Players can’t change them once saved; remove them from the user’s profile' : 'Players can change them when nothing is pending'}</small>
+          </label>
+        </div>
+        <div className="note">
+          <Icon name="info" size={16} />
+          <span>
+            {f.form.withdrawEnabled
+              ? <>Players add their bank account number and IFSC on their Account page. They can request a withdrawal once their wallet holds <strong>{money(toNum(f.form.minWithdrawBalance) || 0)}</strong>, for {money(toNum(f.form.minWithdraw) || 0)} – {money(toNum(f.form.maxWithdraw) || 0)} at a time. The money is held and appears under Withdrawals for you to pay or reject.</>
+              : 'Withdrawals are paused: players can’t submit new requests. Requests already waiting still appear under Withdrawals.'}
+          </span>
+        </div>
         <FormSaveBar f={f} />
     </section>
   )

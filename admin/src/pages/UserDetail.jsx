@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { api, dateTime, money, signedMoney, timeAgo } from '../api'
 import { Icon } from '../Icons'
 
-const TX_LABELS = { bonus: 'Signup bonus', deposit: 'Deposit', bet: 'Bet', win: 'Win', refund: 'Refund', adjustment: 'Admin adjustment', withdraw: 'Withdrawal', withdraw_refund: 'Withdrawal refund' }
+const TX_LABELS = { bonus: 'Bonus', commission: 'Referral commission', deposit: 'Deposit', bet: 'Bet', win: 'Win', refund: 'Refund', adjustment: 'Admin adjustment', withdraw: 'Withdrawal', withdraw_refund: 'Withdrawal refund' }
 const WD_LABEL = { pending: 'Pending', approved: 'Paid', rejected: 'Rejected' }
 const GAME_LABELS = { aviator: 'Aviator', wingo: 'Win Go', color: 'Color Prediction', mines: 'Mines', tower: 'Tower', plinko: 'Plinko', dice: 'Dice', wheel: 'Wheel', spin: 'Lucky Spin', poker: 'Poker' }
 // Games that share the generic bet table (one tab each)
@@ -46,6 +46,45 @@ function Row({ label, children, copy }) {
         {copy && <CopyButton value={copy} />}
       </div>
     </div>
+  )
+}
+
+function BankCard({ user, onRemoved }) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const bank = user.bank
+
+  const remove = async () => {
+    if (!window.confirm(`Remove ${user.username}'s bank details? They will need to add them again before withdrawing.`)) return
+    setBusy(true)
+    setError('')
+    try {
+      await api.post(`/users/${user.id}/bank/remove`)
+      onRemoved()
+    } catch (err) {
+      setError(err.message)
+    }
+    setBusy(false)
+  }
+
+  return (
+    <section className="card">
+      <h2 className="card-title"><Icon name="banknote" size={16} /> Bank account</h2>
+      {bank ? (
+        <>
+          <Row label="Account holder" copy={bank.accountName}>{bank.accountName}</Row>
+          <Row label="Account number" copy={bank.accountNumber}><span className="mono">{bank.accountNumber}</span></Row>
+          <Row label="IFSC" copy={bank.ifsc}><span className="mono">{bank.ifsc}</span></Row>
+          <Row label="Saved">{dateTime(bank.updatedAt)}</Row>
+          {error && <div className="alert alert-error"><Icon name="alert" size={15} /> {error}</div>}
+          <button type="button" className="btn btn-ghost btn-block bank-remove" onClick={remove} disabled={busy}>
+            <Icon name="x" size={15} /> Remove bank details
+          </button>
+        </>
+      ) : (
+        <Empty text="No bank account added yet" />
+      )}
+    </section>
   )
 }
 
@@ -292,6 +331,35 @@ export default function UserDetail() {
           <Row label="Total logins">{u.loginCount}</Row>
           <Row label="Last updated">{dateTime(u.updatedAt)}</Row>
         </section>
+
+        {/* Referral */}
+        {data.referral && (
+          <section className="card">
+            <h2 className="card-title"><Icon name="users" size={16} /> Referral</h2>
+            <Row label="Referral code" copy={data.referral.code ?? undefined}>
+              {data.referral.code ? <span className="mono">{data.referral.code}</span> : <span className="muted">Created on first visit to Promotion</span>}
+            </Row>
+            <Row label="Invited by">
+              {data.referral.inviter
+                ? <Link to={`/users/${data.referral.inviter.id}`}>{data.referral.inviter.name} <span className="muted mono small">UID {data.referral.inviter.uid ?? '—'}</span></Link>
+                : <span className="muted">Nobody</span>}
+            </Row>
+            <div className="mini-stats">
+              <div><span>Direct invitees</span><strong>{data.referral.direct.register}</strong></div>
+              <div><span>Direct depositors</span><strong>{data.referral.direct.firstDeposit}</strong></div>
+              <div><span>Direct deposits</span><strong>{money(data.referral.direct.depositAmount)}</strong></div>
+              <div><span>Rest of team</span><strong>{data.referral.team.register}</strong></div>
+              <div><span>Team depositors</span><strong>{data.referral.team.firstDeposit}</strong></div>
+              <div><span>Team deposits</span><strong>{money(data.referral.team.depositAmount)}</strong></div>
+              <div><span>Commission earned</span><strong className="pos">{money(data.referral.commissionTotal)}</strong></div>
+              <div><span>Not yet claimed</span><strong>{money(data.referral.commission)}</strong></div>
+              <div><span>Partner rewards</span><strong>{data.referral.partnerClaimed}</strong></div>
+            </div>
+          </section>
+        )}
+
+        {/* Bank account */}
+        <BankCard user={u} onRemoved={reload} />
 
         {/* Security */}
         <section className="card">

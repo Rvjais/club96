@@ -19,6 +19,7 @@ import { wheelRouter } from './games/wheel.js'
 import { spinRouter } from './games/spin.js'
 import { pokerRouter } from './games/poker.js'
 import { supportRouter } from './routes/support.js'
+import { promotionRouter, startReferrals } from './referral.js'
 import { HttpError } from './wallet.js'
 import { loadSettings } from './settings.js'
 
@@ -34,6 +35,7 @@ app.use('/api/auth', authRouter)
 app.use('/api/wallet', walletRouter)
 app.use('/api/account', accountRouter)
 app.use('/api/support', supportRouter)
+app.use('/api/promotion', promotionRouter)
 app.use('/api/games/aviator', aviatorRouter)
 app.use('/api/games/wingo', wingoRouter)
 app.use('/api/games/mines', minesRouter)
@@ -74,5 +76,6 @@ await seedAdmin()
 await startAviator()
 await refundRetiredColorBets()
 await startWingo()
+startReferrals()
 
 app.listen(PORT, () => console.log(`API listening on http://localhost:${PORT}`))

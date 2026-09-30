@@ -8,7 +8,7 @@ const ITEMS = [
   { icon: 'home', label: 'Home', to: '/game' },
   { icon: 'gift', label: 'Activity', dot: true },
   { cta: true },
-  { icon: 'megaphone', label: 'Promotion' },
+  { icon: 'megaphone', label: 'Promotion', to: '/promotion' },
   { icon: 'user', label: 'Account', to: '/account' },
 ]
 

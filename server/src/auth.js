@@ -7,6 +7,7 @@ import { tx } from './db.js'
 import { User } from './models/index.js'
 import { HttpError, credit, toPaise, toRupees } from './wallet.js'
 import { getSettings } from './settings.js'
+import { newCode as newReferralCode, referralFields } from './referral.js'
 
 const COOKIE = 'sid'
 const COUNTRY_CODES = new Set(['+91', '+1', '+44', '+971'])
@@ -107,21 +108,30 @@ export function recordFailure(key) {
 }
 export const clearFailures = (key) => failures.delete(key)
 
-async function createUser({ phone, password, inviteCode, ip }, bonusPaise) {
+async function createUser({ phone, password, inviteCode, ip }, bonusPaise, upline) {
   const passwordHash = await bcrypt.hash(password, 10)
   for (let attempt = 0; attempt < 5; attempt++) {
     try {
       return await tx(async (session) => {
         const [user] = await User.create(
-          [{ username: randomUsername(), uid: crypto.randomInt(1_000_000, 10_000_000), phone, passwordHash, inviteCode: inviteCode || undefined, signupIp: ip }],
+          [{
+            username: randomUsername(),
+            uid: crypto.randomInt(1_000_000, 10_000_000),
+            referralCode: newReferralCode(),
+            ...upline,
+            phone,
+            passwordHash,
+            inviteCode: inviteCode || undefined,
+            signupIp: ip,
+          }],
           { session },
         )
         if (bonusPaise > 0) await credit(session, user._id, bonusPaise, { type: 'bonus', ref: 'signup' })
         return user
       })
     } catch (err) {
-      // Username/UID collision → retry with new ones; phone collision → report
-      if (err?.code === 11000 && (err.keyPattern?.username || err.keyPattern?.uid)) continue
+      // Username/UID/code collision → retry with new ones; phone collision → report
+      if (err?.code === 11000 && (err.keyPattern?.username || err.keyPattern?.uid || err.keyPattern?.referralCode)) continue
       if (err?.code === 11000 && err.keyPattern?.phone) throw new HttpError(409, 'An account with this phone number already exists')
       throw err
     }
@@ -137,12 +147,12 @@ authRouter.post('/signup', async (req, res) => {
   validatePassword(password)
   if (await User.exists({ phone: fullPhone })) throw new HttpError(409, 'An account with this phone number already exists')
 
+  const code = typeof inviteCode === 'string' ? inviteCode.trim().slice(0, 32) : ''
+  const upline = await referralFields(code)
+
   const cfg = getSettings('platform')
   const bonusPaise = toPaise(cfg.signupBonus)
-  const user = await createUser(
-    { phone: fullPhone, password, inviteCode: typeof inviteCode === 'string' ? inviteCode.slice(0, 32) : null, ip: req.ip },
-    bonusPaise,
-  )
+  const user = await createUser({ phone: fullPhone, password, inviteCode: code || null, ip: req.ip }, bonusPaise, upline)
   const fresh = await User.findByIdAndUpdate(user._id, { lastLoginAt: new Date(), lastLoginIp: req.ip, $inc: { loginCount: 1 } }, { new: true })
   setSession(res, fresh)
   res.status(201).json({

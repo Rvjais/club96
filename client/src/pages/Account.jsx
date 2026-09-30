@@ -53,21 +53,140 @@ function DepositSheet({ onDone, toast }) {
   )
 }
 
-function WithdrawSheet({ onDone, toast, balance }) {
-  const { setBalance } = useAuth()
-  const [amount, setAmount] = useState('')
-  const [method, setMethod] = useState('upi')
-  const [upiId, setUpiId] = useState('')
-  const [bank, setBank] = useState({ accountName: '', accountNumber: '', ifsc: '' })
+function BankCard({ bank, onChange }) {
+  return (
+    <div className="ac-bank-card">
+      <span className="ac-bank-icon"><Icon name="bank" size={20} /></span>
+      <div>
+        <strong>{bank.accountName}</strong>
+        <span className="ac-bank-num">A/c {bank.masked} · {bank.ifsc}</span>
+      </div>
+      {onChange && <button type="button" className="ac-input-btn" onClick={onChange}>Change</button>}
+    </div>
+  )
+}
+
+function BankSheet({ onDone, toast }) {
+  const [data, setData] = useState(null) // { bank, rules }
+  const [editing, setEditing] = useState(false)
+  const [form, setForm] = useState({ accountName: '', accountNumber: '', confirm: '', ifsc: '' })
   const [busy, setBusy] = useState(false)
-  const value = Number(amount) || 0
-  const setB = (k) => (e) => setBank((b) => ({ ...b, [k]: e.target.value }))
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: k === 'ifsc' ? e.target.value.toUpperCase() : e.target.value }))
+
+  useEffect(() => {
+    let cancelled = false
+    api.get('/wallet/bank').then((d) => {
+      if (cancelled) return
+      setData(d)
+      setEditing(!d.bank)
+      if (d.bank) setForm({ accountName: d.bank.accountName, accountNumber: '', confirm: '', ifsc: d.bank.ifsc })
+    }, (err) => toast('error', err.message))
+    return () => { cancelled = true }
+  }, [toast])
+
+  if (!data) return <div className="ac-loading"><span className="ac-spinner ac-spinner-red" /></div>
+
+  const locked = Boolean(data.bank && data.rules.bankLocked)
+  const digits = (v) => v.replace(/\s/g, '')
+  const mismatch = form.confirm !== '' && digits(form.confirm) !== digits(form.accountNumber)
+  const ready = form.accountName.trim().length >= 2 && /^\d{9,18}$/.test(digits(form.accountNumber)) && form.confirm !== '' && !mismatch && form.ifsc.length === 11
 
   const submit = async () => {
     setBusy(true)
     try {
-      const body = { amount: value, method, ...(method === 'upi' ? { upiId } : bank) }
-      const res = await api.post('/wallet/withdraw', body)
+      const { bank } = await api.post('/wallet/bank', { accountName: form.accountName, accountNumber: form.accountNumber, ifsc: form.ifsc })
+      toast('success', 'Bank account saved')
+      onDone(bank)
+    } catch (err) {
+      toast('error', err.message)
+    }
+    setBusy(false)
+  }
+
+  if (!editing) {
+    return (
+      <div className="ac-form">
+        <label className="ac-label">Withdrawals are paid to</label>
+        <BankCard bank={data.bank} onChange={locked ? null : () => setEditing(true)} />
+        <p className="ac-hint">
+          <Icon name={locked ? 'lock' : 'info'} size={13} />
+          {locked
+            ? 'Bank details can’t be changed once saved. Contact customer service if they need updating.'
+            : 'Make sure the name matches your bank account so payouts aren’t rejected.'}
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="ac-form">
+      <label className="ac-label">Account holder name</label>
+      <div className="ac-input">
+        <input placeholder="Name as per bank records" value={form.accountName} maxLength={60} onChange={set('accountName')} autoComplete="name" aria-label="Account holder name" />
+      </div>
+      <label className="ac-label">Bank account number</label>
+      <div className="ac-input">
+        <input placeholder="9–18 digits" inputMode="numeric" value={form.accountNumber} maxLength={22} onChange={set('accountNumber')} autoComplete="off" aria-label="Account number" />
+      </div>
+      <div className={`ac-input ${mismatch ? 'is-bad' : ''}`}>
+        <input placeholder="Re-enter account number" inputMode="numeric" value={form.confirm} maxLength={22} onChange={set('confirm')} onPaste={(e) => e.preventDefault()} autoComplete="off" aria-label="Confirm account number" />
+      </div>
+      {mismatch && <p className="ac-field-error">Account numbers don’t match</p>}
+      <label className="ac-label">IFSC code</label>
+      <div className="ac-input">
+        <input placeholder="e.g. SBIN0001234" value={form.ifsc} maxLength={11} onChange={set('ifsc')} autoCapitalize="characters" autoComplete="off" aria-label="IFSC code" />
+      </div>
+      <p className="ac-hint">
+        <Icon name="shieldCheck" size={13} />
+        {data.rules.bankLocked
+          ? 'Check carefully: bank details can’t be changed after saving.'
+          : 'Withdrawals are paid only to this account. You can change it later.'}
+      </p>
+      <button type="button" className="ac-btn ac-btn-primary" onClick={submit} disabled={busy || !ready}>
+        {busy ? <span className="ac-spinner" /> : 'Save bank account'}
+      </button>
+    </div>
+  )
+}
+
+function WithdrawSheet({ onDone, onAddBank, toast, balance }) {
+  const { setBalance } = useAuth()
+  const [data, setData] = useState(null) // { bank, rules }
+  const [amount, setAmount] = useState('')
+  const [busy, setBusy] = useState(false)
+  const value = Number(amount) || 0
+
+  useEffect(() => {
+    let cancelled = false
+    api.get('/wallet/bank').then((d) => !cancelled && setData(d), (err) => toast('error', err.message))
+    return () => { cancelled = true }
+  }, [toast])
+
+  if (!data) return <div className="ac-loading"><span className="ac-spinner ac-spinner-red" /></div>
+  const { bank, rules } = data
+
+  if (!rules.enabled) {
+    return (
+      <div className="ac-form">
+        <div className="ac-notice"><Icon name="clock" size={18} /> Withdrawals are paused right now. Please try again later.</div>
+      </div>
+    )
+  }
+
+  if (!bank) {
+    return (
+      <div className="ac-form">
+        <div className="ac-notice"><Icon name="bank" size={18} /> Add your bank account number and IFSC code first. Withdrawals are paid to that account.</div>
+        <button type="button" className="ac-btn ac-btn-primary" onClick={onAddBank}>Add bank account</button>
+      </div>
+    )
+  }
+
+  const short = balance < rules.minBalance
+  const submit = async () => {
+    setBusy(true)
+    try {
+      const res = await api.post('/wallet/withdraw', { amount: value })
       setBalance(res.balance)
       toast('success', `Withdrawal of ${money(value)} requested`)
       onDone()
@@ -77,6 +196,11 @@ function WithdrawSheet({ onDone, toast, balance }) {
     setBusy(false)
   }
 
+  let label = `Withdraw ${money(value)}`
+  if (short) label = `Need ${money(rules.minBalance)} to withdraw`
+  else if (value > balance) label = 'Insufficient balance'
+  else if (value > rules.max) label = `Maximum is ${money(rules.max)}`
+
   return (
     <div className="ac-form">
       <div className="ac-available">
@@ -84,41 +208,29 @@ function WithdrawSheet({ onDone, toast, balance }) {
         <strong>{money(balance)}</strong>
       </div>
 
+      {short && (
+        <div className="ac-notice ac-notice-warn">
+          <Icon name="circleAlert" size={18} />
+          <span>You need at least <strong>{money(rules.minBalance)}</strong> in your wallet to request a withdrawal.</span>
+        </div>
+      )}
+
       <label className="ac-label">Amount</label>
       <div className="ac-input">
         <span>₹</span>
-        <input type="number" inputMode="decimal" placeholder="Min ₹100" value={amount} onChange={(e) => setAmount(e.target.value)} aria-label="Withdrawal amount" />
-        <button type="button" className="ac-input-btn" onClick={() => setAmount(String(Math.floor(balance)))}>All</button>
+        <input type="number" inputMode="decimal" placeholder={`${money(rules.min)} – ${money(rules.max)}`} value={amount} onChange={(e) => setAmount(e.target.value)} disabled={short} aria-label="Withdrawal amount" />
+        <button type="button" className="ac-input-btn" disabled={short} onClick={() => setAmount(String(Math.min(Math.floor(balance), rules.max)))}>All</button>
       </div>
 
       <label className="ac-label">Send to</label>
-      <div className="ac-seg">
-        <button type="button" className={method === 'upi' ? 'is-active' : ''} onClick={() => setMethod('upi')}>
-          <Icon name="phone" size={15} /> UPI
-        </button>
-        <button type="button" className={method === 'bank' ? 'is-active' : ''} onClick={() => setMethod('bank')}>
-          <Icon name="bank" size={15} /> Bank account
-        </button>
-      </div>
-
-      {method === 'upi' ? (
-        <div className="ac-input">
-          <input placeholder="UPI ID, e.g. name@okaxis" value={upiId} onChange={(e) => setUpiId(e.target.value)} autoCapitalize="off" aria-label="UPI ID" />
-        </div>
-      ) : (
-        <>
-          <div className="ac-input"><input placeholder="Account holder name" value={bank.accountName} onChange={setB('accountName')} aria-label="Account holder name" /></div>
-          <div className="ac-input"><input placeholder="Account number" inputMode="numeric" value={bank.accountNumber} onChange={setB('accountNumber')} aria-label="Account number" /></div>
-          <div className="ac-input"><input placeholder="IFSC code" value={bank.ifsc} onChange={setB('ifsc')} autoCapitalize="characters" aria-label="IFSC code" /></div>
-        </>
-      )}
+      <BankCard bank={bank} onChange={rules.bankLocked ? null : onAddBank} />
 
       <p className="ac-hint">
         <Icon name="clock" size={13} /> The amount is held from your balance and paid after review, usually within 24 hours.
         If a request is rejected, the money returns to your wallet.
       </p>
-      <button type="button" className="ac-btn ac-btn-primary" onClick={submit} disabled={busy || value < 100 || value > balance}>
-        {busy ? <span className="ac-spinner" /> : value > balance ? 'Insufficient balance' : `Withdraw ${money(value)}`}
+      <button type="button" className="ac-btn ac-btn-primary" onClick={submit} disabled={busy || short || value < rules.min || value > balance || value > rules.max}>
+        {busy ? <span className="ac-spinner" /> : label}
       </button>
     </div>
   )
@@ -265,6 +377,14 @@ export default function Account() {
     load().catch(() => {})
   }, [load])
 
+  // Saved bank account, for the settings list (undefined while loading)
+  const [bank, setBank] = useState(undefined)
+  useEffect(() => {
+    let cancelled = false
+    api.get('/wallet/bank').then((d) => !cancelled && setBank(d.bank), () => {})
+    return () => { cancelled = true }
+  }, [])
+
   // Clear ?open= once the sheet it asked for is shown
   useEffect(() => {
     if (params.get('open')) setParams({}, { replace: true })
@@ -373,6 +493,11 @@ export default function Account() {
             <span className="ac-list-icon"><Icon name="barChart" size={17} /></span>Game statistics
             <Icon name="chevronRight" size={16} className="ac-chev" />
           </button>
+          <button type="button" onClick={() => setSheet('bank')}>
+            <span className="ac-list-icon"><Icon name="bank" size={17} /></span>Bank account
+            <span className="ac-list-value">{bank === undefined ? '' : bank ? `A/c ${bank.masked}` : 'Add'}</span>
+            <Icon name="chevronRight" size={16} className="ac-chev" />
+          </button>
           <button type="button" onClick={() => setSheet('password')}>
             <span className="ac-list-icon"><Icon name="lock" size={17} /></span>Change password
             <Icon name="chevronRight" size={16} className="ac-chev" />
@@ -408,7 +533,10 @@ export default function Account() {
         <DepositSheet toast={showToast} onDone={closeSheet} />
       </Sheet>
       <Sheet open={sheet === 'withdraw'} title="Withdraw" onClose={closeSheet}>
-        <WithdrawSheet toast={showToast} balance={balance} onDone={() => { closeSheet(); load().catch(() => {}) }} />
+        <WithdrawSheet toast={showToast} balance={balance} onAddBank={() => setSheet('bank')} onDone={() => { closeSheet(); load().catch(() => {}) }} />
+      </Sheet>
+      <Sheet open={sheet === 'bank'} title="Bank account" onClose={closeSheet}>
+        <BankSheet toast={showToast} onDone={(b) => { setBank(b); closeSheet() }} />
       </Sheet>
       <Sheet open={sheet === 'name'} title="Edit name" onClose={closeSheet}>
         <NameSheet current={name} toast={showToast} onDone={(nu) => { closeSheet(); setProfile((p) => p && { ...p, user: nu }) }} />

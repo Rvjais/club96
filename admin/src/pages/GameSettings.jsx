@@ -11,6 +11,7 @@ import WheelSettings from './settings/WheelSettings'
 import SpinSettings from './settings/SpinSettings'
 import PokerSettings from './settings/PokerSettings'
 import PlatformSettings from './settings/PlatformSettings'
+import ReferralSettings from './settings/ReferralSettings'
 
 
 // ── Change log ───────────────────────────────────────────────
@@ -30,7 +31,9 @@ const FIELD_LABELS = {
   'payouts.size': 'Big / Small payout', 'payouts.color': 'Green / Red payout', 'payouts.colorSplit': 'Green / Red on 5 / 0 payout',
   'payouts.violet': 'Violet payout', 'payouts.number': 'Number payout',
   signupBonus: 'Sign-up bonus', bonusPopup: 'Welcome pop-up', bonusTitle: 'Pop-up title', bonusMessage: 'Pop-up message', minPlayBalance: 'Min balance to play',
+  withdrawEnabled: 'Withdrawals', minWithdrawBalance: 'Balance needed to withdraw', minWithdraw: 'Min withdrawal', maxWithdraw: 'Max withdrawal', maxPendingWithdrawals: 'Requests in review', bankLocked: 'Bank details',
   smallBlind: 'Small blind', bigBlind: 'Big blind', minBuyIn: 'Min buy-in', maxBuyIn: 'Max buy-in', rake: 'Rake %', rakeCap: 'Rake cap',
+  depositMode: 'Deposit commission on', minClaim: 'Minimum to claim',
   cost: 'Price per spin', bots: 'Opponents', botSkill: 'Bot skill', botAggression: 'Bot aggression', botBluff: 'Bot bluffing', turnSeconds: 'Time to act',
 }
 
@@ -48,13 +51,17 @@ function fieldLabel(key) {
   if (m) return `${m[1]} level ${Number(m[2]) + 1} payout`
   m = key.match(/^curve\.(\d+)\.(mult|chance)$/)
   if (m) return `Odds point ${Number(m[1]) + 1} ${m[2] === 'mult' ? 'multiplier' : 'chance'}`
+  m = key.match(/^levels\.(\d+)\.(bet|deposit)$/)
+  if (m) return `Level ${Number(m[1]) + 1} ${m[2]} commission`
+  m = key.match(/^tiers\.(\d+)\.(invites|deposit|reward)$/)
+  if (m) return `Partner tier ${Number(m[1]) + 1} ${m[2]}`
   m = key.match(/^prizes\.(\d+)\.(amount|chance)$/)
   if (m) return `Prize ${Number(m[1]) + 1} ${m[2]}`
   m = key.match(/^risks\.(\w+)\.(\d+)\.(mult|count)$/)
   if (m) return `${m[1]} wheel group ${Number(m[2]) + 1} ${m[3] === 'mult' ? 'payout' : 'segments'}`
   return key
 }
-const fmt = (key, v) => (key === 'enabled' ? (v ? 'Live' : 'Paused') : key === 'bonusPopup' ? (v ? 'Shown' : 'Hidden') : key.startsWith('rooms.') ? (v ? 'Open' : 'Closed') : String(v))
+const fmt = (key, v) => (key === 'enabled' ? (v ? 'Live' : 'Paused') : key === 'bonusPopup' ? (v ? 'Shown' : 'Hidden') : key === 'withdrawEnabled' ? (v ? 'Open' : 'Paused') : key === 'bankLocked' ? (v ? 'Locked' : 'Editable') : key.startsWith('rooms.') ? (v ? 'Open' : 'Closed') : String(v))
 
 function changes(before, after) {
   const b = Object.fromEntries(flatten(before))
@@ -64,7 +71,7 @@ function changes(before, after) {
     .map(([k, v]) => `${fieldLabel(k)}: ${b[k] === undefined ? '—' : fmt(k, b[k])} → ${fmt(k, v)}`)
   // Wheel groups removed / custom payouts switched back to the formula
   for (const [k, v] of flatten(before)) {
-    if (!(k in a) && (k.startsWith('risks.') || k.startsWith('prizes.') || k.startsWith('custom.') || k.startsWith('curve.'))) list.push(`${fieldLabel(k)}: ${fmt(k, v)} → ${k.startsWith('custom.') ? 'formula' : 'removed'}`)
+    if (!(k in a) && (k.startsWith('risks.') || k.startsWith('prizes.') || k.startsWith('levels.') || k.startsWith('tiers.') || k.startsWith('custom.') || k.startsWith('curve.'))) list.push(`${fieldLabel(k)}: ${fmt(k, v)} → ${k.startsWith('custom.') ? 'formula' : 'removed'}`)
   }
   return list
 }
@@ -72,6 +79,7 @@ function changes(before, after) {
 // ── Page ─────────────────────────────────────────────────────
 const GAMES = [
   { key: 'platform', label: 'Bonus & limits', icon: 'gift', Card: PlatformSettings, site: true },
+  { key: 'referral', label: 'Referral', icon: 'users', Card: ReferralSettings, site: true },
   { key: 'aviator', label: 'Aviator', icon: 'plane', Card: AviatorSettings },
   { key: 'wingo', label: 'Win Go', icon: 'clock', Card: WingoSettings },
   { key: 'mines', label: 'Mines', icon: 'bomb', Card: MinesSettings },
@@ -127,7 +135,7 @@ export default function GameSettings() {
       <header className="page-head">
         <div>
           <h1>Game settings</h1>
-          <p>Odds, payouts, limits and the on/off switch for each game, plus the sign-up bonus and minimum balance to play under <strong>Bonus &amp; limits</strong>.</p>
+          <p>Odds, payouts, limits and the on/off switch for each game, plus the sign-up bonus and minimum balance to play under <strong>Bonus &amp; limits</strong> and agency commission under <strong>Referral</strong>.</p>
         </div>
       </header>
 

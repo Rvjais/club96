@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { Icon } from '../components/Icons'
 import { useAuth } from '../auth/authContext'
 import { useSiteConfig } from '../lib/siteConfig'
@@ -9,11 +9,12 @@ export default function Signup() {
   const navigate = useNavigate()
   const { signup, status } = useAuth()
   const config = useSiteConfig()
+  const [params] = useSearchParams()
   const [countryCode, setCountryCode] = useState('+91')
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
-  const [inviteCode, setInviteCode] = useState('681727078287')
+  const [inviteCode, setInviteCode] = useState(() => params.get('invite') ?? '')
   const [showPw, setShowPw] = useState(false)
   const [showCf, setShowCf] = useState(false)
   const [agreed, setAgreed] = useState(false)
@@ -163,7 +164,7 @@ export default function Signup() {
                   <span className="field-label">Invite code</span>
                 </div>
                 <div className="input-box">
-                  <input type="text" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} maxLength={32} />
+                  <input type="text" inputMode="numeric" placeholder="Invite code (optional)" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} maxLength={32} />
                 </div>
               </div>
 

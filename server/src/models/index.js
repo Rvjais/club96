@@ -13,14 +13,36 @@ const userSchema = new Schema({
   passwordHash: { type: String, required: true },
   passwordChangedAt: { type: Date, default: Date.now },
   sessionVersion: { type: Number, default: 0 }, // bump to log the user out everywhere
-  inviteCode: String,
+  inviteCode: String, // code typed at sign-up
+  // ── Referrals: every player gets a code; whoever's code they signed up with is their upline
+  referralCode: { type: String, unique: true, sparse: true },
+  referredBy: { type: ObjectId, ref: 'User' },
+  ancestors: { type: [ObjectId], default: undefined }, // upline, closest first: [inviter, inviter's inviter, …]
+  depositTotal: { type: Number, default: 0 }, // paise deposited (tracked by referral.js)
+  depositCount: { type: Number, default: 0 },
+  firstDepositAt: Date,
+  commission: { type: Number, default: 0 }, // paise earned from the team, not yet moved to the wallet
+  commissionTotal: { type: Number, default: 0 }, // paise earned all-time
+  partnerClaimed: { type: [String], default: undefined }, // partner-reward tiers already paid
   balance: { type: Number, default: 0, min: 0 },
+  // Bank account withdrawals are paid to (added by the player on their Account page)
+  bank: {
+    type: new Schema({
+      accountName: String,
+      accountNumber: String,
+      ifsc: String,
+      updatedAt: Date,
+    }, { _id: false }),
+    default: undefined,
+  },
   status: { type: String, enum: ['active', 'blocked'], default: 'active' },
   signupIp: String,
   lastLoginAt: Date,
   lastLoginIp: String,
   loginCount: { type: Number, default: 0 },
 }, { timestamps: true })
+
+userSchema.index({ ancestors: 1 })
 
 const transactionSchema = new Schema({
   user: { type: ObjectId, ref: 'User', required: true, index: true },
@@ -250,6 +272,26 @@ const supportMessageSchema = new Schema({
 supportMessageSchema.index({ user: 1, createdAt: -1 })
 supportMessageSchema.index({ from: 1, readAt: 1 })
 
+// ── Referral commission: one bucket per earner, subordinate, level and day (IST), incremented as bets/deposits come in
+const commissionSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true }, // who earns
+  from: { type: ObjectId, ref: 'User', required: true }, // the subordinate who bet / deposited
+  level: { type: Number, required: true }, // 1 = direct invite
+  day: { type: String, required: true }, // YYYY-MM-DD, India time
+  bet: { type: Number, default: 0 }, // paise wagered (refunds subtracted)
+  betComm: { type: Number, default: 0 },
+  deposit: { type: Number, default: 0 },
+  depositComm: { type: Number, default: 0 },
+}, { timestamps: true })
+commissionSchema.index({ user: 1, from: 1, level: 1, day: 1 }, { unique: true })
+commissionSchema.index({ user: 1, day: -1 })
+
+// Small key/value store for server bookkeeping (e.g. the referral job's progress)
+const metaSchema = new Schema({
+  _id: String,
+  value: Schema.Types.Mixed,
+}, { timestamps: true })
+
 const gameSettingsSchema = new Schema({
   _id: String, // game key
   data: { type: Schema.Types.Mixed, required: true },
@@ -281,5 +323,7 @@ export const PokerTable = model('PokerTable', pokerTableSchema)
 export const Admin = model('Admin', adminSchema)
 export const Withdrawal = model('Withdrawal', withdrawalSchema)
 export const SupportMessage = model('SupportMessage', supportMessageSchema)
+export const Commission = model('Commission', commissionSchema)
+export const Meta = model('Meta', metaSchema)
 export const GameSettings = model('GameSettings', gameSettingsSchema)
 export const SettingsLog = model('SettingsLog', settingsLogSchema)

@@ -7,6 +7,7 @@ import { tx } from '../db.js'
 import { checkRateLimit, clearFailures, recordFailure, validatePassword } from '../auth.js'
 import { Admin, AviatorBet, AviatorRound, ColorBet, DiceBet, MinesBet, PlinkoBet, PokerTable, SupportMessage, TowerBet, Transaction, User, SpinBet, WheelBet, WingoBet, Withdrawal } from '../models/index.js'
 import { conversation, messageText, serializeMessage } from './support.js'
+import { serializeBank } from './wallet.js'
 import { HttpError, credit, debit, serializeTx, toPaise, toRupees } from '../wallet.js'
 import { periodLabel } from '../games/color.js'
 import { describeMines } from '../games/mines.js'
@@ -28,7 +29,8 @@ const OTHER_GAMES = [
   { game: 'spin', model: SpinBet, describe: describeSpin },
   { game: 'poker', model: PokerTable, describe: describePoker },
 ]
-import { DEFAULTS, GAMES, getSettings, settingsLog, updateSettings } from '../settings.js'
+import { DEFAULTS, GAMES, SITE_SETTINGS, getSettings, settingsLog, updateSettings } from '../settings.js'
+import { adminReferralInfo } from '../referral.js'
 
 const COOKIE = 'asid'
 const COOKIE_PATH = '/api/admin'
@@ -156,6 +158,7 @@ adminRouter.get('/users', async (req, res) => {
     const rx = new RegExp(escapeRegex(q), 'i')
     filter.$or = [{ username: rx }, { phone: rx }, { displayName: rx }]
     if (/^\d{7}$/.test(q)) filter.$or.push({ uid: Number(q) })
+    if (/^\d{12}$/.test(q)) filter.$or.push({ referralCode: q })
   }
   if (req.query.status === 'active' || req.query.status === 'blocked') filter.status = req.query.status
 
@@ -177,7 +180,8 @@ adminRouter.get('/users/:id', async (req, res) => {
   const user = await loadUser(req.params.id)
   const uid = user._id
 
-  const [byType, txs, aviator, color, aviatorCount, colorCount, biggest, withdrawals, ...others] = await Promise.all([
+  const [referral, byType, txs, aviator, color, aviatorCount, colorCount, biggest, withdrawals, ...others] = await Promise.all([
+    adminReferralInfo(user),
     Transaction.aggregate([{ $match: { user: uid } }, { $group: { _id: '$type', total: { $sum: '$amount' }, count: { $sum: 1 } } }]),
     Transaction.find({ user: uid }).sort({ createdAt: -1 }).limit(100).lean(),
     AviatorBet.find({ user: uid }).sort({ createdAt: -1 }).limit(50).lean(),
@@ -221,12 +225,14 @@ adminRouter.get('/users/:id', async (req, res) => {
       signupIp: user.signupIp ?? null,
       loginCount: user.loginCount,
       passwordChangedAt: user.passwordChangedAt,
+      bank: serializeBank(user.bank),
     },
     stats: {
       deposits: toRupees(t.deposit ?? 0),
       bonuses: toRupees(t.bonus ?? 0),
       withdrawn: toRupees(-(t.withdraw ?? 0) - (t.withdraw_refund ?? 0)),
       adjustments: toRupees(t.adjustment ?? 0),
+      commission: toRupees(t.commission ?? 0),
       wagered: toRupees(wagered),
       won: toRupees(t.win ?? 0),
       net: toRupees((t.win ?? 0) - wagered),
@@ -235,6 +241,7 @@ adminRouter.get('/users/:id', async (req, res) => {
       ...Object.fromEntries(OTHER_GAMES.map((g, i) => [`${g.game}Bets`, otherCounts[i]])),
       biggestWin: toRupees(biggest?.amount ?? 0),
     },
+    referral,
     transactions: txs.map(serializeTx),
     aviatorBets: aviator.map((b) => ({
       id: String(b._id),
@@ -295,6 +302,17 @@ adminRouter.post('/users/:id/password', async (req, res) => {
   user.sessionVersion += 1 // existing sessions must log in with the new password
   await user.save()
   res.json({ passwordChangedAt: user.passwordChangedAt })
+})
+
+// Remove saved bank details so the player can add new ones
+adminRouter.post('/users/:id/bank/remove', async (req, res) => {
+  const user = await loadUser(req.params.id)
+  if (await Withdrawal.exists({ user: user._id, status: 'pending' })) {
+    throw new HttpError(409, "Process this player's pending withdrawals first")
+  }
+  user.bank = undefined
+  await user.save()
+  res.json({ bank: null })
 })
 
 adminRouter.post('/users/:id/logout', async (req, res) => {
@@ -397,7 +415,7 @@ async function gameStats() {
 adminRouter.get('/settings', async (req, res) => {
   const [log, stats] = await Promise.all([settingsLog(), gameStats()])
   res.json({
-    settings: Object.fromEntries([...GAMES, 'platform'].map((g) => [g, getSettings(g)])),
+    settings: Object.fromEntries([...GAMES, ...SITE_SETTINGS].map((g) => [g, getSettings(g)])),
     defaults: DEFAULTS,
     stats,
     log,
