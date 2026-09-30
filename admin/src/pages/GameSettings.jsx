@@ -69,7 +69,7 @@ function changes(before, after) {
   const a = Object.fromEntries(flatten(after))
   const list = flatten(after)
     .filter(([k, v]) => b[k] !== v)
-    .map(([k, v]) => `${fieldLabel(k)}: ${b[k] === undefined ? '—' : fmt(k, b[k])} → ${fmt(k, v)}`)
+    .map(([k, v]) => `${fieldLabel(k)}: ${b[k] === undefined || b[k] === '' ? '—' : fmt(k, b[k])} → ${v === '' ? '—' : fmt(k, v)}`)
   // Wheel groups removed / custom payouts switched back to the formula
   for (const [k, v] of flatten(before)) {
     if (!(k in a) && (k.startsWith('risks.') || k.startsWith('prizes.') || k.startsWith('levels.') || k.startsWith('tiers.') || k.startsWith('custom.') || k.startsWith('curve.'))) list.push(`${fieldLabel(k)}: ${fmt(k, v)} → ${k.startsWith('custom.') ? 'formula' : 'removed'}`)

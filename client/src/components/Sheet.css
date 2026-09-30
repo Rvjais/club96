@@ -11,11 +11,11 @@
   padding: 10px 16px calc(20px + env(safe-area-inset-bottom));
   border-radius: 22px 22px 0 0;
   background: #fff;
-  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.18);
   transform: translateY(105%);
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s;
 }
-.sheet-overlay.is-open .sheet { transform: none; }
+/* Shadow only while open: closed sheets wait just below the screen and would cast it over an open one */
+.sheet-overlay.is-open .sheet { transform: none; box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.18); }
 .sheet-handle { width: 40px; height: 4px; margin: 0 auto 10px; border-radius: 999px; background: #e0e0e6; }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .sheet-head h2 { margin: 0; font-size: 17px; font-weight: 800; color: #111; }

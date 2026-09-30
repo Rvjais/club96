@@ -13,7 +13,8 @@
   animation: pp-pop 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.25);
 }
 .pp-card button { font-family: inherit; cursor: pointer; border: none; }
-.pp-close {
+/* Scoped to .pp-card so page-level button resets (e.g. .gp-root button) can't override them */
+.pp-card .pp-close {
   position: absolute; top: 10px; right: 10px; z-index: 2;
   width: 30px; height: 30px; border-radius: 50%;
   display: grid; place-items: center;
@@ -60,17 +61,17 @@
 .pp-text strong { color: #111; }
 
 .pp-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; }
-.pp-btn {
+.pp-card .pp-btn {
   width: 100%; padding: 12px; border-radius: 999px;
   font-size: 15px; font-weight: 700;
   background: #f3f3f7; color: #444;
 }
-.pp-btn-primary {
+.pp-card .pp-btn-primary {
   background: linear-gradient(180deg, #ff6b5e, #e02020); color: #fff;
   box-shadow: 0 6px 16px rgba(224, 32, 32, 0.3);
 }
-.pp-warn .pp-btn-primary { background: linear-gradient(180deg, #ffb347, #f57c00); box-shadow: 0 6px 16px rgba(245, 124, 0, 0.3); }
-.pp-btn:active { transform: scale(0.98); }
+.pp-card.pp-warn .pp-btn-primary { background: linear-gradient(180deg, #ffb347, #f57c00); box-shadow: 0 6px 16px rgba(245, 124, 0, 0.3); }
+.pp-card .pp-btn:active { transform: scale(0.98); }
 
 @keyframes pp-fade { from { opacity: 0; } }
 @keyframes pp-pop { from { opacity: 0; transform: scale(0.85); } }
