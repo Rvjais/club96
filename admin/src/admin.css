@@ -520,6 +520,8 @@ select:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 3px rg
 .settings-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .mini-table th, .mini-table td { padding: 7px 10px; font-size: 12.5px; }
 .preview-table-7 { grid-template-columns: repeat(7, 1fr); }
+.preview-table-4 { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 720px) { .preview-table-4 { grid-template-columns: repeat(2, 1fr); } }
 .preview-table > div.is-off { opacity: 0.4; }
 .sub-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 8px; font-size: 13px; }
 .sub-head strong { color: var(--ink); }

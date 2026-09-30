@@ -185,6 +185,24 @@ wingoBetSchema.index({ user: 1, createdAt: -1 })
 wingoBetSchema.index({ room: 1, period: 1, status: 1 })
 wingoBetSchema.index({ status: 1, period: 1 })
 
+// ── Poker: one sitting at a Texas Hold'em table against house bots.
+// `amount` = everything bought in, `win` = the stack cashed out on leaving.
+const pokerTableSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true },
+  amount: { type: Number, required: true },
+  cfg: { type: Schema.Types.Mixed, required: true }, // blinds, rake and bot settings locked in when seated
+  state: { type: Schema.Types.Mixed, required: true }, // the table (see games/pokerEngine.js) — holds the deck, never sent as-is
+  v: { type: Number, default: 0 }, // bumped on every save so two taps can't act twice
+  hands: { type: Number, default: 0 },
+  rake: { type: Number, default: 0 },
+  status: { type: String, required: true }, // active | won | lost
+  multiplier: { type: Number, default: 0 }, // cash-out ÷ buy-in
+  win: { type: Number, default: 0 },
+  settledAt: Date,
+}, { timestamps: { createdAt: true, updatedAt: false }, minimize: false })
+pokerTableSchema.index({ user: 1, createdAt: -1 })
+pokerTableSchema.index({ user: 1 }, { unique: true, partialFilterExpression: { status: 'active' } }) // one table at a time
+
 const adminSchema = new Schema({
   username: { type: String, required: true, unique: true },
   passwordHash: { type: String, required: true },
@@ -235,6 +253,7 @@ export const DiceBet = model('DiceBet', diceBetSchema)
 export const WheelBet = model('WheelBet', wheelBetSchema)
 export const WingoResult = model('WingoResult', wingoResultSchema)
 export const WingoBet = model('WingoBet', wingoBetSchema)
+export const PokerTable = model('PokerTable', pokerTableSchema)
 export const Admin = model('Admin', adminSchema)
 export const Withdrawal = model('Withdrawal', withdrawalSchema)
 export const GameSettings = model('GameSettings', gameSettingsSchema)

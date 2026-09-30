@@ -16,6 +16,7 @@ import { towerRouter } from './games/tower.js'
 import { plinkoRouter } from './games/plinko.js'
 import { diceRouter } from './games/dice.js'
 import { wheelRouter } from './games/wheel.js'
+import { pokerRouter } from './games/poker.js'
 import { HttpError } from './wallet.js'
 import { loadSettings } from './settings.js'
 
@@ -37,6 +38,7 @@ app.use('/api/games/tower', towerRouter)
 app.use('/api/games/plinko', plinkoRouter)
 app.use('/api/games/dice', diceRouter)
 app.use('/api/games/wheel', wheelRouter)
+app.use('/api/games/poker', pokerRouter)
 app.use('/api/admin', adminRouter)
 app.use('/api', (req, res, next) => next(new HttpError(404, 'Not found')))
 

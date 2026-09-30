@@ -228,6 +228,7 @@ function StatsSheet() {
       {game('Plinko', 'pyramid', stats.plinko)}
       {game('Dice', 'dices', stats.dice)}
       {game('Wheel', 'wheel', stats.wheel)}
+      {game('Poker', 'club', stats.poker)}
     </div>
   )
 }

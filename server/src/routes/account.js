@@ -3,7 +3,7 @@ import { Router } from 'express'
 import mongoose from 'mongoose'
 import bcrypt from 'bcryptjs'
 import { ensureUid, publicUser, requireAuth, setSession, validatePassword } from '../auth.js'
-import { AviatorBet, AviatorRound, ColorBet, DiceBet, MinesBet, PlinkoBet, TowerBet, Transaction, User, WheelBet, WingoBet, Withdrawal } from '../models/index.js'
+import { AviatorBet, AviatorRound, ColorBet, DiceBet, MinesBet, PlinkoBet, PokerTable, TowerBet, Transaction, User, WheelBet, WingoBet, Withdrawal } from '../models/index.js'
 import { HttpError, serializeTx, toRupees } from '../wallet.js'
 import { periodLabel } from '../games/color.js'
 import { describeMines } from '../games/mines.js'
@@ -11,6 +11,7 @@ import { describeTower } from '../games/tower.js'
 import { describePlinko } from '../games/plinko.js'
 import { describeDice } from '../games/dice.js'
 import { describeWheel } from '../games/wheel.js'
+import { describePoker } from '../games/poker.js'
 import { describeWingo, periodLabel as wingoPeriod } from '../games/wingo.js'
 
 // Newer games share one history shape: { game, model, settled filter, describe }
@@ -21,6 +22,8 @@ const OTHER_GAMES = [
   { game: 'plinko', model: PlinkoBet, settled: {}, describe: describePlinko },
   { game: 'dice', model: DiceBet, settled: {}, describe: describeDice },
   { game: 'wheel', model: WheelBet, settled: {}, describe: describeWheel },
+  // A poker sitting: amount = buy-ins, win = cash-out; it's a win only when the player left with more
+  { game: 'poker', model: PokerTable, settled: { status: { $in: ['won', 'lost'] } }, describe: describePoker, ref: (b) => `Table ${String(b._id).slice(-8).toUpperCase()}`, won: (b) => b.win > b.amount },
 ]
 
 export const accountRouter = Router()
@@ -116,7 +119,8 @@ accountRouter.get('/game-history', async (req, res) => {
       time: b.settledAt ?? b.createdAt,
       amount: toRupees(b.amount),
       win: toRupees(b.win),
-      won: b.win > 0,
+      won: g.won ? g.won(b) : b.win > 0,
+      lost: g.won ? toRupees(Math.max(0, b.amount - b.win)) : undefined,
       detail: g.describe(b),
       ref: g.ref ? g.ref(b) : `Bet ${String(b._id).slice(-8).toUpperCase()}`,
     }))),

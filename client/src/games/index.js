@@ -8,14 +8,16 @@ import tower from './tower'
 import plinko from './plinko'
 import dice from './dice'
 import wheel from './wheel'
+import poker from './poker'
 
-export const games = [wingo, aviator, mines, tower, plinko, wheel, dice]
+export const games = [wingo, aviator, poker, mines, tower, plinko, wheel, dice]
 
 // Lobby tabs / sections; every game's index.js names one of these keys as its `category`
 export const gameCategories = [
   { key: 'all', label: 'Lobby', icon: 'home' },
   { key: 'lottery', label: 'Lottery', icon: 'timer', title: 'Lottery', sub: 'Colour & number draws every 30 seconds to 5 minutes' },
   { key: 'crash', label: 'Crash', icon: 'plane', title: 'Crash', sub: 'Cash out before the plane flies away' },
+  { key: 'cards', label: 'Poker', icon: 'club', title: 'Poker', sub: "Texas Hold'em against the table — buy in, cash out any time" },
   { key: 'grid', label: 'Mines & Tower', icon: 'grid', title: 'Mines & Tower', sub: 'Pick safe tiles, cash out any time' },
   { key: 'physics', label: 'Plinko & Wheel', icon: 'wheel', title: 'Plinko & Wheel', sub: 'Drop the ball or spin for a multiplier' },
   { key: 'probability', label: 'Dice', icon: 'dices', title: 'Dice', sub: 'Choose your odds, roll over or under' },

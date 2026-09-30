@@ -102,6 +102,20 @@ export const DEFAULTS = {
     maxBet: 10000,
     maxWin: 500000,
   },
+  poker: {
+    enabled: true,
+    smallBlind: 5,
+    bigBlind: 10,
+    minBuyIn: 200, // ₹ a player brings to the table (top-ups count too)
+    maxBuyIn: 2000,
+    rake: 5, // % the house takes from each pot the player wins once a flop is dealt
+    rakeCap: 50, // ₹ most rake taken from one hand
+    bots: 5, // opponents at the table (1–5)
+    botSkill: 'normal', // easy | normal | hard — how well bots judge their hands
+    botAggression: 50, // % how often bots bet and raise with good hands
+    botBluff: 15, // % how often bots bet with weak hands
+    turnSeconds: 30, // time to act before the player auto-checks / folds
+  },
 }
 
 export const GAMES = Object.keys(DEFAULTS)
@@ -109,6 +123,7 @@ export const WINGO_ROOMS = ['30s', '1m', '3m', '5m']
 export const RISKS = ['low', 'medium', 'high']
 export const PLINKO_ROWS = [8, 12, 16]
 export const TOWER_MODE_KEYS = ['easy', 'medium', 'hard', 'expert']
+export const POKER_SKILLS = ['easy', 'normal', 'hard']
 
 const cache = structuredClone(DEFAULTS)
 const listeners = new Map() // game → [fn]
@@ -183,6 +198,28 @@ export function validate(game, input) {
       }
       prev = p
     }
+    return s
+  }
+
+  if (game === 'poker') {
+    const s = {
+      enabled: Boolean(input.enabled),
+      smallBlind: num(input.smallBlind, 'Small blind', 0.01, 100_000),
+      bigBlind: num(input.bigBlind, 'Big blind', 0.02, 200_000),
+      minBuyIn: num(input.minBuyIn, 'Minimum buy-in', 1, 10_000_000),
+      maxBuyIn: num(input.maxBuyIn, 'Maximum buy-in', 1, 10_000_000),
+      rake: num(input.rake, 'Rake', 0, 10),
+      rakeCap: num(input.rakeCap, 'Rake cap', 0, 1_000_000),
+      bots: Math.round(num(input.bots, 'Opponents', 1, 5)),
+      botSkill: String(input.botSkill),
+      botAggression: num(input.botAggression, 'Bot aggression', 0, 100),
+      botBluff: num(input.botBluff, 'Bot bluffing', 0, 100),
+      turnSeconds: Math.round(num(input.turnSeconds, 'Time to act', 10, 300)),
+    }
+    if (!POKER_SKILLS.includes(s.botSkill)) throw new HttpError(400, 'Bot skill must be easy, normal or hard')
+    if (s.bigBlind < s.smallBlind) throw new HttpError(400, 'Big blind must be at least the small blind')
+    if (s.minBuyIn < s.bigBlind * 10) throw new HttpError(400, 'Minimum buy-in must be at least 10 big blinds')
+    if (s.maxBuyIn < s.minBuyIn) throw new HttpError(400, 'Maximum buy-in must be at least the minimum buy-in')
     return s
   }
 

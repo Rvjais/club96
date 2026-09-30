@@ -5,7 +5,7 @@ import { Icon } from '../Icons'
 
 const TX_LABELS = { bonus: 'Signup bonus', deposit: 'Deposit', bet: 'Bet', win: 'Win', refund: 'Refund', adjustment: 'Admin adjustment', withdraw: 'Withdrawal', withdraw_refund: 'Withdrawal refund' }
 const WD_LABEL = { pending: 'Pending', approved: 'Paid', rejected: 'Rejected' }
-const GAME_LABELS = { aviator: 'Aviator', wingo: 'Win Go', color: 'Color Prediction', mines: 'Mines', tower: 'Tower', plinko: 'Plinko', dice: 'Dice', wheel: 'Wheel' }
+const GAME_LABELS = { aviator: 'Aviator', wingo: 'Win Go', color: 'Color Prediction', mines: 'Mines', tower: 'Tower', plinko: 'Plinko', dice: 'Dice', wheel: 'Wheel', poker: 'Poker' }
 // Games that share the generic bet table (one tab each)
 const OTHER_GAMES = [
   { key: 'wingo', icon: 'clock' },
@@ -14,6 +14,7 @@ const OTHER_GAMES = [
   { key: 'plinko', icon: 'pyramid' },
   { key: 'dice', icon: 'dices' },
   { key: 'wheel', icon: 'wheel' },
+  { key: 'poker', icon: 'club' },
 ]
 
 function CopyButton({ value }) {

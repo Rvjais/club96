@@ -8,6 +8,7 @@ import TowerSettings from './settings/TowerSettings'
 import PlinkoSettings from './settings/PlinkoSettings'
 import DiceSettings from './settings/DiceSettings'
 import WheelSettings from './settings/WheelSettings'
+import PokerSettings from './settings/PokerSettings'
 
 
 // ── Change log ───────────────────────────────────────────────
@@ -26,6 +27,8 @@ const FIELD_LABELS = {
   lockSeconds: 'Betting lock', fee: 'Service fee',
   'payouts.size': 'Big / Small payout', 'payouts.color': 'Green / Red payout', 'payouts.colorSplit': 'Green / Red on 5 / 0 payout',
   'payouts.violet': 'Violet payout', 'payouts.number': 'Number payout',
+  smallBlind: 'Small blind', bigBlind: 'Big blind', minBuyIn: 'Min buy-in', maxBuyIn: 'Max buy-in', rake: 'Rake %', rakeCap: 'Rake cap',
+  bots: 'Opponents', botSkill: 'Bot skill', botAggression: 'Bot aggression', botBluff: 'Bot bluffing', turnSeconds: 'Time to act',
 }
 
 function fieldLabel(key) {
@@ -70,6 +73,7 @@ const GAMES = [
   { key: 'plinko', label: 'Plinko', icon: 'pyramid', Card: PlinkoSettings },
   { key: 'dice', label: 'Dice', icon: 'dices', Card: DiceSettings },
   { key: 'wheel', label: 'Wheel', icon: 'wheel', Card: WheelSettings },
+  { key: 'poker', label: 'Poker', icon: 'club', Card: PokerSettings },
 ]
 const GAME_NAMES = Object.fromEntries(GAMES.map((g) => [g.key, g.label]))
 

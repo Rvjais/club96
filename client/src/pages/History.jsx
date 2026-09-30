@@ -22,8 +22,8 @@ const TX_LABELS = {
   withdraw: 'Withdrawal',
   withdraw_refund: 'Withdrawal returned',
 }
-const GAME_LABELS = { aviator: 'Aviator', wingo: 'Win Go', color: 'Color Prediction', mines: 'Mines', tower: 'Tower', plinko: 'Plinko', dice: 'Dice', wheel: 'Wheel' }
-const GAME_ICONS = { aviator: 'plane', wingo: 'timer', color: 'palette', mines: 'bomb', tower: 'layers', plinko: 'pyramid', dice: 'dices', wheel: 'wheel' }
+const GAME_LABELS = { aviator: 'Aviator', wingo: 'Win Go', color: 'Color Prediction', mines: 'Mines', tower: 'Tower', plinko: 'Plinko', dice: 'Dice', wheel: 'Wheel', poker: 'Poker' }
+const GAME_ICONS = { aviator: 'plane', wingo: 'timer', color: 'palette', mines: 'bomb', tower: 'layers', plinko: 'pyramid', dice: 'dices', wheel: 'wheel', poker: 'club' }
 const STATUS = { pending: 'In review', approved: 'Paid', rejected: 'Rejected' }
 
 function Empty({ text }) {
@@ -109,8 +109,8 @@ export default function History() {
               <small>{g.ref} · {stamp(g.time)}</small>
             </div>
             <div className="hs-amt">
-              <strong className={g.won ? 'pos' : 'neg'}>{g.won ? `+${money(g.win)}` : `−${money(g.amount)}`}</strong>
-              <small>Bet {money(g.amount)}</small>
+              <strong className={g.won ? 'pos' : 'neg'}>{g.won ? `+${money(g.win)}` : `−${money(g.lost ?? g.amount)}`}</strong>
+              <small>{g.game === 'poker' ? 'Buy-in' : 'Bet'} {money(g.amount)}</small>
             </div>
           </div>
         ))}
