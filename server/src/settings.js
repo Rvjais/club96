@@ -176,6 +176,8 @@ export const DEFAULTS = {
     botBluff: 15, // % how often bots bet with weak hands
     turnSeconds: 30, // time to act before the player auto-checks / folds
   },
+  andarBahar: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000, andarPayout: 1.9, baharPayout: 1.9 },
+  dragonTiger: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000, dragonPayout: 1.95, tigerPayout: 1.95, tiePayout: 9, suitedTiePayout: 50 },
 }
 
 export const SITE_SETTINGS = ['platform', 'referral'] // not games
@@ -366,6 +368,16 @@ export function validate(game, input) {
     if (s.bigBlind < s.smallBlind) throw new HttpError(400, 'Big blind must be at least the small blind')
     if (s.minBuyIn < s.bigBlind * 10) throw new HttpError(400, 'Minimum buy-in must be at least 10 big blinds')
     if (s.maxBuyIn < s.minBuyIn) throw new HttpError(400, 'Maximum buy-in must be at least the minimum buy-in')
+    return s
+  }
+
+  if (game === 'andarBahar' || game === 'dragonTiger') {
+    const base = limits(input)
+    const s = { ...base }
+    const fields = game === 'andarBahar'
+      ? ['andarPayout', 'baharPayout']
+      : ['dragonPayout', 'tigerPayout', 'tiePayout', 'suitedTiePayout']
+    for (const key of fields) s[key] = num(input[key], `${key} payout`, 0.01, 1000)
     return s
   }
 

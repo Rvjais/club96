@@ -12,6 +12,7 @@ import SpinSettings from './settings/SpinSettings'
 import PokerSettings from './settings/PokerSettings'
 import PlatformSettings from './settings/PlatformSettings'
 import ReferralSettings from './settings/ReferralSettings'
+import CardTableSettings from './settings/CardTableSettings'
 
 
 // ── Change log ───────────────────────────────────────────────
@@ -90,6 +91,8 @@ const GAMES = [
   { key: 'wheel', label: 'Wheel', icon: 'wheel', Card: WheelSettings },
   { key: 'spin', label: 'Lucky Spin', icon: 'coins', Card: SpinSettings },
   { key: 'poker', label: 'Poker', icon: 'club', Card: PokerSettings },
+  { key: 'andarBahar', label: 'Andar Bahar', icon: 'club', Card: (props) => <CardTableSettings {...props} game="andarBahar" /> },
+  { key: 'dragonTiger', label: 'Dragon Tiger', icon: 'club', Card: (props) => <CardTableSettings {...props} game="dragonTiger" /> },
 ]
 const GAME_NAMES = Object.fromEntries(GAMES.map((g) => [g.key, g.label]))
 

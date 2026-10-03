@@ -9,8 +9,10 @@ import plinko from './plinko'
 import dice from './dice'
 import wheel from './wheel'
 import poker from './poker'
+import andarBahar from './andarBahar'
+import dragonTiger from './dragonTiger'
 
-export const games = [wingo, aviator, poker, mines, tower, plinko, wheel, dice]
+export const games = [wingo, aviator, poker, andarBahar, dragonTiger, mines, tower, plinko, wheel, dice]
 
 // Artwork per game id, for history and stats lists
 export const gameImages = Object.fromEntries(games.map((g) => [g.id, g.image]))

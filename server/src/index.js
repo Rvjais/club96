@@ -18,6 +18,7 @@ import { diceRouter } from './games/dice.js'
 import { wheelRouter } from './games/wheel.js'
 import { spinRouter } from './games/spin.js'
 import { pokerRouter } from './games/poker.js'
+import { cardsRouter } from './games/cards.js'
 import { supportRouter } from './routes/support.js'
 import { promotionRouter, startReferrals } from './referral.js'
 import { HttpError } from './wallet.js'
@@ -45,6 +46,7 @@ app.use('/api/games/dice', diceRouter)
 app.use('/api/games/wheel', wheelRouter)
 app.use('/api/games/spin', spinRouter)
 app.use('/api/games/poker', pokerRouter)
+app.use('/api/games/cards', cardsRouter)
 app.use('/api/admin', adminRouter)
 app.use('/api', (req, res, next) => next(new HttpError(404, 'Not found')))
 
