@@ -29,9 +29,9 @@ for (const [game, path] of [['andarBahar', '/andar-bahar/play'], ['dragonTiger',
     let result, winning, suited = false
     if (game === 'andarBahar') {
       const joker = card(0), match = (c) => c.value === joker.value
-      let side = 'andar'
-      for (let i = 1; i < 52; i++) { if (match(card(i))) { winning = side; break } side = side === 'andar' ? 'bahar' : 'andar' }
-      result = { joker, winning }
+      let side = 'andar', matchCard
+      for (let i = 1; i < 52; i++) { if (match(card(i))) { winning = side; matchCard = card(i); break } side = side === 'andar' ? 'bahar' : 'andar' }
+      result = { joker, matchCard, winning }
     } else {
       const dragon = card(0), tiger = card(1)
       winning = dragon.value === tiger.value ? 'tie' : dragon.value > tiger.value ? 'dragon' : 'tiger'
