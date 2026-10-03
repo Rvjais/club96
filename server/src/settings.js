@@ -178,6 +178,7 @@ export const DEFAULTS = {
   },
   andarBahar: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000, andarPayout: 1.9, baharPayout: 1.9 },
   dragonTiger: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000, dragonPayout: 1.95, tigerPayout: 1.95, tiePayout: 9, suitedTiePayout: 50 },
+  horseRacing: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000, houseEdge: 5 },
 }
 
 export const SITE_SETTINGS = ['platform', 'referral'] // not games
@@ -378,6 +379,11 @@ export function validate(game, input) {
       ? ['andarPayout', 'baharPayout']
       : ['dragonPayout', 'tigerPayout', 'tiePayout', 'suitedTiePayout']
     for (const key of fields) s[key] = num(input[key], `${key} payout`, 0.01, 1000)
+    return s
+  }
+
+  if (game === 'horseRacing') {
+    const s = { ...limits(input), houseEdge: num(input.houseEdge, 'House edge', 0, 50) }
     return s
   }
 
