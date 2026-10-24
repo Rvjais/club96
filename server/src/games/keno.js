@@ -18,7 +18,7 @@ const PICK_MAX = 10
 
 // Standard Keno paytable (can be overridden in settings)
 // Rows: picks (1-10), Columns: matches (0 to picks)
-const DEFAULT_PAYTABLE: Record<number, number[]> = {
+const DEFAULT_PAYTABLE = {
   1: [0, 3],                    // Pick 1: match 1 pays 3x
   2: [0, 0, 12],                // Pick 2: match 2 pays 12x
   3: [0, 0, 2, 45],             // Pick 3: match 2 pays 2x, match 3 pays 45x
@@ -37,25 +37,23 @@ const ROOMS = {
   '1m': { label: '1 Minute', intervalMs: 60000 },
   '3m': { label: '3 Minutes', intervalMs: 180000 },
   '5m': { label: '5 Minutes', intervalMs: 300000 },
-} as const
+}
 
-type RoomKey = keyof typeof ROOMS
-
-function periodKey(room: RoomKey, now: number): string {
+function periodKey(room, now) {
   const { intervalMs } = ROOMS[room]
   const period = Math.floor(now / intervalMs)
   return `${room}:${period}`
 }
 
-function periodStart(room: RoomKey, period: number): number {
+function periodStart(room, period) {
   return period * ROOMS[room].intervalMs
 }
 
-function periodEnd(room: RoomKey, period: number): number {
+function periodEnd(room, period) {
   return (period + 1) * ROOMS[room].intervalMs
 }
 
-function drawNumbers(seed: string): number[] {
+function drawNumbers(seed) {
   // Deterministic shuffle from seed, pick first 20
   const rng = seedRNG(seed)
   const pool = Array.from({ length: NUMBERS }, (_, i) => i + 1)
@@ -66,7 +64,7 @@ function drawNumbers(seed: string): number[] {
   return pool.slice(0, DRAWN).sort((a, b) => a - b)
 }
 
-function seedRNG(seed: string) {
+function seedRNG(seed) {
   let h = 0x12345678
   for (let i = 0; i < seed.length; i++) {
     h = Math.imul(h ^ seed.charCodeAt(i), 0x5bd1e995)
@@ -80,21 +78,21 @@ function seedRNG(seed: string) {
   }
 }
 
-function countMatches(picks: number[], drawn: number[]): number {
+function countMatches(picks, drawn) {
   const drawnSet = new Set(drawn)
   return picks.filter(n => drawnSet.has(n)).length
 }
 
-function getPaytable(cfg: any): Record<number, number[]> {
+function getPaytable(cfg) {
   const custom = cfg.customPaytable ?? {}
-  const merged: Record<number, number[]> = {}
+  const merged = {}
   for (let p = PICK_MIN; p <= PICK_MAX; p++) {
     merged[p] = custom[p] ?? DEFAULT_PAYTABLE[p]
   }
   return merged
 }
 
-function serializeBet(b: any, cfg: any) {
+function serializeBet(b, cfg) {
   const settled = b.status !== 'pending'
   return {
     id: String(b._id),
@@ -112,7 +110,7 @@ function serializeBet(b: any, cfg: any) {
   }
 }
 
-async function snapshotFor(userId: string) {
+async function snapshotFor(userId) {
   const cfg = getSettings(GAME)
   const [balance, pending, settled] = await Promise.all([
     balanceOf(userId),
@@ -156,7 +154,7 @@ async function snapshotFor(userId: string) {
   }
 }
 
-async function settlePeriod(room: RoomKey, period: number, now: number) {
+async function settlePeriod(room, period, now) {
   const key = `${room}:${period}`
   const existing = await KenoResult.findById(key).lean()
   if (existing) return // already settled
@@ -196,7 +194,7 @@ async function tick() {
     const cfg = getSettings(GAME)
     if (!cfg.enabled) return
 
-    for (const room of Object.keys(ROOMS) as RoomKey[]) {
+    for (const room of Object.keys(ROOMS)) {
       if (!cfg.rooms?.[room]) continue
       const { intervalMs } = ROOMS[room]
       const currentPeriod = Math.floor(now / intervalMs)
@@ -221,7 +219,7 @@ kenoRouter.post('/bet', async (req, res) => {
   const cfg = getSettings(GAME)
   if (!cfg.enabled) throw new HttpError(403, 'Keno is paused. Please try again later.')
 
-  const room = String(req.body?.room) as RoomKey
+  const room = String(req.body?.room)
   if (!ROOMS[room] || cfg.rooms?.[room] === false) throw new HttpError(400, 'Invalid or closed room')
 
   const picks = Array.from(new Set((req.body?.picks ?? []).map((n: any) => Number(n))))

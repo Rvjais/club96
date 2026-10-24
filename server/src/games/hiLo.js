@@ -12,17 +12,17 @@ import { HttpError, balanceOf, credit, debit, toPaise, toRupees } from '../walle
 import { getSettings } from '../settings.js'
 
 const GAME = 'hiLo'
-const SUITS = ['h', 'd', 'c', 's'] as const
-const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'] as const
+const SUITS = ['h', 'd', 'c', 's']
+const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
 
 // Rank values: A=1, 2=2... K=13 (Ace low for simplicity)
-function rankValue(rank: string): number {
+function rankValue(rank) {
   return RANKS.indexOf(rank) + 1
 }
 
 // Create a fresh shuffled deck
-function newDeck(): string[] {
-  const deck: string[] = []
+function newDeck() {
+  const deck = []
   for (const s of SUITS) {
     for (const r of RANKS) deck.push(r + s)
   }
@@ -39,12 +39,12 @@ const STREAK_PAYOUTS = [1.95, 2.0, 2.1, 2.25, 2.5, 3.0, 4.0, 5.5, 8.0, 12.0, 18.
 // Probability of correct guess (excluding ties): ~46.3% per round
 // With tie=loss, house edge ≈ 3.5% on first guess, compounding on streaks
 
-function nextMultiplier(streak: number): number {
+function nextMultiplier(streak) {
   if (streak >= STREAK_PAYOUTS.length) return STREAK_PAYOUTS[STREAK_PAYOUTS.length - 1]
   return STREAK_PAYOUTS[streak]
 }
 
-function serialize(bet: any, cfg: any) {
+function serialize(bet, cfg) {
   const active = bet.status === 'active'
   return {
     id: String(bet._id),
@@ -61,7 +61,7 @@ function serialize(bet: any, cfg: any) {
   }
 }
 
-async function snapshotFor(userId: string) {
+async function snapshotFor(userId) {
   const [balance, active, recent] = await Promise.all([
     balanceOf(userId),
     HiLoBet.findOne({ user: userId, status: 'active' }).lean(),
@@ -82,17 +82,17 @@ async function snapshotFor(userId: string) {
   }
 }
 
-async function activeRound(userId: string) {
+async function activeRound(userId) {
   const bet = await HiLoBet.findOne({ user: userId, status: 'active' }).lean()
   if (!bet) throw new HttpError(404, 'No round in progress')
   return bet
 }
 
 // Every update is conditional on the streak we read
-const sameRound = (bet: any) => ({ _id: bet._id, status: 'active', streak: bet.streak })
+const sameRound = (bet) => ({ _id: bet._id, status: 'active', streak: bet.streak })
 const raced = () => new HttpError(409, 'That move was already made')
 
-async function cashOut(bet: any, cfg: any) {
+async function cashOut(bet, cfg) {
   const win = Math.min(Math.floor(bet.amount * bet.multiplier + 1e-6), Math.round(cfg.maxWin * 100))
   return tx(async (session) => {
     const upd = await HiLoBet.findOneAndUpdate(
@@ -162,7 +162,7 @@ hiLoRouter.post('/guess', async (req, res) => {
   let newMultiplier = bet.multiplier
   let newDeck = [...bet.deck]
   let newCurrentCard = nextCard
-  let status: 'active' | 'lost' = 'active'
+  let status = 'active'
 
   // Tie = loss (house edge)
   if (nextVal === currentVal) {

@@ -11,19 +11,18 @@ import { HttpError, balanceOf, credit, debit, toPaise, toRupees } from '../walle
 import { getSettings } from '../settings.js'
 
 const GAME = 'double'
-const COLORS = ['red', 'black'] as const
-type Color = typeof COLORS[number]
+const COLORS = ['red', 'black']
 
 // Payout multiplier (1.95x = 2.5% house edge on a fair 50/50)
 const PAYOUT_MULT = 1.95
 
-function pickColor(seed: string): Color {
+function pickColor(seed) {
   // Use first byte of hash for deterministic but fair result
   const n = parseInt(seed.slice(0, 2), 16)
   return COLORS[n % 2]
 }
 
-async function snapshotFor(userId: string) {
+async function snapshotFor(userId) {
   const [balance, recent] = await Promise.all([
     balanceOf(userId),
     DoubleBet.find({ user: userId }).sort({ createdAt: -1 }).limit(30).lean(),
@@ -61,7 +60,7 @@ doubleRouter.post('/bet', async (req, res) => {
   if (!cfg.enabled) throw new HttpError(403, 'Double is paused. Please try again later.')
 
   const color = String(req.body?.color).toLowerCase()
-  if (!COLORS.includes(color as Color)) throw new HttpError(400, 'Pick red or black')
+  if (!COLORS.includes(color)) throw new HttpError(400, 'Pick red or black')
 
   const paise = toPaise(req.body?.amount)
   if (!Number.isInteger(paise) || paise < Math.round(cfg.minBet * 100)) {
@@ -82,7 +81,7 @@ doubleRouter.post('/bet', async (req, res) => {
     await DoubleBet.create([{
       user: req.userId,
       amount: paise,
-      color: color as Color,
+      color,
       result,
       multiplier,
       win,
