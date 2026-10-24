@@ -125,7 +125,7 @@ hiLoRouter.post('/start', async (req, res) => {
 
   const seed = crypto.randomBytes(32).toString('hex')
   const deck = newDeck()
-  const currentCard = deck.pop()! // first card shown to player
+  const currentCard = deck.pop() // first card shown to player
 
   await tx(async (session) => {
     if (await HiLoBet.exists({ user: req.userId, status: 'active' }).session(session)) {
