@@ -1,0 +1,16 @@
+import { lazy } from 'react'
+import image from '../icons/blackjack.svg'
+
+export default {
+  id: 'blackjack',
+  name: 'Blackjack',
+  tagline: '21 vs Dealer',
+  category: 'cards',
+  path: '/games/blackjack',
+  icon: 'spade',
+  image,
+  bg: 'linear-gradient(160deg,#0f172a 0%,#1e293b 45%,#0b1021 100%)',
+  glow: '#3b82f6',
+  badge: 'NEW',
+  component: lazy(() => import('./Blackjack')),
+}

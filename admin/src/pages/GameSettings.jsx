@@ -17,6 +17,8 @@ import HorseRacingSettings from './settings/HorseRacingSettings'
 import DoubleSettings from './settings/DoubleSettings'
 import HiLoSettings from './settings/HiLoSettings'
 import KenoSettings from './settings/KenoSettings'
+import BlackjackSettings from './settings/BlackjackSettings'
+import BaccaratSettings from './settings/BaccaratSettings'
 
 
 // ── Change log ───────────────────────────────────────────────
@@ -104,6 +106,8 @@ const GAMES = [
   { key: 'double', label: 'Double', icon: 'circleHalf', Card: DoubleSettings },
   { key: 'hiLo', label: 'Hi-Lo', icon: 'sortUp', Card: HiLoSettings },
   { key: 'keno', label: 'Keno', icon: 'grid', Card: KenoSettings },
+  { key: 'blackjack', label: 'Blackjack', icon: 'spade', Card: BlackjackSettings },
+  { key: 'baccarat', label: 'Baccarat', icon: 'heart', Card: BaccaratSettings },
 ]
 const GAME_NAMES = Object.fromEntries(GAMES.map((g) => [g.key, g.label]))
 

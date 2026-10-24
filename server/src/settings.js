@@ -192,6 +192,8 @@ export const DEFAULTS = {
     // Optional custom paytable: { [picks]: [payout for 0 matches, 1 match, ...] }
     customPaytable: {},
   },
+  blackjack: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000 },
+  baccarat: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000 },
 }
 
 export const SITE_SETTINGS = ['platform', 'referral'] // not games
@@ -427,6 +429,14 @@ export function validate(game, input) {
       fee: num(input.fee, 'Service fee', 0, 20),
       customPaytable,
     }
+  }
+
+  if (game === 'blackjack') {
+    return limits(input)
+  }
+
+  if (game === 'baccarat') {
+    return limits(input)
   }
 
   if (game === 'spin') {

@@ -304,6 +304,42 @@ const kenoBetSchema = new Schema({
 kenoBetSchema.index({ user: 1, createdAt: -1 })
 kenoBetSchema.index({ room: 1, period: 1, status: 1 })
 
+// ── Blackjack: player vs dealer, hit/stand/double
+const blackjackBetSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true, index: true },
+  amount: { type: Number, required: true }, // total staked (original + doubles)
+  betAmount: { type: Number, required: true }, // current payout base (changes on double)
+  deck: { type: [Number], required: true },
+  playerCards: { type: [Number], required: true },
+  dealerCards: { type: [Number], required: true },
+  playerValue: { type: Number, required: true },
+  dealerValue: { type: Number, default: 0 },
+  status: { type: String, enum: ['active', 'won', 'lost', 'refunded'], required: true },
+  multiplier: { type: Number, default: 0 },
+  win: { type: Number, default: 0 },
+  result: String, // blackjack | playerWins | dealerWins | dealerBust | push | bust
+  finished: { type: Boolean, default: false },
+}, { timestamps: { createdAt: true, updatedAt: false } })
+blackjackBetSchema.index({ user: 1, createdAt: -1 })
+blackjackBetSchema.index({ user: 1 }, { unique: true, partialFilterExpression: { status: 'active' } })
+
+// ── Baccarat: player / banker / tie, fixed drawing rules
+const baccaratBetSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true, index: true },
+  amount: { type: Number, required: true },
+  betOn: { type: String, enum: ['player', 'banker', 'tie'], required: true },
+  playerCards: { type: [Number], required: true },
+  bankerCards: { type: [Number], required: true },
+  playerValue: { type: Number, required: true },
+  bankerValue: { type: Number, required: true },
+  status: { type: String, enum: ['won', 'lost', 'refunded'], required: true },
+  multiplier: { type: Number, default: 0 },
+  win: { type: Number, default: 0 },
+  result: String, // player | banker | tie
+  finished: { type: Boolean, default: true },
+}, { timestamps: { createdAt: true, updatedAt: false } })
+baccaratBetSchema.index({ user: 1, createdAt: -1 })
+
 const adminSchema = new Schema({
   username: { type: String, required: true, unique: true },
   passwordHash: { type: String, required: true },
@@ -410,6 +446,8 @@ export const DoubleBet = model('DoubleBet', doubleBetSchema)
 export const HiLoBet = model('HiLoBet', hiLoBetSchema)
 export const KenoResult = model('KenoResult', kenoResultSchema)
 export const KenoBet = model('KenoBet', kenoBetSchema)
+export const BlackjackBet = model('BlackjackBet', blackjackBetSchema)
+export const BaccaratBet = model('BaccaratBet', baccaratBetSchema)
 export const Admin = model('Admin', adminSchema)
 export const Withdrawal = model('Withdrawal', withdrawalSchema)
 export const Deposit = model('Deposit', depositSchema)

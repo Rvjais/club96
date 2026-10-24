@@ -15,8 +15,10 @@ import horseRacing from './horseRacing'
 import double from './double'
 import hiLo from './hiLo'
 import keno from './keno'
+import blackjack from './blackjack'
+import baccarat from './baccarat'
 
-export const games = [wingo, aviator, poker, andarBahar, dragonTiger, horseRacing, mines, tower, plinko, wheel, dice, double, hiLo, keno]
+export const games = [wingo, aviator, poker, andarBahar, dragonTiger, horseRacing, mines, tower, plinko, wheel, dice, double, hiLo, keno, blackjack, baccarat]
 
 // Artwork per game id, for history and stats lists
 export const gameImages = Object.fromEntries(games.map((g) => [g.id, g.image]))
