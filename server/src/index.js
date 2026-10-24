@@ -25,6 +25,8 @@ import { hiLoRouter } from './games/hiLo.js'
 import { kenoRouter, startKeno } from './games/keno.js'
 import { blackjackRouter, startBlackjack } from './games/blackjack.js'
 import { baccaratRouter, startBaccarat } from './games/baccarat.js'
+import { scratchRouter, startScratch } from './games/scratch.js'
+import { teenPattiRouter, startTeenPatti } from './games/teenPatti.js'
 import { supportRouter } from './routes/support.js'
 import { promotionRouter, startReferrals } from './referral.js'
 import { HttpError } from './wallet.js'
@@ -59,6 +61,8 @@ app.use('/api/games/hi-lo', hiLoRouter)
 app.use('/api/games/keno', kenoRouter)
 app.use('/api/games/blackjack', blackjackRouter)
 app.use('/api/games/baccarat', baccaratRouter)
+app.use('/api/games/scratch', scratchRouter)
+app.use('/api/games/teen-patti', teenPattiRouter)
 app.use('/api/admin', adminRouter)
 app.use('/api', (req, res, next) => next(new HttpError(404, 'Not found')))
 
@@ -93,6 +97,8 @@ await startWingo()
 await startKeno()
 await startBlackjack()
 await startBaccarat()
+await startScratch()
+await startTeenPatti()
 startReferrals()
 
 app.listen(PORT, () => console.log(`API listening on http://localhost:${PORT}`))

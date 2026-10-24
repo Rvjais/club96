@@ -19,6 +19,8 @@ import HiLoSettings from './settings/HiLoSettings'
 import KenoSettings from './settings/KenoSettings'
 import BlackjackSettings from './settings/BlackjackSettings'
 import BaccaratSettings from './settings/BaccaratSettings'
+import ScratchSettings from './settings/ScratchSettings'
+import TeenPattiSettings from './settings/TeenPattiSettings'
 
 
 // ── Change log ───────────────────────────────────────────────
@@ -108,6 +110,8 @@ const GAMES = [
   { key: 'keno', label: 'Keno', icon: 'grid', Card: KenoSettings },
   { key: 'blackjack', label: 'Blackjack', icon: 'spade', Card: BlackjackSettings },
   { key: 'baccarat', label: 'Baccarat', icon: 'heart', Card: BaccaratSettings },
+  { key: 'scratch', label: 'Scratch Cards', icon: 'gift', Card: ScratchSettings },
+  { key: 'teenPatti', label: 'Teen Patti', icon: 'heart', Card: TeenPattiSettings },
 ]
 const GAME_NAMES = Object.fromEntries(GAMES.map((g) => [g.key, g.label]))
 

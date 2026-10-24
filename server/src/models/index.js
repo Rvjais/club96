@@ -340,6 +340,41 @@ const baccaratBetSchema = new Schema({
 }, { timestamps: { createdAt: true, updatedAt: false } })
 baccaratBetSchema.index({ user: 1, createdAt: -1 })
 
+// ── Scratch Cards: instant win, 3 panels, match 3 symbols to win
+const scratchBetSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true, index: true },
+  amount: { type: Number, required: true },
+  panels: { type: [String], required: true },
+  revealed: { type: Boolean, default: false },
+  multiplier: { type: Number, default: 0 },
+  win: { type: Number, default: 0 },
+  status: { type: String, enum: ['active', 'won', 'lost', 'refunded'], required: true },
+  result: String, // win | loss
+  finished: { type: Boolean, default: true },
+}, { timestamps: { createdAt: true, updatedAt: false } })
+scratchBetSchema.index({ user: 1, createdAt: -1 })
+scratchBetSchema.index({ user: 1 }, { unique: true, partialFilterExpression: { status: 'active' } })
+
+// ── Teen Patti: 3-card vs house, play/fold, optional Pair+ side bet
+const teenPattiBetSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true, index: true },
+  amount: { type: Number, required: true }, // total staked (ante + play + pair+)
+  ante: { type: Number, required: true },
+  pairPlus: { type: Number, default: 0 },
+  deck: { type: [String], required: true },
+  playerCards: { type: [String], required: true },
+  dealerCards: { type: [String], required: true },
+  playerRank: { type: Number, required: true },
+  dealerRank: { type: Number, required: true },
+  status: { type: String, enum: ['active', 'won', 'lost', 'refunded'], required: true },
+  multiplier: { type: Number, default: 0 },
+  win: { type: Number, default: 0 },
+  result: String, // playerWins | dealerWins | push | folded
+  finished: { type: Boolean, default: false },
+}, { timestamps: { createdAt: true, updatedAt: false } })
+teenPattiBetSchema.index({ user: 1, createdAt: -1 })
+teenPattiBetSchema.index({ user: 1 }, { unique: true, partialFilterExpression: { status: 'active' } })
+
 const adminSchema = new Schema({
   username: { type: String, required: true, unique: true },
   passwordHash: { type: String, required: true },
@@ -448,6 +483,8 @@ export const KenoResult = model('KenoResult', kenoResultSchema)
 export const KenoBet = model('KenoBet', kenoBetSchema)
 export const BlackjackBet = model('BlackjackBet', blackjackBetSchema)
 export const BaccaratBet = model('BaccaratBet', baccaratBetSchema)
+export const ScratchBet = model('ScratchBet', scratchBetSchema)
+export const TeenPattiBet = model('TeenPattiBet', teenPattiBetSchema)
 export const Admin = model('Admin', adminSchema)
 export const Withdrawal = model('Withdrawal', withdrawalSchema)
 export const Deposit = model('Deposit', depositSchema)

@@ -194,6 +194,8 @@ export const DEFAULTS = {
   },
   blackjack: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000 },
   baccarat: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000 },
+  scratch: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000 },
+  teenPatti: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000 },
 }
 
 export const SITE_SETTINGS = ['platform', 'referral'] // not games
@@ -553,6 +555,14 @@ export function validate(game, input) {
       if (total < 2 || total > 60) throw new HttpError(400, `${risk} wheel must have 2–60 segments (currently ${total})`)
     }
     return { ...base, risks }
+  }
+
+  if (game === 'scratch') {
+    return limits(input)
+  }
+
+  if (game === 'teenPatti') {
+    return limits(input)
   }
 
   throw new HttpError(404, 'Unknown game')
