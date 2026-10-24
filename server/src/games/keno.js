@@ -222,7 +222,7 @@ kenoRouter.post('/bet', async (req, res) => {
   const room = String(req.body?.room)
   if (!ROOMS[room] || cfg.rooms?.[room] === false) throw new HttpError(400, 'Invalid or closed room')
 
-  const picks = Array.from(new Set((req.body?.picks ?? []).map((n: any) => Number(n))))
+  const picks = Array.from(new Set((req.body?.picks ?? []).map((n) => Number(n))))
   if (picks.length < PICK_MIN || picks.length > PICK_MAX) {
     throw new HttpError(400, `Pick ${PICK_MIN}–${PICK_MAX} numbers`)
   }
