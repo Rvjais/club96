@@ -201,6 +201,12 @@ const paths = {
       <path d="m9 12 2 2 4-4" />
     </>
   ),
+  circleHalf: (
+    <>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 2v20" />
+    </>
+  ),
   circleAlert: (
     <>
       <circle cx="12" cy="12" r="10" />
@@ -470,6 +476,13 @@ const paths = {
       <circle cx="12" cy="12" r="10" />
       <circle cx="12" cy="12" r="2" />
       <path d="M12 2v8M12 14v8M2 12h8M14 12h8M4.9 4.9l5.7 5.7M13.4 13.4l5.7 5.7M19.1 4.9l-5.7 5.7M10.6 13.4l-5.7 5.7" />
+    </>
+  ),
+  sortUp: (
+    <>
+      <path d="M3 16h18" />
+      <path d="m18 11-6-6-6 6" />
+      <path d="M12 5v11" />
     </>
   ),
   shuffle: (

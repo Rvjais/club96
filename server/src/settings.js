@@ -179,6 +179,19 @@ export const DEFAULTS = {
   andarBahar: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000, andarPayout: 1.9, baharPayout: 1.9 },
   dragonTiger: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000, dragonPayout: 1.95, tigerPayout: 1.95, tiePayout: 9, suitedTiePayout: 50 },
   horseRacing: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000, houseEdge: 5 },
+  double: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000 },
+  hiLo: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000 },
+  keno: {
+    enabled: true,
+    rooms: { '30s': true, '1m': true, '3m': true, '5m': true },
+    lockSeconds: 5,
+    fee: 2,
+    minBet: 1,
+    maxBet: 100000,
+    maxWin: 1000000,
+    // Optional custom paytable: { [picks]: [payout for 0 matches, 1 match, ...] }
+    customPaytable: {},
+  },
 }
 
 export const SITE_SETTINGS = ['platform', 'referral'] // not games
@@ -385,6 +398,35 @@ export function validate(game, input) {
   if (game === 'horseRacing') {
     const s = { ...limits(input), houseEdge: num(input.houseEdge, 'House edge', 0, 50) }
     return s
+  }
+
+  if (game === 'double') {
+    return limits(input)
+  }
+
+  if (game === 'hiLo') {
+    return limits(input)
+  }
+
+  if (game === 'keno') {
+    const base = limits(input)
+    const rooms = {}
+    for (const r of Object.keys(ROOMS)) rooms[r] = input.rooms?.[r] !== false
+    if (!Object.values(rooms).some(Boolean)) throw new HttpError(400, 'Keep at least one room open (or pause the game instead)')
+    const customPaytable = {}
+    for (const [key, list] of Object.entries(input.customPaytable ?? {})) {
+      const p = Number(key)
+      if (!Number.isInteger(p) || p < 1 || p > 10) throw new HttpError(400, `Invalid pick count ${key}`)
+      if (!Array.isArray(list) || list.length !== p + 1) throw new HttpError(400, `${p}-pick paytable needs ${p + 1} values (0 to ${p} matches)`)
+      customPaytable[p] = list.map((v, i) => num(v, `${p} picks, ${i} matches payout`, 0, 1_000_000))
+    }
+    return {
+      ...base,
+      rooms,
+      lockSeconds: Math.round(num(input.lockSeconds, 'Betting lock', 1, 15)),
+      fee: num(input.fee, 'Service fee', 0, 20),
+      customPaytable,
+    }
   }
 
   if (game === 'spin') {

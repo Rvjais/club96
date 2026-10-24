@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect x="8" y="8" width="112" height="112" rx="12" fill="#1a0a2e" stroke="#a855f7" stroke-width="4"/>
+  <g font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#d8b4fe" text-anchor="middle">
+    <text x="32" y="40">07</text>
+    <text x="64" y="40">23</text>
+    <text x="96" y="40">41</text>
+    <text x="32" y="68">12</text>
+    <text x="64" y="68" fill="#4ade80">35</text>
+    <text x="96" y="68">58</text>
+    <text x="32" y="96">03</text>
+    <text x="64" y="96">29</text>
+    <text x="96" y="96">44</text>
+  </g>
+  <circle cx="64" cy="68" r="18" fill="none" stroke="#4ade80" stroke-width="3" stroke-dasharray="4 4"/>
+</svg>

@@ -14,6 +14,9 @@ import PlatformSettings from './settings/PlatformSettings'
 import ReferralSettings from './settings/ReferralSettings'
 import CardTableSettings from './settings/CardTableSettings'
 import HorseRacingSettings from './settings/HorseRacingSettings'
+import DoubleSettings from './settings/DoubleSettings'
+import HiLoSettings from './settings/HiLoSettings'
+import KenoSettings from './settings/KenoSettings'
 
 
 // ── Change log ───────────────────────────────────────────────
@@ -38,6 +41,7 @@ const FIELD_LABELS = {
   smallBlind: 'Small blind', bigBlind: 'Big blind', minBuyIn: 'Min buy-in', maxBuyIn: 'Max buy-in', rake: 'Rake %', rakeCap: 'Rake cap',
   depositMode: 'Deposit commission on', minClaim: 'Minimum to claim',
   cost: 'Price per spin', bots: 'Opponents', botSkill: 'Bot skill', botAggression: 'Bot aggression', botBluff: 'Bot bluffing', turnSeconds: 'Time to act',
+  'rooms.30s': '30s room', 'rooms.1m': '1m room', 'rooms.3m': '3m room', 'rooms.5m': '5m room',
 }
 
 function fieldLabel(key) {
@@ -62,6 +66,8 @@ function fieldLabel(key) {
   if (m) return `Prize ${Number(m[1]) + 1} ${m[2]}`
   m = key.match(/^risks\.(\w+)\.(\d+)\.(mult|count)$/)
   if (m) return `${m[1]} wheel group ${Number(m[2]) + 1} ${m[3] === 'mult' ? 'payout' : 'segments'}`
+  m = key.match(/^customPaytable\.(\d+)\.(\d+)$/)
+  if (m) return `Pick ${m[1]} match ${m[2]} payout`
   return key
 }
 const fmt = (key, v) => (key === 'enabled' ? (v ? 'Live' : 'Paused') : key === 'bonusPopup' ? (v ? 'Shown' : 'Hidden') : key === 'withdrawEnabled' || key === 'depositEnabled' ? (v ? 'Open' : 'Paused') : key === 'bankLocked' ? (v ? 'Locked' : 'Editable') : key.startsWith('rooms.') ? (v ? 'Open' : 'Closed') : String(v))
@@ -95,6 +101,9 @@ const GAMES = [
   { key: 'andarBahar', label: 'Andar Bahar', icon: 'club', Card: (props) => <CardTableSettings {...props} game="andarBahar" /> },
   { key: 'dragonTiger', label: 'Dragon Tiger', icon: 'club', Card: (props) => <CardTableSettings {...props} game="dragonTiger" /> },
   { key: 'horseRacing', label: 'Horse Racing', icon: 'coins', Card: HorseRacingSettings },
+  { key: 'double', label: 'Double', icon: 'circleHalf', Card: DoubleSettings },
+  { key: 'hiLo', label: 'Hi-Lo', icon: 'sortUp', Card: HiLoSettings },
+  { key: 'keno', label: 'Keno', icon: 'grid', Card: KenoSettings },
 ]
 const GAME_NAMES = Object.fromEntries(GAMES.map((g) => [g.key, g.label]))
 

@@ -235,18 +235,74 @@ wingoBetSchema.index({ status: 1, period: 1 })
 const pokerTableSchema = new Schema({
   user: { type: ObjectId, ref: 'User', required: true },
   amount: { type: Number, required: true },
-  cfg: { type: Schema.Types.Mixed, required: true }, // blinds, rake and bot settings locked in when seated
-  state: { type: Schema.Types.Mixed, required: true }, // the table (see games/pokerEngine.js) — holds the deck, never sent as-is
-  v: { type: Number, default: 0 }, // bumped on every save so two taps can't act twice
+  cfg: { type: Schema.Types.Mixed, required: true },
+  state: { type: Schema.Types.Mixed, required: true },
+  v: { type: Number, default: 0 },
   hands: { type: Number, default: 0 },
   rake: { type: Number, default: 0 },
-  status: { type: String, required: true }, // active | won | lost
-  multiplier: { type: Number, default: 0 }, // cash-out ÷ buy-in
+  status: { type: String, required: true },
+  multiplier: { type: Number, default: 0 },
   win: { type: Number, default: 0 },
   settledAt: Date,
 }, { timestamps: { createdAt: true, updatedAt: false }, minimize: false })
 pokerTableSchema.index({ user: 1, createdAt: -1 })
-pokerTableSchema.index({ user: 1 }, { unique: true, partialFilterExpression: { status: 'active' } }) // one table at a time
+pokerTableSchema.index({ user: 1 }, { unique: true, partialFilterExpression: { status: 'active' } })
+
+// ── Double (Red-Black): instant 50/50 color bet
+const doubleBetSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true, index: true },
+  amount: { type: Number, required: true },
+  color: { type: String, enum: ['red', 'black'], required: true },
+  result: { type: String, enum: ['red', 'black'], required: true },
+  seed: { type: String, required: true },
+  multiplier: { type: Number, default: 0 },
+  win: { type: Number, default: 0 },
+}, { timestamps: { createdAt: true, updatedAt: false } })
+doubleBetSchema.index({ user: 1, createdAt: -1 })
+
+// ── Hi-Lo Cards: guess higher/lower, streak multipliers
+const hiLoBetSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true },
+  amount: { type: Number, required: true },
+  seed: { type: String, required: true },
+  deck: { type: [String], required: true }, // remaining cards in order
+  currentCard: { type: String, required: true },
+  streak: { type: Number, default: 0 },
+  multiplier: { type: Number, default: 1 },
+  status: { type: String, enum: ['active', 'won', 'lost'], required: true },
+  win: { type: Number, default: 0 },
+  settledAt: Date,
+}, { timestamps: { createdAt: true, updatedAt: false } })
+hiLoBetSchema.index({ user: 1, createdAt: -1 })
+hiLoBetSchema.index({ user: 1 }, { unique: true, partialFilterExpression: { status: 'active' } })
+
+// ── Keno: pick numbers, 20 drawn per period
+const kenoResultSchema = new Schema({
+  _id: String, // "room:period"
+  room: { type: String, required: true },
+  period: { type: Number, required: true },
+  numbers: { type: [Number], required: true },
+  seed: { type: String, required: true },
+}, { timestamps: { createdAt: true, updatedAt: false } })
+kenoResultSchema.index({ room: 1, period: -1 })
+
+const kenoBetSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true, index: true },
+  room: { type: String, required: true },
+  period: { type: Number, required: true },
+  picks: { type: [Number], required: true },
+  amount: { type: Number, required: true }, // after fee
+  fee: { type: Number, required: true },
+  maxWin: { type: Number, required: true },
+  status: { type: String, enum: ['pending', 'won', 'lost', 'refunded'], default: 'pending' },
+  drawn: { type: [Number], default: undefined },
+  matches: Number,
+  multiplier: { type: Number, default: 0 },
+  win: { type: Number, default: 0 },
+  settledAt: Date,
+}, { timestamps: { createdAt: true, updatedAt: false } })
+kenoBetSchema.index({ user: 1, createdAt: -1 })
+kenoBetSchema.index({ room: 1, period: 1, status: 1 })
 
 const adminSchema = new Schema({
   username: { type: String, required: true, unique: true },
@@ -350,6 +406,10 @@ export const SpinBet = model('SpinBet', spinBetSchema)
 export const WingoResult = model('WingoResult', wingoResultSchema)
 export const WingoBet = model('WingoBet', wingoBetSchema)
 export const PokerTable = model('PokerTable', pokerTableSchema)
+export const DoubleBet = model('DoubleBet', doubleBetSchema)
+export const HiLoBet = model('HiLoBet', hiLoBetSchema)
+export const KenoResult = model('KenoResult', kenoResultSchema)
+export const KenoBet = model('KenoBet', kenoBetSchema)
 export const Admin = model('Admin', adminSchema)
 export const Withdrawal = model('Withdrawal', withdrawalSchema)
 export const Deposit = model('Deposit', depositSchema)
