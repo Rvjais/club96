@@ -4,9 +4,9 @@ import { api } from '../../lib/api'
 import { useAuth } from '../../auth/authContext'
 import { money } from '../../lib/format'
 import { Icon } from '../../components/Icons'
-import BottomNav from '../../components/BottomNav'
 import Popup from '../../components/Popup'
 import { useSiteConfig } from '../../lib/siteConfig'
+import GameShell from '../lib/GameShell'
 import './Lucky6.css'
 
 export default function Lucky6() {
@@ -22,6 +22,9 @@ export default function Lucky6() {
   const [toast, setToast] = useState(null)
   const [lowBalance, setLowBalance] = useState(false)
   const minPlay = config?.minPlayBalance ?? 0
+
+  const minBet = rules?.minBet ?? 10
+  const maxBet = rules?.maxBet ?? 10000
 
   const showToast = (kind, text) => {
     setToast({ kind, text, id: Date.now() })
@@ -70,100 +73,169 @@ export default function Lucky6() {
     }
   }
 
+  const halfStake = () => setStake(String(Math.max(minBet, Math.floor((Number(stake) || 0) / 2) || minBet)))
+  const doubleStake = () => setStake(String(Math.min(maxBet, Math.max(minBet, Math.floor((Number(stake) || 0) * 2)))))
+  const maxStake = () => setStake(String(Math.max(minBet, Math.min(maxBet, Math.floor(Number(balance) || 0)))))
+
   const drawns = new Set(last?.main ?? [])
   const bonus = last?.bonus
+  const bestMatch = history.reduce((m, b) => (b.matches > m ? b.matches : m), 0)
 
   return (
-    <div className="l6-root">
-      <header className="l6-header">
-        <div className="l6-title"><Icon name="grid" size={22} strokeWidth={2.2} /><span>Lucky 6/49</span></div>
-        <div className="l6-balance"><span>{money(balance)}</span></div>
-      </header>
-
-      <main className="l6-main">
-        <section className="l6-board">
-          <div className="l6-selected">
-            <span>Picks ({picks.length}/{picksNeeded})</span>
-            <div className="l6-picked">{picks.map(n => <em key={n}>{n}</em>)}</div>
-          </div>
-          <div className="l6-grid">
-            {Array.from({ length: pool }, (_, i) => i + 1).map(n => (
-              <button key={n} type="button" className={picks.includes(n) ? 'picked' : ''} onClick={() => toggle(n)}>{n}</button>
-            ))}
-          </div>
-          <div className="l6-elected">
-            <button type="button" className="l6-quick" onClick={quickPick}>
-              <Icon name="zap" size={14} strokeWidth={2.4} /> Quick pick
-            </button>
-            <button type="button" className="l6-clear" onClick={() => setPicks([])}>Clear</button>
-          </div>
-        </section>
-
-        {last && (
-          <div className="l6-draw">
-            <span>DRAWN:</span>
-            {last.main.map(n => (
-              <em key={n} className={last.matches > 0 ? undefined : undefined}>{n}</em>
-            ))}
-            <em className="l6-bonus">{bonus}</em>
-            <small>bonus</small>
-            {last.win > 0 && <strong className="l6-won">+{money(last.win)}</strong>}
-          </div>
-        )}
-
-        <section className="l6-controls">
-          <label className="l6-stake">
-            <span>Stake</span>
-            <input type="number" min={rules?.minBet ?? 10} max={rules?.maxBet ?? 10000} value={stake} onChange={e => setStake(e.target.value)} inputMode="decimal" />
-          </label>
-          <button type="button" className="l6-bet" onClick={bet} disabled={busy || picks.length !== picksNeeded}>
-            <Icon name="play" size={16} strokeWidth={2.5} /> {busy ? 'Drawing…' : 'DRAW BALLS'}
-          </button>
-        </section>
-
-        <div className="l6-pay">
-          {Object.entries(rules?.payouts ?? { 3: 8, 4: 100, 5: 1500, '5+bonus': 3000, 6: 50000, '2+bonus': 4 }).map(([k, v]) => (
-            <span key={k}>{k.endsWith('bonus') ? `${k.replace('+bonus', '')} + bonus` : `${k} matches`} <strong>{v}×</strong></span>
-          ))}
-        </div>
-
-        <details className="l6-rules">
-          <summary>How to play</summary>
-          <ul>
-            <li>Pick <strong>{picksNeeded} numbers</strong> from 1–{pool}</li>
-            <li>6 main balls + 1 bonus ball are drawn</li>
-            <li>Match 3+ to win — bigger matches pay much more</li>
-            <li>Matching the bonus ball boosts small prizes</li>
-          </ul>
-        </details>
-
-        <div className="l6-history">
-          <h3>Recent draws</h3>
-          {history.length ? (
-            <div className="l6-hist-list">
-              {history.slice(0, 12).map(b => (
-                <div key={b.id} className="l6-hist-item">
-                  <span className="l6-hist-picks">{b.matches}/6</span>
-                  <span className="l6-hist-balls">{b.drawn.join(' ')}</span>
-                  <span>{money(b.amount)}</span>
-                  <span className={b.win > 0 ? 'win' : 'lose'}>
-                    {b.win > 0 ? `+${money(b.win)}` : 'No win'}
-                  </span>
-                </div>
-              ))}
+    <GameShell
+      icon="gem"
+      title="Lucky 6/49"
+      tagline="Pick 6 draw 6"
+      accent="#51e07f"
+      busy={busy}
+      toast={toast}
+      onRefresh={fetchState}
+      footer={(
+        <div className="l6-dock">
+          <div className="gs-input-row">
+            <div className="gs-field">
+              <span className="gs-cur">₹</span>
+              <input
+                className="gs-input"
+                type="number"
+                min={minBet}
+                max={maxBet}
+                value={stake}
+                onChange={e => setStake(e.target.value)}
+                inputMode="decimal"
+                aria-label="Stake"
+              />
             </div>
-          ) : <p className="l6-empty">No draws yet</p>}
-        </div>
-      </main>
-
-      <BottomNav onSoon={t => showToast('info', t)} />
-
-      {toast && (
-        <div key={toast.id} className={`l6-toast l6-toast-${toast.kind}`} role="status">
-          <Icon name={toast.kind === 'success' ? 'circleCheck' : toast.kind === 'error' ? 'circleAlert' : 'info'} size={16} />
-          {toast.text}
+            <button type="button" className="gs-chip" onClick={halfStake}>1/2</button>
+            <button type="button" className="gs-chip" onClick={doubleStake}>2×</button>
+            <button type="button" className="gs-chip" onClick={maxStake}>MAX</button>
+          </div>
+          <div className="gs-quick">
+            {[10, 50, 100, 500].filter(v => v >= minBet && v <= maxBet).map(v => (
+              <button key={v} type="button" className="gs-chip" onClick={() => setStake(String(v))}>₹{v}</button>
+            ))}
+          </div>
+          <button type="button" className="gs-cta" onClick={bet} disabled={busy || picks.length !== picksNeeded}>
+            <Icon name="play" size={17} strokeWidth={2.6} />
+            {busy ? 'Drawing…' : 'Draw balls'}
+          </button>
         </div>
       )}
+    >
+      <section className="gs-stage l6-stage" key={last?.id ?? 'idle'}>
+        <div className="l6-halo" aria-hidden="true" />
+        <div className="l6-stagecap">
+          <Icon name="dices" size={13} strokeWidth={2.4} />
+          {last ? 'Latest draw' : 'Machine ready'}
+        </div>
+        <div className="l6-balls">
+          {last
+            ? last.main.map((n, i) => (
+              <span key={`m${n}`} className={`l6-ball ${picks.includes(n) ? 'match' : ''}`} style={{ '--i': i }}>{n}</span>
+            ))
+            : Array.from({ length: 6 }, (_, i) => (
+              <span key={`g${i}`} className="l6-ball ghost" style={{ '--i': i }}>·</span>
+            ))}
+          {last
+            ? <span key="b" className="l6-ball bonus" style={{ '--i': last.main.length }}>{bonus ?? '?'}</span>
+            : <span key="gb" className="l6-ball ghost bonus" style={{ '--i': 6 }}>B</span>}
+        </div>
+        {last ? (
+          <>
+            <span className="l6-bonusnote"><Icon name="star" size={12} strokeWidth={2.4} />Gold ball = bonus</span>
+            <div className={`gs-banner ${last.win > 0 ? 'win' : 'loss'}`}>
+              {last.win > 0 ? `${last.matches} matched — won ${money(last.win)}` : `${last.matches} of ${picksNeeded} — no prize`}
+            </div>
+          </>
+        ) : (
+          <p className="l6-idle-note">Pick {picksNeeded} numbers, then draw — 6 main balls + 1 golden bonus</p>
+        )}
+      </section>
+
+      <div className="gs-strip">
+        {history.slice(0, 14).map(b => (
+          <span key={b.id} className={`gs-pill ${b.win > 0 ? 'win' : 'loss'}`}>{b.matches}/6</span>
+        ))}
+        {!history.length && <span className="gs-pill">—</span>}
+      </div>
+
+      <div className="gs-stats">
+        <div className="gs-stat">
+          <b>1–{pool}</b>
+          <span>Number pool</span>
+        </div>
+        <div className="gs-stat">
+          <b>{history.length ? `${bestMatch}/6` : '—'}</b>
+          <span>Best match</span>
+        </div>
+        <div className="gs-stat">
+          <b>{last?.win > 0 ? money(last.win) : '—'}</b>
+          <span>Last win</span>
+        </div>
+      </div>
+
+      <section className="gs-panel l6-boardpanel">
+        <div className="gs-panel-title"><Icon name="grid" size={13} strokeWidth={2.4} />Bet board · pick {picksNeeded} of {pool}</div>
+        <div className="l6-pickedrow">
+          <span className="l6-count">Picks ({picks.length}/{picksNeeded})</span>
+          {picks.map(n => <em key={n} className="l6-pickedchip">{n}</em>)}
+        </div>
+        <div className="l6-grid">
+          {Array.from({ length: pool }, (_, i) => i + 1).map(n => (
+            <button
+              key={n}
+              type="button"
+              className={`l6-tile ${picks.includes(n) ? 'is-on' : ''} ${last && picks.includes(n) && drawns.has(n) ? 'is-hit' : ''} ${last && n === bonus ? 'is-bn' : ''}`}
+              onClick={() => toggle(n)}
+              aria-pressed={picks.includes(n)}
+            >{n}</button>
+          ))}
+        </div>
+        <div className="l6-actions">
+          <button type="button" className="gs-btn-ghost" onClick={quickPick}>
+            <Icon name="zap" size={15} strokeWidth={2.4} /> Quick pick
+          </button>
+          <button type="button" className="gs-btn-ghost" onClick={() => setPicks([])}>Clear</button>
+        </div>
+      </section>
+
+      <section className="gs-panel l6-pays">
+        <div className="gs-panel-title"><Icon name="receipt" size={13} strokeWidth={2.4} />Payout table</div>
+        <div className="l6-payrow">
+          {Object.entries(rules?.payouts ?? { 3: 8, 4: 100, 5: 1500, '5+bonus': 3000, 6: 50000, '2+bonus': 4 }).map(([k, v]) => (
+            <span key={k} className="gs-pill">
+              {k.endsWith('bonus') ? `${k.replace('+bonus', '')} + bonus` : `${k} matches`} · <b>{v}×</b>
+            </span>
+          ))}
+        </div>
+      </section>
+
+      <section className="gs-panel gs-hist">
+        <div className="gs-panel-title"><Icon name="history" size={13} strokeWidth={2.4} />Recent draws</div>
+        {history.length ? (
+          history.slice(0, 12).map(b => (
+            <div key={b.id} className="gs-hist-row">
+              <span className={b.win > 0 ? 'win' : 'lose'}>{b.matches}/6</span>
+              <span className="l6-hist-balls">{b.drawn.join(' ')}</span>
+              <span className="l6-hist-stake">{money(b.amount)}</span>
+              <span className={b.win > 0 ? 'win' : 'lose'}>
+                {b.win > 0 ? `+${money(b.win)}` : 'No win'}
+              </span>
+              <span className="gs-hist-time">{new Date(b.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+          ))
+        ) : <p className="gs-hist-empty">No draws yet — pick your six</p>}
+      </section>
+
+      <details className="gs-rules">
+        <summary>How to play</summary>
+        <ul>
+          <li>Pick <strong>{picksNeeded} numbers</strong> from 1–{pool}</li>
+          <li>6 main balls + 1 bonus ball are drawn</li>
+          <li>Match 3+ to win — bigger matches pay much more</li>
+          <li>Matching the bonus ball boosts small prizes</li>
+        </ul>
+      </details>
 
       <Popup
         open={lowBalance}
@@ -180,6 +252,6 @@ export default function Lucky6() {
         You need at least <strong>{money(minPlay)}</strong> in your wallet to play.
         Your balance is <strong>{money(balance)}</strong>.
       </Popup>
-    </div>
+    </GameShell>
   )
 }

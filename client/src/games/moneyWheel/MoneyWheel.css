@@ -1,54 +1,272 @@
-.mw-root { display: flex; flex-direction: column; min-height: 100vh; background: #0b0d12; color: #e8e8e8; }
-.mw-header { display: flex; align-items: center; justify-content: space-between; padding: 16px; border-bottom: 1px solid #1f232a; position: sticky; top: 0; background: rgba(11,13,18,0.95); backdrop-filter: blur(8px); z-index: 10; }
-.mw-title { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 18px; color: #fff; }
-.mw-balance { font-weight: 600; font-size: 16px; }
+/* Money Wheel — big-six wheel visuals on top of the GameShell kit */
 
-.mw-main { flex: 1; padding: 16px; padding-bottom: 120px; display: flex; flex-direction: column; gap: 16px; }
+/* ── stage: wheel + teller readout ──────────────────────────────── */
+.mw-stage {
+  padding: 22px 14px 20px;
+}
 
-.mw-stage { background: radial-gradient(circle at 50% 35%, #2b1053 0%, #160733 75%); border: 1px solid #4c1d95; border-radius: 16px; padding: 22px 16px 18px; display: flex; flex-direction: column; align-items: center; gap: 14px; position: relative; }
-.mw-pointer { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 9px solid transparent; border-right: 9px solid transparent; border-top: 16px solid #fbbf24; z-index: 5; filter: drop-shadow(0 2px 4px #0009); }
-.mw-plate { position: relative; width: 260px; height: 260px; border-radius: 50%; background: #1a0f33; border: 6px solid #fbbf24; box-shadow: 0 12px 36px #000a, inset 0 0 40px #0008; overflow: hidden; }
-.mw-seg { position: absolute; top: 50%; left: 50%; width: 20px; height: 50%; transform-origin: bottom center; transform: translateX(-50%) rotate(var(--ca)); display: flex; align-items: flex-start; justify-content: center; font-size: 11px; font-weight: 900; padding-top: 6px; border-left: 1px solid #0006; }
-.mw-hub { position: absolute; top: 50%; left: 50%; width: 44px; height: 44px; transform: translate(-50%, -50%); border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff, #d4d4d8 60%); border: 3px solid #fbbf24; box-shadow: 0 4px 10px #0009; }
+.mw-spotlight {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(460px 220px at 50% -40px, rgba(124, 92, 255, 0.16), transparent 72%),
+    radial-gradient(320px 180px at 50% 108%, rgba(247, 201, 72, 0.07), transparent 74%);
+}
 
-.mw-callout { font-weight: 800; font-size: 15px; padding: 10px 22px; border-radius: 12px; }
-.mw-callout.is-win { background: #064e3b; color: #6ee7b7; }
-.mw-callout.is-push { background: #1e3a5f; color: #93c5fd; }
-.mw-callout.is-loss { background: #450a0a; color: #fca5a5; }
+.mw-scene {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  z-index: 1;
+}
 
-.mw-spots { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
-.mw-spot { display: flex; flex-direction: column; align-items: center; gap: 3px; background: #12151c; border: 2px solid #2a2f3a; border-radius: 12px; padding: 12px 4px; cursor: pointer; }
-.mw-spot-label { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px; background: var(--cc); color: #fff; box-shadow: inset 0 -4px 8px #0006; }
-.mw-spot em { font-style: normal; font-size: 11px; color: #999; }
-.mw-spot.active { border-color: var(--cc); background: #1c1428; box-shadow: 0 0 0 1px var(--cc), 0 4px 16px #0008; }
-.mw-spot.active em { color: #fff; }
+.mw-wheelwrap { position: relative; }
 
-.mw-controls { background: #12151c; border: 1px solid #1f232a; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-.mw-stake { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #888; }
-.mw-stake input { background: #0b0d12; border: 1px solid #2a2f3a; border-radius: 10px; padding: 12px 14px; color: #fff; font-size: 16px; outline: none; }
-.mw-stake input:focus { border-color: #a855f7; }
-.mw-quick { display: flex; flex-wrap: wrap; gap: 8px; }
-.mw-quick button { background: #1a1d24; border: 1px solid #2a2f3a; border-radius: 8px; padding: 6px 14px; color: #ccc; font-size: 13px; cursor: pointer; }
-.mw-spin { background: linear-gradient(135deg, #a855f7, #6d28d9); border: none; border-radius: 12px; padding: 14px; color: #fff; font-weight: 900; font-size: 15px; letter-spacing: 1px; cursor: pointer; }
-.mw-spin:disabled { opacity: 0.6; }
+/* gold pointer pinning the winning segment at 12 o'clock */
+.mw-pointer {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+  border-top: 17px solid #f3c25b;
+  z-index: 6;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.65));
+}
+.mw-pointer::after {
+  content: '';
+  position: absolute;
+  top: -19px;
+  left: -6px;
+  width: 12px;
+  height: 8px;
+  border-radius: 3px;
+  background: #d8a12e;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.4);
+}
 
-.mw-rules { background: #12151c; border: 1px solid #1f232a; border-radius: 14px; padding: 12px 16px; }
-.mw-rules summary { cursor: pointer; font-weight: 600; color: #aaa; list-style: none; display: flex; justify-content: space-between; }
-.mw-rules summary::-webkit-details-marker { display: none; }
-.mw-rules summary::after { content: '+'; font-size: 18px; color: #666; }
-.mw-rules[open] summary::after { transform: rotate(45deg); }
-.mw-rules ul { margin: 10px 0 0; padding-left: 18px; color: #bbb; font-size: 13px; line-height: 1.8; }
+.mw-plate-holder {
+  position: relative;
+  width: 272px;
+  height: 272px;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 8px #221245,
+    0 0 0 10px rgba(243, 194, 91, 0.8),
+    0 28px 48px -20px rgba(0, 0, 0, 0.9);
+  transition: box-shadow 0.4s ease;
+}
+@media (min-width: 720px) {
+  .mw-plate-holder { width: 320px; height: 320px; }
+}
+.mw-wheelwrap.is-spinning .mw-plate-holder {
+  box-shadow:
+    0 0 0 8px #221245,
+    0 0 0 10px rgba(243, 194, 91, 0.8),
+    0 28px 48px -20px rgba(0, 0, 0, 0.9),
+    0 0 44px rgba(124, 92, 255, 0.4);
+}
 
-.mw-history h3 { font-size: 14px; font-weight: 600; color: #888; margin: 0 0 10px; }
-.mw-hist-list { display: flex; flex-direction: column; gap: 6px; }
-.mw-hist-item { display: grid; grid-template-columns: 30px 34px auto auto auto; align-items: center; gap: 12px; background: #0b0d12; border: 1px solid #1f232a; border-radius: 10px; padding: 8px 12px; font-size: 13px; }
-.mw-hist-spot { width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; }
-.mw-hist-item .win { color: #4ade80; font-weight: 700; }
-.mw-hist-item .lose { color: #f87171; font-weight: 700; }
-.mw-hist-time { color: #666; font-size: 11px; margin-left: auto; }
-.mw-empty { text-align: center; color: #666; padding: 16px; font-size: 14px; }
+/* rotating disc — paints the exact 54-segment ladder from rules.wheel */
+.mw-plate {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 9px solid #1b0f38;
+  box-shadow:
+    inset 0 0 0 2.5px rgba(243, 194, 91, 0.45),
+    inset 0 0 34px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  will-change: transform;
+}
 
-.mw-toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 100; }
-.mw-toast-success { background: #065f46; color: #6ee7b7; }
-.mw-toast-error { background: #7f1d1d; color: #fca5a5; }
-.mw-toast-info { background: #1e3a5f; color: #93c5fd; }
+.mw-segwrap {
+  position: absolute;
+  inset: 0;
+  transform: rotate(var(--ca));
+  pointer-events: none;
+}
+.mw-seg {
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-style: normal;
+  font-size: 8.5px;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  font-variant-numeric: tabular-nums;
+}
+@media (min-width: 720px) {
+  .mw-seg { top: 9px; font-size: 9.5px; }
+}
+
+/* glossy gold hub cap */
+.mw-hub {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 58px;
+  height: 58px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(120% 120% at 32% 26%, #ffe9a3 0%, #f7c948 55%, #a97c17 100%);
+  border: 2.5px solid rgba(255, 244, 200, 0.8);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6), inset 0 -6px 10px rgba(146, 103, 14, 0.5);
+  z-index: 4;
+  animation: mw-float 3.4s ease-in-out infinite;
+}
+@keyframes mw-float {
+  0%, 100% { box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6), inset 0 -6px 10px rgba(146, 103, 14, 0.5), 0 0 0 rgba(247, 201, 72, 0); }
+  50% { box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6), inset 0 -6px 10px rgba(146, 103, 14, 0.5), 0 0 18px rgba(247, 201, 72, 0.45); }
+}
+
+/* teller: bold multiplier result beside the wheel */
+.mw-teller {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mw-landed {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.mw-landed-coin {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-size: 17px;
+  font-weight: 900;
+  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.4), 0 4px 10px rgba(0, 0, 0, 0.5);
+  animation: mw-pop 0.25s ease;
+}
+.mw-landed-coin.idle {
+  color: #8fa0b8;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: none;
+  animation: none;
+}
+
+.mw-landed-mult {
+  font-size: 21px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 18px rgba(124, 92, 255, 0.5);
+}
+
+.mw-note {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #7c869d;
+}
+.mw-note strong { font-weight: 900; }
+.mw-note strong:last-child { color: #ffd76a; }
+
+@keyframes mw-pop {
+  0% { opacity: 0; transform: scale(0.72); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* ── dock: spot chips + stake ───────────────────────────────────── */
+.mw-dock { display: grid; gap: 9px; }
+
+.mw-spots {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 7px;
+}
+.mw-spot {
+  height: 44px;
+  padding: 0 4px;
+  gap: 0;
+  flex-direction: column;
+}
+.mw-spot-dot {
+  width: 23px;
+  height: 23px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 10.5px;
+  font-weight: 900;
+  box-shadow: inset 0 -3px 5px rgba(0, 0, 0, 0.35), inset 0 1.5px 2px rgba(255, 255, 255, 0.4);
+  flex: none;
+}
+.mw-spot em {
+  font-style: normal;
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #8b95ab;
+}
+.mw-spot.is-on {
+  border-color: var(--cc);
+  background: color-mix(in srgb, var(--cc) 16%, transparent);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--cc) 36%, transparent), inset 0 0 10px color-mix(in srgb, var(--cc) 16%, transparent);
+}
+.mw-spot.is-on em { color: var(--cc); }
+
+/* ── history bits ───────────────────────────────────────────────── */
+.mw-hist .gs-hist-row { grid-template-columns: auto 1fr auto auto auto; }
+
+.mw-pill { font-variant-numeric: tabular-nums; }
+
+.mw-hist-spot {
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  box-shadow: inset 0 -3px 5px rgba(0, 0, 0, 0.3), inset 0 1.5px 2px rgba(255, 255, 255, 0.35);
+}
+
+.mw-hist-land { color: #96a0b6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mw-hist-land i {
+  font-style: normal;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.mw-hist-stake { color: #aab3c6; font-variant-numeric: tabular-nums; }
+
+/* ── wider phones / desktop ─────────────────────────────────────── */
+@media (min-width: 720px) {
+  .mw-scene {
+    flex-direction: row;
+    justify-content: center;
+    gap: 24px;
+  }
+  .mw-teller {
+    width: 248px;
+    flex: none;
+    align-self: center;
+  }
+  .mw-landed-mult { font-size: 26px; }
+}

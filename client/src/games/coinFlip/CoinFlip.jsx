@@ -4,9 +4,9 @@ import { api } from '../../lib/api'
 import { useAuth } from '../../auth/authContext'
 import { money } from '../../lib/format'
 import { Icon } from '../../components/Icons'
-import BottomNav from '../../components/BottomNav'
 import Popup from '../../components/Popup'
 import { useSiteConfig } from '../../lib/siteConfig'
+import GameShell from '../lib/GameShell'
 import './CoinFlip.css'
 
 const flipped = (side) => (side === 'heads' ? 'H' : 'T')
@@ -26,6 +26,10 @@ export default function CoinFlip() {
   const [lowBalance, setLowBalance] = useState(false)
   const minPlay = config?.minPlayBalance ?? 0
   const flipTimer = useRef(null)
+
+  const minBet = rules?.minBet ?? 10
+  const maxBet = rules?.maxBet ?? 10000
+  const payout = rules?.payout ?? 1.95
 
   const showToast = (kind, text) => {
     setToast({ kind, text, id: Date.now() })
@@ -83,92 +87,127 @@ export default function CoinFlip() {
     }
   }
 
+  const halfStake = () => setStake(String(Math.max(minBet, Math.floor((Number(stake) || 0) / 2) || minBet)))
+  const doubleStake = () => setStake(String(Math.min(maxBet, Math.max(minBet, Math.floor((Number(stake) || 0) * 2)))))
+  const maxStake = () => setStake(String(Math.max(minBet, Math.min(maxBet, Math.floor(Number(balance) || 0)))))
+
   const last = history[0]
-  const payout = rules?.payout ?? 1.95
+  let streak = 0
+  for (const b of history) { if (b.win > 0) streak++; else break }
 
   return (
-    <div className="cfp-root">
-      <header className="cfp-header">
-        <div className="cfp-title"><Icon name="coins" size={22} strokeWidth={2.2} /><span>Coin Flip</span></div>
-        <div className="cfp-balance">
-          <span>{money(balance)}</span>
-          <button className={`cfp-refresh ${spinning ? 'spin' : ''}`} onClick={() => { setSpinning(true); Promise.all([fetchState(), refreshWallet().catch(() => {}), new Promise(r => setTimeout(r, 500))]).then(() => setSpinning(false)) }} aria-label="Refresh">
-            <Icon name="refresh" size={18} strokeWidth={2} />
-          </button>
-        </div>
-      </header>
-
-      <main className="cfp-main">
-        <section className="cfp-coinbox">
-          <div className={`cfp-coin ${spinning ? 'spinning' : ''} ${face === 'T' ? 'tails' : ''}`}>
-            <span className="cfp-face">{face}</span>
-            <small className="cfp-face-sub">{face === 'H' ? 'HEADS' : face === 'T' ? 'TAILS' : 'READY'}</small>
+    <GameShell
+      icon="coins"
+      title="Coin Flip"
+      tagline="Call the coin"
+      accent="#f7c948"
+      busy={busy}
+      toast={toast}
+      onRefresh={fetchState}
+      footer={(
+        <div className="cfp-dock">
+          <div className="cfp-call">
+            <button type="button" className={`cfp-side heads ${side === 'heads' ? 'is-on' : ''}`} onClick={() => setSide('heads')}>
+              <span className="cfp-side-face">H</span>
+              <span className="cfp-side-txt">HEADS<em>{payout}×</em></span>
+            </button>
+            <button type="button" className={`cfp-side tails ${side === 'tails' ? 'is-on' : ''}`} onClick={() => setSide('tails')}>
+              <span className="cfp-side-face">T</span>
+              <span className="cfp-side-txt">TAILS<em>{payout}×</em></span>
+            </button>
           </div>
-          {last && (
-            <div className={`cfp-last ${last.win > 0 ? 'is-win' : 'is-loss'}`}>
-              {last.win > 0 ? `+${money(last.win)}` : `−${money(last.amount)}`} · {last.side === last.result ? 'Called it' : 'Missed'}
+          <div className="gs-input-row">
+            <div className="gs-field">
+              <span className="gs-cur">₹</span>
+              <input
+                className="gs-input"
+                type="number"
+                min={minBet}
+                max={maxBet}
+                value={stake}
+                onChange={e => setStake(e.target.value)}
+                inputMode="decimal"
+                aria-label="Stake"
+              />
             </div>
-          )}
-        </section>
-
-        <section className="cfp-controls">
-          <div className="cfp-sides">
-            <button type="button" className={`cfp-side heads ${side === 'heads' ? 'active' : ''}`} onClick={() => setSide('heads')}>
-              <span className="cfp-side-face">H</span> Heads <em>{payout}x</em>
-            </button>
-            <button type="button" className={`cfp-side tails ${side === 'tails' ? 'active' : ''}`} onClick={() => setSide('tails')}>
-              <span className="cfp-side-face">T</span> Tails <em>{payout}x</em>
-            </button>
+            <button type="button" className="gs-chip" onClick={halfStake}>1/2</button>
+            <button type="button" className="gs-chip" onClick={doubleStake}>2×</button>
+            <button type="button" className="gs-chip" onClick={maxStake}>MAX</button>
           </div>
-          <label className="cfp-stake">
-            <span>Stake</span>
-            <input type="number" min={rules?.minBet ?? 10} max={rules?.maxBet ?? 10000} value={stake} onChange={e => setStake(e.target.value)} inputMode="decimal" />
-          </label>
-          <div className="cfp-quick">
-            {[10, 50, 100, 500, 1000].filter(v => v >= (rules?.minBet ?? 10) && v <= (rules?.maxBet ?? 10000)).map(v => (
-              <button key={v} type="button" onClick={() => setStake(String(v))}>₹{v}</button>
+          <div className="gs-quick">
+            {[10, 50, 100, 500, 1000].filter(v => v >= minBet && v <= maxBet).map(v => (
+              <button key={v} type="button" className="gs-chip" onClick={() => setStake(String(v))}>₹{v}</button>
             ))}
           </div>
-          <button type="button" className="cfp-bet" onClick={bet} disabled={busy}>
-            <Icon name="play" size={16} strokeWidth={2.5} /> FLIP
+          <button type="button" className="gs-cta" onClick={bet} disabled={busy}>
+            <Icon name={spinning ? 'refresh' : 'play'} size={17} strokeWidth={2.6} />
+            {spinning ? 'FLIPPING…' : 'FLIP THE COIN'}
           </button>
-        </section>
-
-        <details className="cfp-rules">
-          <summary>How to play</summary>
-          <ul>
-            <li>Pick <strong>heads</strong> or <strong>tails</strong></li>
-            <li>Win pays <strong>{payout}×</strong> the stake</li>
-            <li>Fair 50 / 50 shot on every flip</li>
-          </ul>
-        </details>
-
-        <div className="cfp-history">
-          <h3>Recent flips</h3>
-          {history.length ? (
-            <div className="cfp-hist-list">
-              {history.slice(0, 15).map(b => (
-                <div key={b.id} className="cfp-hist-item">
-                  <span className={`cfp-hist-coin ${b.result === 'heads' ? 'h' : 't'}`}>{flipped(b.result)}</span>
-                  <span>{b.side} {b.side === b.result ? '✓' : '✗'}</span>
-                  <span>{money(b.amount)}</span>
-                  <span className={b.win > 0 ? 'win' : 'lose'}>{b.win > 0 ? `+${money(b.win)}` : 'Lost'}</span>
-                  <span className="cfp-hist-time">{new Date(b.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                </div>
-              ))}
-            </div>
-          ) : <p className="cfp-empty">No flips yet</p>}
-        </div>
-      </main>
-
-      <BottomNav onSoon={t => showToast('info', t)} />
-
-      {toast && (
-        <div key={toast.id} className={`cfp-toast cfp-toast-${toast.kind}`} role="status">
-          <Icon name={toast.kind === 'success' ? 'circleCheck' : toast.kind === 'error' ? 'circleAlert' : 'info'} size={16} />
-          {toast.text}
         </div>
       )}
+    >
+      <section className="gs-stage cfp-stage">
+        <div className="cfp-halo" aria-hidden="true" />
+        <div className="cfp-coinwrap">
+          <div className={`cfp-coin ${face === 'T' ? 'tails' : ''} ${spinning ? 'spinning' : ''}`}>
+            <span className="cfp-coin-face">{face}</span>
+            <small className="cfp-coin-sub">{face === 'H' ? 'HEADS' : face === 'T' ? 'TAILS' : 'READY'}</small>
+          </div>
+          <div className="cfp-coin-shadow" aria-hidden="true" />
+        </div>
+        {last && (
+          <div className={`cfp-last ${last.win > 0 ? 'is-win' : 'is-loss'}`}>
+            {last.win > 0 ? `+${money(last.win)}` : `−${money(last.amount)}`}
+            <em>{last.result} · {last.side === last.result ? 'called it' : 'missed'}</em>
+          </div>
+        )}
+      </section>
+
+      <div className="gs-strip">
+        {history.slice(0, 14).map(b => (
+          <span key={b.id} className={`gs-pill ${b.result === 'heads' ? 'gold' : ''}`}>{flipped(b.result)}</span>
+        ))}
+        {!history.length && <span className="gs-pill">—</span>}
+      </div>
+
+      <div className="gs-stats">
+        <div className="gs-stat">
+          <b>{streak > 0 ? `${streak}×` : '—'}</b>
+          <span>Win streak</span>
+        </div>
+        <div className="gs-stat">
+          <b>{payout}×</b>
+          <span>Pays</span>
+        </div>
+        <div className="gs-stat">
+          <b>{money(last ? (last.win > 0 ? last.win : last.amount) : 0)}</b>
+          <span>Last round</span>
+        </div>
+      </div>
+
+      <section className="gs-panel gs-hist">
+        <div className="gs-panel-title">Recent flips</div>
+        {history.length ? (
+          history.slice(0, 15).map(b => (
+            <div key={b.id} className="gs-hist-row">
+              <span className={`cfp-hist-coin ${b.result === 'heads' ? 'gold' : 'silver'}`}>{flipped(b.result)}</span>
+              <span>{b.side} {b.side === b.result ? '✓' : '✗'}</span>
+              <span className="cfp-hist-stake">{money(b.amount)}</span>
+              <span className={b.win > 0 ? 'win' : 'lose'}>{b.win > 0 ? `+${money(b.win)}` : 'LOST'}</span>
+              <span className="gs-hist-time">{new Date(b.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+          ))
+        ) : <p className="gs-hist-empty">No flips yet — call your first</p>}
+      </section>
+
+      <details className="gs-rules">
+        <summary>How to play</summary>
+        <ul>
+          <li>Pick <strong>heads</strong> or <strong>tails</strong></li>
+          <li>Win pays <strong>{payout}×</strong> the stake</li>
+          <li>Fair 50 / 50 shot on every flip</li>
+        </ul>
+      </details>
 
       <Popup
         open={lowBalance}
@@ -185,6 +224,6 @@ export default function CoinFlip() {
         You need at least <strong>{money(minPlay)}</strong> in your wallet to play.
         Your balance is <strong>{money(balance)}</strong>.
       </Popup>
-    </div>
+    </GameShell>
   )
 }

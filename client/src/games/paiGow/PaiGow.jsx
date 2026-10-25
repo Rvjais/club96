@@ -4,9 +4,9 @@ import { api } from '../../lib/api'
 import { useAuth } from '../../auth/authContext'
 import { money } from '../../lib/format'
 import { Icon } from '../../components/Icons'
-import BottomNav from '../../components/BottomNav'
 import Popup from '../../components/Popup'
 import { useSiteConfig } from '../../lib/siteConfig'
+import GameShell from '../lib/GameShell'
 import { CardFace } from '../lib/cards'
 import '../lib/cards.css'
 import './PaiGow.css'
@@ -16,6 +16,8 @@ const RESULT_TEXT = {
   dealerWins: 'Dealer wins',
   push: 'Push — stake back',
 }
+
+const MARK = { won: 'WIN', lost: 'LOSE', tied: 'TIE' }
 
 export default function PaiGow() {
   const navigate = useNavigate()
@@ -29,6 +31,9 @@ export default function PaiGow() {
   const [toast, setToast] = useState(null)
   const [lowBalance, setLowBalance] = useState(false)
   const minPlay = config?.minPlayBalance ?? 0
+
+  const minBet = rules?.minBet ?? 10
+  const maxBet = rules?.maxBet ?? 10000
 
   const showToast = (kind, text) => {
     setToast({ kind, text, id: Date.now() })
@@ -63,90 +68,200 @@ export default function PaiGow() {
     }
   }
 
+  const halfStake = () => setStake(String(Math.max(minBet, Math.floor((Number(stake) || 0) / 2) || minBet)))
+  const doubleStake = () => setStake(String(Math.min(maxBet, Math.max(minBet, Math.floor((Number(stake) || 0) * 2)))))
+  const maxStake = () => setStake(String(Math.max(minBet, Math.min(maxBet, Math.floor(Number(balance) || 0)))))
+
+  // purely presentational: colour each row from the overall result
+  const youCls = last ? (last.result === 'playerWins' ? 'won' : last.result === 'push' ? 'tied' : 'lost') : ''
+  const dlrCls = last ? (last.result === 'playerWins' ? 'lost' : last.result === 'push' ? 'tied' : 'won') : ''
+  const bestWin = history.reduce((m, b) => (b.result === 'playerWins' && b.win - b.amount > m ? b.win - b.amount : m), 0)
+  const totalStaked = history.reduce((m, b) => m + b.amount, 0)
+
   return (
-    <div className="pg-root">
-      <header className="pg-header">
-        <div className="pg-title"><Icon name="layers" size={22} strokeWidth={2.2} /><span>Pai Gow Poker</span></div>
-        <div className="pg-balance"><span>{money(balance)}</span></div>
-      </header>
-
-      <main className="pg-main">
-        {last && (
-          <section className="pg-table">
-            <div className="pg-side">
-              <span className="pg-label">YOU — HIGH (5)</span>
-              <div className="pg-cards">{last.playerHigh.map((c, i) => <CardFace key={i} card={c} small />)}</div>
-              <span className="pg-label pg-low">YOU — LOW (2)</span>
-              <div className="pg-cards">{last.playerLow.map((c, i) => <CardFace key={i} card={c} small />)}</div>
+    <GameShell
+      icon="layers"
+      title="Pai Gow Poker"
+      tagline="Win both hands"
+      accent="#a78bfa"
+      busy={busy}
+      toast={toast}
+      onRefresh={fetchState}
+      wide
+      footer={(
+        <div className="pg-dock">
+          <div className="gs-input-row">
+            <div className="gs-field">
+              <span className="gs-cur">₹</span>
+              <input
+                className="gs-input"
+                type="number"
+                min={minBet}
+                max={maxBet}
+                value={stake}
+                onChange={e => setStake(e.target.value)}
+                inputMode="decimal"
+                aria-label="Stake"
+              />
             </div>
-            <div className="pg-divider">VS</div>
-            <div className="pg-side">
-              <span className="pg-label">DEALER — HIGH (5)</span>
-              <div className="pg-cards">{last.dealerHigh.map((c, i) => <CardFace key={i} card={c} small />)}</div>
-              <span className="pg-label pg-low">DEALER — LOW (2)</span>
-              <div className="pg-cards">{last.dealerLow.map((c, i) => <CardFace key={i} card={c} small />)}</div>
-            </div>
-            <div className={`pg-banner ${last.result === 'playerWins' ? 'is-win' : last.result === 'push' ? 'is-push' : 'is-loss'}`}>
-              {RESULT_TEXT[last.result]}{last.win > 0 ? ` — ${money(last.win)}` : ''}
-            </div>
-          </section>
-        )}
-
-        <section className="pg-controls">
-          <label className="pg-stake">
-            <span>Stake</span>
-            <input type="number" min={rules?.minBet ?? 10} max={rules?.maxBet ?? 10000} value={stake} onChange={e => setStake(e.target.value)} inputMode="decimal" />
-          </label>
-          <div className="pg-quick">
-            {[10, 50, 100, 500].filter(v => v >= (rules?.minBet ?? 10) && v <= (rules?.maxBet ?? 10000)).map(v => (
-              <button key={v} type="button" onClick={() => setStake(String(v))}>₹{v}</button>
+            <button type="button" className="gs-chip" onClick={halfStake}>1/2</button>
+            <button type="button" className="gs-chip" onClick={doubleStake}>2×</button>
+            <button type="button" className="gs-chip" onClick={maxStake}>MAX</button>
+          </div>
+          <div className="gs-quick">
+            {[10, 50, 100, 500].filter(v => v >= minBet && v <= maxBet).map(v => (
+              <button key={v} type="button" className="gs-chip" onClick={() => setStake(String(v))}>₹{v}</button>
             ))}
           </div>
-          <button type="button" className="pg-deal" onClick={deal} disabled={busy}>
-            <Icon name="shuffle" size={16} strokeWidth={2.5} /> {busy ? 'Dealing…' : 'DEAL & SPLIT'}
+          <button type="button" className="gs-cta" onClick={deal} disabled={busy}>
+            <Icon name="shuffle" size={17} strokeWidth={2.6} />
+            {busy ? 'Dealing…' : 'Deal & split'}
           </button>
-        </section>
-
-        <details className="pg-rules" open={!last}>
-          <summary>How to play</summary>
-          <ul>
-            <li>You get <strong>7 cards</strong>, dealer gets 7</li>
-            <li>Both hands are split automatically into a <strong>5-card high</strong> and a <strong>2-card low</strong></li>
-            <li><strong>Win both</strong> hands → paid 1:1 minus 5% commission</li>
-            <li>Split 1–1 → <strong>push</strong>; otherwise you lose</li>
-            <li>Two-card hand: any <strong>pair</strong> beats any two singles</li>
-          </ul>
-        </details>
-
-        <div className="pg-history">
-          <h3>Recent hands</h3>
-          {history.length ? (
-            <div className="pg-hist-list">
-              {history.slice(0, 15).map(b => (
-                <div key={b.id} className="pg-hist-item">
-                  <span className={b.result === 'playerWins' ? 'win' : b.result === 'push' ? 'push' : 'lose'}>
-                    {b.result === 'playerWins' ? 'WON' : b.result === 'push' ? 'PUSH' : 'LOST'}
-                  </span>
-                  <span>{money(b.amount)}</span>
-                  <span className={b.result === 'playerWins' ? 'win' : b.result === 'push' ? 'push' : 'lose'}>
-                    {b.result === 'playerWins' ? `+${money(b.win - b.amount)}` : b.result === 'push' ? money(b.win) : '−' + money(b.amount)}
-                  </span>
-                  <span className="pg-hist-time">{new Date(b.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                </div>
-              ))}
-            </div>
-          ) : <p className="pg-empty">No hands yet</p>}
-        </div>
-      </main>
-
-      <BottomNav onSoon={t => showToast('info', t)} />
-
-      {toast && (
-        <div key={toast.id} className={`pg-toast pg-toast-${toast.kind}`} role="status">
-          <Icon name={toast.kind === 'success' ? 'circleCheck' : toast.kind === 'error' ? 'circleAlert' : 'info'} size={16} />
-          {toast.text}
         </div>
       )}
+    >
+      <section className={`gs-stage pg-stage ${busy ? 'is-dealing' : ''}`}>
+        <div className="pg-rail" aria-hidden="true" />
+        {last ? (
+          <div className="pg-felt">
+            <div className="pg-hand">
+              <div className="pg-sidehead">
+                <span className="pg-sidechip you"><Icon name="user" size={11} strokeWidth={2.4} />You</span>
+              </div>
+              <div className="pg-rows">
+                <div className={`pg-row ${youCls}`}>
+                  <div className="pg-rowlabel">
+                    <b>High</b><i>5 cards</i>
+                    <em className={`pg-mark ${youCls}`}>{MARK[youCls]}</em>
+                  </div>
+                  <div className="pg-cards">
+                    {last.playerHigh.map((c, i) => (
+                      <div key={i} className="pg-card" style={{ '--i': i }}><CardFace card={c} small /></div>
+                    ))}
+                  </div>
+                </div>
+                <div className={`pg-row ${youCls}`}>
+                  <div className="pg-rowlabel low">
+                    <b>Low</b><i>2 cards</i>
+                    <em className={`pg-mark ${youCls}`}>{MARK[youCls]}</em>
+                  </div>
+                  <div className="pg-cards">
+                    {last.playerLow.map((c, i) => (
+                      <div key={i} className="pg-card" style={{ '--i': i + 5 }}><CardFace card={c} small /></div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pg-vs">VS</div>
+
+            <div className="pg-hand">
+              <div className="pg-sidehead">
+                <span className="pg-sidechip dealer"><Icon name="spade" size={11} strokeWidth={2.4} />Dealer</span>
+              </div>
+              <div className="pg-rows">
+                <div className={`pg-row ${dlrCls}`}>
+                  <div className="pg-rowlabel">
+                    <b>High</b><i>5 cards</i>
+                    <em className={`pg-mark ${dlrCls}`}>{MARK[dlrCls]}</em>
+                  </div>
+                  <div className="pg-cards">
+                    {last.dealerHigh.map((c, i) => (
+                      <div key={i} className="pg-card" style={{ '--i': i }}><CardFace card={c} small /></div>
+                    ))}
+                  </div>
+                </div>
+                <div className={`pg-row ${dlrCls}`}>
+                  <div className="pg-rowlabel low">
+                    <b>Low</b><i>2 cards</i>
+                    <em className={`pg-mark ${dlrCls}`}>{MARK[dlrCls]}</em>
+                  </div>
+                  <div className="pg-cards">
+                    {last.dealerLow.map((c, i) => (
+                      <div key={i} className="pg-card" style={{ '--i': i + 5 }}><CardFace card={c} small /></div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className={`gs-banner ${last.result === 'playerWins' ? 'win' : last.result === 'push' ? 'push' : 'loss'}`}>
+              {RESULT_TEXT[last.result]}{last.win > 0 ? ` — ${money(last.win)}` : ''}
+            </div>
+          </div>
+        ) : (
+          <div className="pg-idle">
+            <div className="pg-idle-hand">
+              {Array.from({ length: 5 }, (_, i) => (
+                <div key={`h${i}`} className="pg-card" style={{ '--i': i }}><CardFace back small /></div>
+              ))}
+            </div>
+            <div className="pg-idle-hand low">
+              {Array.from({ length: 2 }, (_, i) => (
+                <div key={`l${i}`} className="pg-card" style={{ '--i': i + 5 }}><CardFace back small /></div>
+              ))}
+            </div>
+            <p className="pg-idle-cap">Seven cards · auto split 5 + 2</p>
+            <p className="pg-idle-note">Beat the dealer on <b>both</b> hands to win</p>
+          </div>
+        )}
+      </section>
+
+      <div className="gs-strip">
+        {history.slice(0, 14).map(b => (
+          <span key={b.id} className={`gs-pill ${b.result === 'playerWins' ? 'win' : b.result === 'push' ? 'gold' : 'loss'}`}>
+            {b.result === 'playerWins' ? 'W' : b.result === 'push' ? 'P' : 'L'}
+          </span>
+        ))}
+        {!history.length && <span className="gs-pill">—</span>}
+      </div>
+
+      <div className="gs-stats">
+        <div className="gs-stat">
+          <b>{history.length}</b>
+          <span>Hands</span>
+        </div>
+        <div className="gs-stat">
+          <b>{money(bestWin)}</b>
+          <span>Best win</span>
+        </div>
+        <div className="gs-stat">
+          <b>{money(totalStaked)}</b>
+          <span>Total staked</span>
+        </div>
+      </div>
+
+      <section className="gs-panel gs-hist">
+        <div className="gs-panel-title"><Icon name="history" size={13} strokeWidth={2.4} />Recent hands</div>
+        {history.length ? (
+          history.slice(0, 15).map(b => {
+            const cls = b.result === 'playerWins' ? 'win' : b.result === 'push' ? 'pg-push' : 'lose'
+            return (
+              <div key={b.id} className="gs-hist-row">
+                <span className={`pg-dot ${cls}`} />
+                <span className={cls}>{b.result === 'playerWins' ? 'WON' : b.result === 'push' ? 'PUSH' : 'LOST'}</span>
+                <span className="pg-staketxt">{money(b.amount)}</span>
+                <span className={cls}>
+                  {b.result === 'playerWins' ? `+${money(b.win - b.amount)}` : b.result === 'push' ? money(b.win) : '−' + money(b.amount)}
+                </span>
+                <span className="gs-hist-time">{new Date(b.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+            )
+          })
+        ) : <p className="gs-hist-empty">No hands yet — deal your first</p>}
+      </section>
+
+      <details className="gs-rules" open={!last}>
+        <summary>How to play</summary>
+        <ul>
+          <li>You get <strong>7 cards</strong>, dealer gets 7</li>
+          <li>Both hands are split automatically into a <strong>5-card high</strong> and a <strong>2-card low</strong></li>
+          <li><strong>Win both</strong> hands → paid 1:1 minus 5% commission</li>
+          <li>Split 1–1 → <strong>push</strong>; otherwise you lose</li>
+          <li>Two-card hand: any <strong>pair</strong> beats any two singles</li>
+        </ul>
+      </details>
 
       <Popup
         open={lowBalance}
@@ -163,6 +278,6 @@ export default function PaiGow() {
         You need at least <strong>{money(minPlay)}</strong> in your wallet to play.
         Your balance is <strong>{money(balance)}</strong>.
       </Popup>
-    </div>
+    </GameShell>
   )
 }

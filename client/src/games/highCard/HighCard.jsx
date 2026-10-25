@@ -4,9 +4,9 @@ import { api } from '../../lib/api'
 import { useAuth } from '../../auth/authContext'
 import { money } from '../../lib/format'
 import { Icon } from '../../components/Icons'
-import BottomNav from '../../components/BottomNav'
 import Popup from '../../components/Popup'
 import { useSiteConfig } from '../../lib/siteConfig'
+import GameShell from '../lib/GameShell'
 import { CardFace } from '../lib/cards'
 import '../lib/cards.css'
 import './HighCard.css'
@@ -25,6 +25,10 @@ export default function HighCard() {
   const [toast, setToast] = useState(null)
   const [lowBalance, setLowBalance] = useState(false)
   const minPlay = config?.minPlayBalance ?? 0
+
+  const minBet = rules?.minBet ?? 10
+  const maxBet = rules?.maxBet ?? 10000
+  const payout = rules?.payout ?? 1.92
 
   const showToast = (kind, text) => {
     setToast({ kind, text, id: Date.now() })
@@ -67,87 +71,131 @@ export default function HighCard() {
     }
   }
 
-  return (
-    <div className="hc-root">
-      <header className="hc-header">
-        <div className="hc-title"><Icon name="spade" size={22} strokeWidth={2.2} /><span>High Card Draw</span></div>
-        <div className="hc-balance"><span>{money(balance)}</span></div>
-      </header>
+  const halfStake = () => setStake(String(Math.max(minBet, Math.floor((Number(stake) || 0) / 2) || minBet)))
+  const doubleStake = () => setStake(String(Math.min(maxBet, Math.max(minBet, Math.floor((Number(stake) || 0) * 2)))))
+  const maxStake = () => setStake(String(Math.max(minBet, Math.min(maxBet, Math.floor(Number(balance) || 0)))))
 
-      <main className="hc-main">
-        <section className="hc-table">
-          <div className="hc-hand">
-            <span className="hc-label">YOU</span>
-            <div className="hc-cards">
+  const last = history[0]
+  let streak = 0
+  for (const b of history) { if (b.result === 'playerWins') streak++; else break }
+
+  return (
+    <GameShell
+      icon="spade"
+      title="High Card Draw"
+      tagline="Beat the dealer"
+      accent="#5ad1ff"
+      busy={busy}
+      toast={toast}
+      onRefresh={fetchState}
+      footer={(
+        <div className="hc-dock">
+          <div className="gs-input-row">
+            <div className="gs-field">
+              <span className="gs-cur">₹</span>
+              <input
+                className="gs-input"
+                type="number"
+                min={minBet}
+                max={maxBet}
+                value={stake}
+                onChange={e => setStake(e.target.value)}
+                inputMode="decimal"
+                aria-label="Stake"
+              />
+            </div>
+            <button type="button" className="gs-chip" onClick={halfStake}>1/2</button>
+            <button type="button" className="gs-chip" onClick={doubleStake}>2×</button>
+            <button type="button" className="gs-chip" onClick={maxStake}>MAX</button>
+          </div>
+          <div className="gs-quick">
+            {[10, 50, 100, 500].filter(v => v >= minBet && v <= maxBet).map(v => (
+              <button key={v} type="button" className="gs-chip" onClick={() => setStake(String(v))}>₹{v}</button>
+            ))}
+          </div>
+          <button type="button" className="gs-cta" onClick={draw} disabled={busy}>
+            <Icon name="shuffle" size={17} strokeWidth={2.6} />
+            {busy ? 'Drawing…' : 'DRAW CARDS'}
+          </button>
+        </div>
+      )}
+    >
+      <section className="gs-stage hc-stage">
+        <div className="hc-felt" aria-hidden="true" />
+        <div
+          className={`hc-duel ${reveal ? (reveal.result === 'playerWins' ? 'is-player' : reveal.result === 'push' ? 'is-push' : 'is-dealer') : ''}`}
+          key={reveal?.id ?? 'hc-idle'}
+        >
+          <div className="hc-duelist hc-you">
+            <span className="hc-side">You</span>
+            <div className="hc-slot">
               {reveal?.playerCard
                 ? <CardFace card={reveal.playerCard} />
                 : <CardFace back />}
             </div>
           </div>
-          <div className="hc-vs">VS</div>
-          <div className="hc-hand">
-            <span className="hc-label">DEALER</span>
-            <div className="hc-cards">
+          <div className="hc-vs" aria-hidden="true"><span>VS</span></div>
+          <div className="hc-duelist hc-banker">
+            <span className="hc-side">Dealer</span>
+            <div className="hc-slot">
               <CardFace card={reveal?.dealerCard ?? null} back={reveal?.dealerCard ? false : true} dim={reveal && reveal.result === 'playerWins'} />
             </div>
           </div>
-        </section>
-
+        </div>
         {reveal && (
-          <div className={`hc-banner ${reveal.result === 'playerWins' ? 'is-win' : reveal.result === 'push' ? 'is-push' : 'is-loss'}`}>
+          <div className={`gs-banner ${reveal.result === 'playerWins' ? 'win' : reveal.result === 'push' ? 'push' : 'loss'}`}>
             {RESULT_TEXT[reveal.result]}{reveal.win > 0 && reveal.result !== 'push' ? ` — +${money(reveal.win)}` : ''}
           </div>
         )}
+      </section>
 
-        <section className="hc-controls">
-          <label className="hc-stake">
-            <span>Stake</span>
-            <input type="number" min={rules?.minBet ?? 10} max={rules?.maxBet ?? 10000} value={stake} onChange={e => setStake(e.target.value)} inputMode="decimal" />
-          </label>
-          <div className="hc-quick">
-            {[10, 50, 100, 500].filter(v => v >= (rules?.minBet ?? 10) && v <= (rules?.maxBet ?? 10000)).map(v => (
-              <button key={v} type="button" onClick={() => setStake(String(v))}>₹{v}</button>
-            ))}
-          </div>
-          <button type="button" className="hc-draw" onClick={draw} disabled={busy}>
-            <Icon name="shuffle" size={16} strokeWidth={2.5} /> {busy ? 'Drawing…' : 'DRAW CARDS'}
-          </button>
-        </section>
+      <div className="gs-strip">
+        {history.slice(0, 14).map(b => (
+          <span key={b.id} className={`gs-pill ${b.result === 'playerWins' ? 'win' : b.result === 'push' ? 'gold' : 'loss'}`}>{b.playerCard}</span>
+        ))}
+        {!history.length && <span className="gs-pill">—</span>}
+      </div>
 
-        <details className="hc-rules">
-          <summary>How to play</summary>
-          <ul>
-            <li>One card for you, one for the dealer</li>
-            <li><strong>Ace is high</strong>; the higher card wins</li>
-            <li>Win pays <strong>{rules?.payout ?? 1.92}×</strong> · identical ranks push</li>
-          </ul>
-        </details>
+      <div className="gs-stats">
+        <div className="gs-stat">
+          <b>{streak > 0 ? `${streak}×` : '—'}</b>
+          <span>Win streak</span>
+        </div>
+        <div className="gs-stat">
+          <b>{payout}×</b>
+          <span>Pays</span>
+        </div>
+        <div className="gs-stat">
+          <b>{money(last ? (last.win > 0 ? last.win : last.amount) : 0)}</b>
+          <span>Last round</span>
+        </div>
+      </div>
 
-        <div className="hc-history">
-          <h3>Recent draws</h3>
-          {history.length ? (
-            <div className="hc-hist-list">
-              {history.slice(0, 15).map(b => (
-                <div key={b.id} className="hc-hist-item">
-                  <span className="hc-hist-cards">{b.playerCard} vs {b.dealerCard}</span>
-                  <span>{money(b.amount)}</span>
-                  <span className={b.result === 'playerWins' ? 'win' : 'lose'}>{RESULT_TEXT[b.result]}</span>
-                  <span className="hc-hist-time">{new Date(b.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                </div>
-              ))}
+      <section className="gs-panel gs-hist">
+        <div className="gs-panel-title">Recent draws</div>
+        {history.length ? (
+          history.slice(0, 15).map(b => (
+            <div key={b.id} className="gs-hist-row">
+              <span className={`hc-hist-badge ${b.result === 'playerWins' ? 'w' : b.result === 'push' ? 'p' : 'l'}`}>
+                <Icon name={b.result === 'playerWins' ? 'trophy' : b.result === 'push' ? 'circleHalf' : 'spade'} size={13} strokeWidth={2.2} />
+              </span>
+              <span className="hc-hist-cards">{b.playerCard} vs {b.dealerCard}</span>
+              <span className="hc-hist-stake">{money(b.amount)}</span>
+              <span className={b.result === 'playerWins' ? 'win' : 'lose'}>{RESULT_TEXT[b.result]}</span>
+              <span className="gs-hist-time">{new Date(b.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
-          ) : <p className="hc-empty">No draws yet</p>}
-        </div>
-      </main>
+          ))
+        ) : <p className="gs-hist-empty">No draws yet — call your first</p>}
+      </section>
 
-      <BottomNav onSoon={t => showToast('info', t)} />
-
-      {toast && (
-        <div key={toast.id} className={`hc-toast hc-toast-${toast.kind}`} role="status">
-          <Icon name={toast.kind === 'success' ? 'circleCheck' : toast.kind === 'error' ? 'circleAlert' : 'info'} size={16} />
-          {toast.text}
-        </div>
-      )}
+      <details className="gs-rules">
+        <summary>How to play</summary>
+        <ul>
+          <li>One card for you, one for the dealer</li>
+          <li><strong>Ace is high</strong>; the higher card wins</li>
+          <li>Win pays <strong>{payout}×</strong> · identical ranks push</li>
+        </ul>
+      </details>
 
       <Popup
         open={lowBalance}
@@ -164,6 +212,6 @@ export default function HighCard() {
         You need at least <strong>{money(minPlay)}</strong> in your wallet to play.
         Your balance is <strong>{money(balance)}</strong>.
       </Popup>
-    </div>
+    </GameShell>
   )
 }

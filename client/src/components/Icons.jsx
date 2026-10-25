@@ -1,6 +1,7 @@
 /* Line icon set (Lucide-style, 24×24 stroke paths). Usage: <Icon name="home" size={20} /> */
 
 const paths = {
+  circle: <circle cx="12" cy="12" r="9" />,
   home: (
     <>
       <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
@@ -127,6 +128,7 @@ const paths = {
   chevronLeft: <path d="m15 18-6-6 6-6" />,
   chevronRight: <path d="m9 18 6-6-6-6" />,
   chevronUp: <path d="m18 15-6-6-6 6" />,
+  chevronDown: <path d="m6 9 6 6 6-6" />,
   arrowLeft: (
     <>
       <path d="m12 19-7-7 7-7" />

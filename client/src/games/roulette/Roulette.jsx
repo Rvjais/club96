@@ -4,9 +4,9 @@ import { api } from '../../lib/api'
 import { useAuth } from '../../auth/authContext'
 import { money } from '../../lib/format'
 import { Icon } from '../../components/Icons'
-import BottomNav from '../../components/BottomNav'
 import Popup from '../../components/Popup'
 import { useSiteConfig } from '../../lib/siteConfig'
+import GameShell from '../lib/GameShell'
 import './Roulette.css'
 
 const FALLBACK_RED = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
@@ -24,8 +24,12 @@ const CHIPS = [
   { v: 500, c: '#ef4444' },
 ]
 
-// table order: 0 spans the left column; numbers read left→right in 12 columns of 3
-const COLUMNS = Array.from({ length: 12 }, (_, col) => [3 + col * 3 - 1, 3 + col * 3, 3 + col * 3 + 1])
+// table order: 0 spans the left column; numbers 1–36 read left→right in 12 columns of 3
+const COLUMNS = Array.from({ length: 12 }, (_, col) => [1 + col * 3, 2 + col * 3, 3 + col * 3])
+
+// European wheel pocket order — purely decorative (equal-weight visual, odds per server)
+const ORDER = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26]
+const ORDER_SEG = 360 / ORDER.length
 
 export default function Roulette() {
   const navigate = useNavigate()
@@ -40,6 +44,7 @@ export default function Roulette() {
   const [result, setResult] = useState(null)
   const [toast, setToast] = useState(null)
   const [lowBalance, setLowBalance] = useState(false)
+  const [wheelAngle, setWheelAngle] = useState(0) // purely visual derived state
   const minPlay = config?.minPlayBalance ?? 0
 
   const showToast = (kind, text) => {
@@ -57,6 +62,17 @@ export default function Roulette() {
 
   const redNums = new Set(rules?.red ?? FALLBACK_RED)
   const colorOf = (n) => (n === 0 ? 'green' : redNums.has(n) ? 'red' : 'black')
+
+  // rotate the disc so the winning pocket parks under the top pointer,
+  // always spun forward with 4 extra turns
+  const planSpin = (pocket) => {
+    const idx = ORDER.indexOf(Number(pocket))
+    if (idx < 0) return wheelAngle
+    const center = (idx + 0.5) * ORDER_SEG
+    const target = ((-center % 360) + 360) % 360
+    const from = ((wheelAngle % 360) + 360) % 360
+    return wheelAngle + 1440 + ((target - from) + 360) % 360
+  }
 
   const place = (key) => {
     if (busy || spinning) return
@@ -95,6 +111,7 @@ export default function Roulette() {
       }
       const res = await api.post('/games/roulette/spin', payload)
       const b = res.data.history?.[0]
+      if (b) setWheelAngle(planSpin(b.pocket)) // visual only — bets/payouts untouched
       setTimeout(() => {
         setSpinning(false)
         setBusy(false)
@@ -123,115 +140,164 @@ export default function Roulette() {
   const stakeOf = (key) => bets[key]
   const showChip = (key) => stakeOf(key) ? <span className={`rl-chip c${CHIPS.find(x => x.v === stakeOf(key))?.v ?? 100}`}>{stakeOf(key) >= 1000 ? `${Math.round(stakeOf(key) / 100) / 10}k` : stakeOf(key)}</span> : null
 
+  const discPaint = `conic-gradient(${ORDER.map((n, i) => `${colorOf(n)} ${i * ORDER_SEG}deg ${(i + 1) * ORDER_SEG}deg`).join(', ')})`
+
   return (
-    <div className="rl-root">
-      <header className="rl-header">
-        <div className="rl-title"><Icon name="wheel" size={22} strokeWidth={2.2} /><span>Roulette</span></div>
-        <div className="rl-balance"><span>{money(balance)}</span></div>
-      </header>
-
-      <main className="rl-main">
-        <section className={`rl-wheel ${spinning ? 'spinning' : ''}`}>
-          <div className="rl-pocket-wrap">
-            {result ? (
-              <span className={`rl-pocket p-${result.color}`}>{result.pocket}</span>
-            ) : (
-              <span className="rl-pocket idle">{spinning ? '…' : '?'}</span>
-            )}
-          </div>
-          <span className="rl-wheel-hint">single zero · 37 pockets</span>
-        </section>
-
-        <section className="rl-chips">
-          {CHIPS.map(c => (
-            <button key={c.v} type="button" className={`rl-chip-pick ${chip === c.v ? 'active' : ''}`} style={{ '--cc': c.c }} onClick={() => setChip(c.v)}>
-              {c.v}
-            </button>
-          ))}
-          <span className="rl-staked">Total: <strong>{money(totalStake)}</strong></span>
-        </section>
-
-        <section className="rl-table">
-          <div className="rl-board">
-            <button type="button" className="rl-cell rl-zero" onClick={() => place('n-0')}>
-              0{showChip('n-0')}
-            </button>
-            <div className="rl-grid">
-              {[2, 1, 0].map(row => (
-                <div key={row} className="rl-row">
-                  {COLUMNS.map((col, i) => {
-                    const n = col[row]
-                    return (
-                      <button key={i} type="button" className={`rl-cell c-${colorOf(n)}`} onClick={() => place(`n-${n}`)}>
-                        {n}{showChip(`n-${n}`)}
-                      </button>
-                    )
-                  })}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="rl-dozens">
-            {['dozen1', 'dozen2', 'dozen3'].map(k => (
-              <button key={k} type="button" className="rl-outside" onClick={() => place(k)}>{OUTSIDE_LABELS[k]}{showChip(k)}</button>
-            ))}
-          </div>
-          <div className="rl-half">
-            {['low', 'even', 'red', 'black', 'odd', 'high'].map(k => (
-              <button key={k} type="button" className={`rl-outside ${k === 'red' ? 'is-red' : k === 'black' ? 'is-black' : ''}`} onClick={() => place(k)}>
-                {OUTSIDE_LABELS[k]}{showChip(k)}
+    <GameShell
+      icon="wheel"
+      title="Roulette"
+      tagline="Single-zero wheel"
+      accent="#ff4655"
+      busy={busy}
+      toast={toast}
+      onRefresh={fetchState}
+      wide={true}
+      footer={(
+        <div className="rl-dock">
+          <div className="rl-chiprow">
+            {CHIPS.map(c => (
+              <button key={c.v} type="button" className={`gs-chip rl-chip-pick ${chip === c.v ? 'is-on' : ''}`} style={{ '--cc': c.c }} onClick={() => setChip(c.v)}>
+                {c.v}
               </button>
             ))}
+            <span className="rl-staked">Total <strong>{money(totalStake)}</strong></span>
           </div>
-          <div className="rl-cols">
-            {['col1', 'col2', 'col3'].map(k => (
-              <button key={k} type="button" className="rl-outside small" onClick={() => place(k)}>{OUTSIDE_LABELS[k]}{showChip(k)}</button>
-            ))}
-          </div>
-
-          <div className="rl-actions">
-            <button type="button" className="rl-undo" onClick={undo} disabled={!spotCount}>Undo</button>
-            <button type="button" className="rl-clear" onClick={clear} disabled={!spotCount}>Clear</button>
-            <button type="button" className="rl-spin" onClick={spin} disabled={busy || !spotCount}>
-              {spinning ? 'SPINNING…' : 'SPIN'}
+          <div className="rl-dockrow">
+            <button type="button" className="gs-btn-ghost rl-ghost" onClick={undo} disabled={!spotCount}>
+              <Icon name="rotateCcw" size={15} strokeWidth={2.3} />
+              Undo
+            </button>
+            <button type="button" className="gs-btn-ghost rl-ghost" onClick={clear} disabled={!spotCount}>
+              <Icon name="x" size={15} strokeWidth={2.3} />
+              Clear
             </button>
           </div>
-        </section>
+          <button type="button" className="gs-cta" onClick={spin} disabled={busy || !spotCount}>
+            <Icon name={spinning ? 'refresh' : 'play'} size={17} strokeWidth={2.6} />
+            {spinning ? 'SPINNING…' : 'SPIN THE WHEEL'}
+          </button>
+        </div>
+      )}
+    >
+      <section className="gs-stage rl-stage">
+        <div className="rl-spotlight" aria-hidden="true" />
+        <div className="rl-wheelwrap">
+          <span className="rl-pointer" aria-hidden="true" />
+          <div className="rl-disc-holder">
+            <div className="rl-disc" style={{ background: discPaint, transform: `rotate(${wheelAngle}deg)` }} aria-hidden="true">
+              {ORDER.map((n, i) => (
+                <span key={n} className="rl-slotwrap" style={{ '--wa': `${(i + 0.5) * ORDER_SEG}deg` }}>
+                  <i className="rl-slotnum">{n}</i>
+                </span>
+              ))}
+            </div>
+            <span className="rl-disc-hub" aria-hidden="true" />
+            <div className={`rl-pocket ${result ? `c-${result.color}` : 'idle'}`}>
+              {result ? result.pocket : spinning ? '…' : '?'}
+            </div>
+          </div>
+        </div>
+        <span className="rl-wheel-hint">single zero · 37 pockets</span>
+        {result && (
+          <div className={`gs-banner ${result.win > result.amount ? 'win' : result.win > 0 ? 'push' : 'loss'}`}>
+            {result.win > result.amount
+              ? `Landed on ${result.pocket} (${result.color}) — won ${money(result.win)}!`
+              : result.win > 0
+                ? `Landed on ${result.pocket} (${result.color}) — returned ${money(result.win)}`
+                : `Landed on ${result.pocket} (${result.color}) — no luck`}
+          </div>
+        )}
+      </section>
+
+      <div className="gs-strip">
+        {history.slice(0, 18).map(b => (
+          <span key={b.id} className={`gs-pill rl-pill c-${b.color}`}>{b.pocket}</span>
+        ))}
+        {!history.length && <span className="gs-pill">—</span>}
+      </div>
+
+      <div className="rl-chips">
+        {CHIPS.map(c => (
+          <button key={c.v} type="button" className={`gs-chip rl-chip-pick ${chip === c.v ? 'is-on' : ''}`} style={{ '--cc': c.c }} onClick={() => setChip(c.v)}>
+            {c.v}
+          </button>
+        ))}
+        <span className="rl-staked-grow">Select a chip, tap the felt</span>
+        <span className="rl-staked">Total <strong>{money(totalStake)}</strong></span>
+      </div>
+
+      <section className="gs-panel rl-table">
+        <div className="gs-panel-title">Betting felt</div>
+        <div className="rl-board">
+          <button type="button" className="rl-cell rl-zero" onClick={() => place('n-0')}>
+            0{showChip('n-0')}
+          </button>
+          <div className="rl-grid">
+            {[2, 1, 0].map(row => (
+              <div key={row} className="rl-row">
+                {COLUMNS.map((col, i) => {
+                  const n = col[row]
+                  return (
+                    <button key={i} type="button" className={`rl-cell c-${colorOf(n)}`} onClick={() => place(`n-${n}`)}>
+                      {n}{showChip(`n-${n}`)}
+                    </button>
+                  )
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rl-dozens">
+          {['dozen1', 'dozen2', 'dozen3'].map(k => (
+            <button key={k} type="button" className="rl-outside" onClick={() => place(k)}>{OUTSIDE_LABELS[k]}{showChip(k)}</button>
+          ))}
+        </div>
+        <div className="rl-half">
+          {['low', 'even', 'red', 'black', 'odd', 'high'].map(k => (
+            <button key={k} type="button" className={`rl-outside ${k === 'red' ? 'is-red' : k === 'black' ? 'is-black' : ''}`} onClick={() => place(k)}>
+              {OUTSIDE_LABELS[k]}{showChip(k)}
+            </button>
+          ))}
+        </div>
+        <div className="rl-cols">
+          {['col1', 'col2', 'col3'].map(k => (
+            <button key={k} type="button" className="rl-outside small" onClick={() => place(k)}>{OUTSIDE_LABELS[k]}{showChip(k)}</button>
+          ))}
+        </div>
 
         <div className="rl-pays">
           <span>Number <strong>35:1</strong></span>
           <span>Red/Black, Odd/Even, 1-18/19-36 <strong>1:1</strong></span>
           <span>Dozen, Column <strong>2:1</strong></span>
         </div>
+      </section>
 
-        <div className="rl-history">
-          <h3>Recent spins</h3>
-          {history.length ? (
-            <div className="rl-hist-list">
-              {history.slice(0, 15).map(b => (
-                <div key={b.id} className="rl-hist-item">
-                  <span className={`rl-hist-pocket p-${b.color}`}>{b.pocket}</span>
-                  <span>{money(b.amount)}</span>
-                  <span className={b.win > b.amount ? 'win' : b.win > 0 ? 'push' : 'lose'}>
-                    {b.win > b.amount ? `+${money(b.win - b.amount)}` : b.win > 0 ? `${money(b.win)}` : 'Lost'}
-                  </span>
-                  <span className="rl-hist-time">{new Date(b.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                </div>
-              ))}
+      <section className="gs-panel gs-hist rl-hist">
+        <div className="gs-panel-title">Recent spins</div>
+        {history.length ? (
+          history.slice(0, 15).map(b => (
+            <div key={b.id} className="gs-hist-row">
+              <span className={`rl-hist-pocket c-${b.color}`}>{b.pocket}</span>
+              <span className="rl-hist-stake">{money(b.amount)}</span>
+              <span className={b.win > b.amount ? 'win' : b.win > 0 ? 'push' : 'lose'}>
+                {b.win > b.amount ? `+${money(b.win - b.amount)}` : b.win > 0 ? `${money(b.win)}` : 'Lost'}
+              </span>
+              <span className="gs-hist-time">{new Date(b.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
-          ) : <p className="rl-empty">No spins yet</p>}
-        </div>
-      </main>
+          ))
+        ) : <p className="gs-hist-empty">No spins yet — place your chips</p>}
+      </section>
 
-      <BottomNav onSoon={t => showToast('info', t)} />
-
-      {toast && (
-        <div key={toast.id} className={`rl-toast rl-toast-${toast.kind}`} role="status">
-          <Icon name={toast.kind === 'success' ? 'circleCheck' : toast.kind === 'error' ? 'circleAlert' : 'info'} size={16} />
-          {toast.text}
-        </div>
-      )}
+      <details className="gs-rules">
+        <summary>How to play</summary>
+        <ul>
+          <li>Pick a chip, tap <strong>numbers</strong> or the <strong>outside bets</strong> to stack stakes</li>
+          <li>Straight number pays <strong>35:1</strong> · Red/Black, Odd/Even, 1-18/19-36 pay <strong>1:1</strong></li>
+          <li>Dozen and Column bets pay <strong>2:1</strong></li>
+          <li>Single zero — 37 pockets per spin</li>
+        </ul>
+      </details>
 
       <Popup
         open={lowBalance}
@@ -248,6 +314,6 @@ export default function Roulette() {
         You need at least <strong>{money(minPlay)}</strong> in your wallet to play.
         Your balance is <strong>{money(balance)}</strong>.
       </Popup>
-    </div>
+    </GameShell>
   )
 }

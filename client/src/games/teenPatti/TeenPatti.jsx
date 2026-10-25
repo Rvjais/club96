@@ -4,9 +4,9 @@ import { api } from '../../lib/api'
 import { useAuth } from '../../auth/authContext'
 import { money } from '../../lib/format'
 import { Icon } from '../../components/Icons'
-import BottomNav from '../../components/BottomNav'
 import Popup from '../../components/Popup'
 import { useSiteConfig } from '../../lib/siteConfig'
+import GameShell from '../lib/GameShell'
 import './TeenPatti.css'
 
 const SUIT_COLORS = { '♠': '#1a1a1a', '♥': '#dc2626', '♦': '#dc2626', '♣': '#1a1a1a' }
@@ -101,21 +101,15 @@ export default function TeenPatti() {
   const pairPlusOptions = { 0: 'High Card', 1: 'Pair (1:1)', 2: 'Color (3:1)', 3: 'Sequence (5:1)', 4: 'Pure Sequence (30:1)', 5: 'Trial (40:1)' }
 
   return (
-    <div className="tp-root">
-      <header className="tp-header">
-        <div className="tp-title">
-          <Icon name="heart" size={22} strokeWidth={2.2} />
-          <span>Teen Patti</span>
-        </div>
-        <div className="tp-balance">
-          <span>₹{money(balance)}</span>
-          <button className={`tp-refresh ${spinning ? 'spin' : ''}`} onClick={refresh} disabled={spinning} aria-label="Refresh">
-            <Icon name="refresh" size={18} strokeWidth={2} />
-          </button>
-        </div>
-      </header>
-
-      <main className="tp-main">
+    <GameShell
+      icon="crown"
+      title="Teen Patti"
+      tagline="Three-card duel"
+      accent="#f2a33c"
+      toast={toast}
+      onRefresh={refresh}
+    >
+      <div className="tp-main">
         {!active ? (
           <section className="tp-deal">
             <div className="tp-inputs">
@@ -212,16 +206,7 @@ export default function TeenPatti() {
             <p className="tp-empty">No hands yet</p>
           )}
         </div>
-      </main>
-
-      <BottomNav onSoon={text => showToast('info', text)} />
-
-      {toast && (
-        <div key={toast.id} className={`tp-toast tp-toast-${toast.kind}`} role="status">
-          <Icon name={toast.kind === 'success' ? 'circleCheck' : toast.kind === 'error' ? 'circleAlert' : 'info'} size={16} />
-          {toast.text}
-        </div>
-      )}
+      </div>
 
       <Popup
         open={lowBalance}
@@ -238,6 +223,6 @@ export default function TeenPatti() {
         You need at least <strong>₹{money(minPlay)}</strong> in your wallet to play.
         Your balance is <strong>₹{money(balance)}</strong>.
       </Popup>
-    </div>
+    </GameShell>
   )
 }

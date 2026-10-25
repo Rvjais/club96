@@ -4,9 +4,9 @@ import { api } from '../../lib/api'
 import { useAuth } from '../../auth/authContext'
 import { money } from '../../lib/format'
 import { Icon } from '../../components/Icons'
-import BottomNav from '../../components/BottomNav'
 import Popup from '../../components/Popup'
 import { useSiteConfig } from '../../lib/siteConfig'
+import GameShell from '../lib/GameShell'
 import './BigSmall.css'
 
 // bet type groups: { key, label, pick? }
@@ -21,20 +21,24 @@ const GROUPS = [
   { key: 'total', label: 'Exact total', pick: true },
 ]
 
+const SIDE_BETS = GROUPS.filter(g => g.key !== 'small' && g.key !== 'big')
+const sidePay = (g) => (g.key === 'total' ? '7×+' : `${g.payout}×`)
+
+// pip cells 1–9 laid out row-major (1 2 3 / 4 5 6 / 7 8 9)
 const PIPS = {
   0: [],
-  1: [4],
-  2: [2, 6],
-  3: [2, 4, 6],
+  1: [5],
+  2: [3, 7],
+  3: [3, 5, 7],
   4: [1, 3, 7, 9],
   5: [1, 3, 5, 7, 9],
-  6: [1, 3, 4, 7, 9],
+  6: [1, 3, 4, 6, 7, 9],
 }
 
 function Die({ v, rolling }) {
   return (
     <span className={`bs-die ${rolling ? 'rolling' : ''}`}>
-      <span className={`bs-pips bs-pips-${v}`}>
+      <span className="bs-pips">
         {Array.from({ length: 9 }, (_, i) => i + 1).map(cell => (
           <i key={cell} className={PIPS[v]?.includes(cell) ? 'on' : 'off'} />
         ))}
@@ -58,6 +62,8 @@ export default function BigSmall() {
   const [toast, setToast] = useState(null)
   const [lowBalance, setLowBalance] = useState(false)
   const minPlay = config?.minPlayBalance ?? 0
+  const minBet = rules?.minBet ?? 10
+  const maxBet = rules?.maxBet ?? 10000
 
   const showToast = (kind, text) => {
     setToast({ kind, text, id: Date.now() })
@@ -111,6 +117,10 @@ export default function BigSmall() {
     }
   }
 
+  const halfStake = () => setStake(String(Math.max(minBet, Math.floor((Number(stake) || 0) / 2) || minBet)))
+  const doubleStake = () => setStake(String(Math.min(maxBet, Math.max(minBet, Math.floor((Number(stake) || 0) * 2)))))
+  const maxStake = () => setStake(String(Math.max(minBet, Math.min(maxBet, Math.floor(Number(balance) || 0)))))
+
   const totalPayout = (key, p) => {
     if (key === 'total') {
       const ways = rules?.totalWays?.[p]
@@ -122,110 +132,166 @@ export default function BigSmall() {
   const last = history[0]
   const totalOpts = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
 
+  // purely visual: BIG / SMALL verdict badge for the last roll
+  const lastTriple = last ? last.dice[0] === last.dice[1] && last.dice[1] === last.dice[2] : false
+  const verdict = !last ? '—' : lastTriple ? 'TRIPLE' : last.total <= 10 ? 'SMALL' : 'BIG'
+
+  let streak = 0
+  for (const b of history) { if (b.win > 0) streak++; else break }
+
   return (
-    <div className="bs-root">
-      <header className="bs-header">
-        <div className="bs-title"><Icon name="dices" size={22} strokeWidth={2.2} /><span>Big / Small</span></div>
-        <div className="bs-balance"><span>{money(balance)}</span></div>
-      </header>
-
-      <main className="bs-main">
-        <section className="bs-stage">
-          <div className="bs-dice">
-            <Die v={shown[0]} rolling={rolling} />
-            <Die v={shown[1]} rolling={rolling} />
-            <Die v={shown[2]} rolling={rolling} />
+    <GameShell
+      icon="dices"
+      title="Big / Small"
+      tagline="Three dice sic bo"
+      accent="#4dabf7"
+      busy={busy}
+      toast={toast}
+      onRefresh={fetchState}
+      footer={(
+        <div className="bs-dock">
+          <div className="bs-call">
+            <button type="button" className={`bs-call-btn small ${betType === 'small' ? 'is-on' : ''}`} onClick={() => chooseType('small')}>
+              <span className="bs-call-face s">S</span>
+              <span className="bs-call-txt">SMALL<em>4–10 · {sidePay(GROUPS[0])}</em></span>
+            </button>
+            <button type="button" className={`bs-call-btn big ${betType === 'big' ? 'is-on' : ''}`} onClick={() => chooseType('big')}>
+              <span className="bs-call-face b">B</span>
+              <span className="bs-call-txt">BIG<em>11–17 · {sidePay(GROUPS[1])}</em></span>
+            </button>
           </div>
-          {!rolling && last && !last.multiplier && (
-            <div className={`bs-total ${last.win > 0 ? 'is-win' : 'is-loss'}`}>
-              {last.dice.join(' + ')} = <strong>{last.total}</strong> · {last.win > 0 ? `+${money(last.win)}` : 'lost'}
-            </div>
-          )}
-          {!rolling && last?.win > 0 && (
-            <div className="bs-total is-win">Won {money(last.win)} at {last.multiplier}×</div>
-          )}
-        </section>
 
-        <section className="bs-picks">
-          <div className="bs-grid">
-            {GROUPS.map(g => (
-              <button key={g.key} type="button" className={betType === g.key ? 'active' : ''} onClick={() => chooseType(g.key)}>
-                <span>{g.label}</span>
-                <em>{g.key === 'total' ? '7×+' : `${g.payout}×`}</em>
+          <div className="bs-mores">
+            {SIDE_BETS.map(g => (
+              <button key={g.key} type="button" className={`gs-chip ${betType === g.key ? 'is-on' : ''}`} onClick={() => chooseType(g.key)}>
+                {g.label}<em>{sidePay(g)}</em>
               </button>
             ))}
           </div>
 
-          {betType === 'double' || betType === 'triple' ? (
-            <div className="bs-numbers">
+          {(betType === 'double' || betType === 'triple') && (
+            <div className="bs-pickrow faces">
               {[1, 2, 3, 4, 5, 6].map(n => (
-                <button key={n} type="button" className={pick === n ? 'active' : ''} onClick={() => setPick(n)}>{n}</button>
+                <button key={n} type="button" className={`bs-pick ${pick === n ? 'is-on' : ''}`} onClick={() => setPick(n)}>{n}</button>
               ))}
             </div>
-          ) : null}
+          )}
 
-          {betType === 'total' ? (
-            <div className="bs-numbers totals">
+          {betType === 'total' && (
+            <div className="bs-pickrow totals">
               {totalOpts.map(n => (
-                <button key={n} type="button" className={pick === n ? 'active' : ''} onClick={() => setPick(n)}>
+                <button key={n} type="button" className={`bs-pick ${pick === n ? 'is-on' : ''}`} onClick={() => setPick(n)}>
                   {n}<i>{totalPayout('total', n) ?? ''}×</i>
                 </button>
               ))}
             </div>
-          ) : null}
+          )}
 
-          <label className="bs-stake">
-            <span>Stake</span>
-            <input type="number" min={rules?.minBet ?? 10} max={rules?.maxBet ?? 10000} value={stake} onChange={e => setStake(e.target.value)} inputMode="decimal" />
-          </label>
-          <div className="bs-quick">
-            {[10, 50, 100, 500].filter(v => v >= (rules?.minBet ?? 10) && v <= (rules?.maxBet ?? 10000)).map(v => (
-              <button key={v} type="button" onClick={() => setStake(String(v))}>₹{v}</button>
+          <div className="gs-input-row">
+            <div className="gs-field">
+              <span className="gs-cur">₹</span>
+              <input
+                className="gs-input"
+                type="number"
+                min={minBet}
+                max={maxBet}
+                value={stake}
+                onChange={e => setStake(e.target.value)}
+                inputMode="decimal"
+                aria-label="Stake"
+              />
+            </div>
+            <button type="button" className="gs-chip" onClick={halfStake}>1/2</button>
+            <button type="button" className="gs-chip" onClick={doubleStake}>2×</button>
+            <button type="button" className="gs-chip" onClick={maxStake}>MAX</button>
+          </div>
+
+          <div className="gs-quick">
+            {[10, 50, 100, 500].filter(v => v >= minBet && v <= maxBet).map(v => (
+              <button key={v} type="button" className="gs-chip" onClick={() => setStake(String(v))}>₹{v}</button>
             ))}
           </div>
-          <button type="button" className="bs-roll" onClick={roll} disabled={busy}>
+
+          <button type="button" className="gs-cta" onClick={roll} disabled={busy}>
+            <Icon name={rolling ? 'refresh' : 'play'} size={17} strokeWidth={2.6} />
             {rolling ? 'ROLLING…' : 'ROLL THE DICE'}
           </button>
-        </section>
-
-        <details className="bs-rules">
-          <summary>How to play</summary>
-          <ul>
-            <li>Three dice, total 3–18</li>
-            <li><strong>Small 4–10</strong> / <strong>Big 11–17</strong> pay 1.95× — but a <strong>triple</strong> kills both</li>
-            <li><strong>Odd / even</strong> totals pay 1.9×</li>
-            <li><strong>Doubles</strong> (exactly two) 11× · <strong>triples</strong> 31× / specific triple 181×</li>
-            <li>Exact totals pay by rarity: common 7×, rare 61×</li>
-          </ul>
-        </details>
-
-        <div className="bs-history">
-          <h3>Recent rolls</h3>
-          {history.length ? (
-            <div className="bs-hist-list">
-              {history.slice(0, 15).map(b => (
-                <div key={b.id} className="bs-hist-item">
-                  <span className="bs-hist-dice">{b.dice.join('·')}</span>
-                  <span>{b.total}</span>
-                  <span className="bs-hist-type">{b.betType}{b.pick != null ? ` ${b.pick}` : ''}</span>
-                  <span>{money(b.amount)}</span>
-                  <span className={b.win > 0 ? 'win' : 'lose'}>{b.win > 0 ? `+${money(b.win)}` : 'Lost'}</span>
-                  <span className="bs-hist-time">{new Date(b.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                </div>
-              ))}
-            </div>
-          ) : <p className="bs-empty">No rolls yet</p>}
-        </div>
-      </main>
-
-      <BottomNav onSoon={t => showToast('info', t)} />
-
-      {toast && (
-        <div key={toast.id} className={`bs-toast bs-toast-${toast.kind}`} role="status">
-          <Icon name={toast.kind === 'success' ? 'circleCheck' : toast.kind === 'error' ? 'circleAlert' : 'info'} size={16} />
-          {toast.text}
         </div>
       )}
+    >
+      <section className="gs-stage bs-stage">
+        <div className="bs-spotlight" aria-hidden="true" />
+        <div className="bs-dice">
+          <Die v={shown[0]} rolling={rolling} />
+          <Die v={shown[1]} rolling={rolling} />
+          <Die v={shown[2]} rolling={rolling} />
+        </div>
+        {!rolling && last && (
+          <span className={`bs-verdict ${lastTriple ? 'is-triple' : last.win > 0 ? 'is-win' : 'is-loss'}`}>
+            <i className="bs-verdict-tick" aria-hidden="true" />
+            {verdict} · {last.total}
+          </span>
+        )}
+        {!rolling && last && !last.multiplier && (
+          <div className={`bs-total ${last.win > 0 ? 'is-win' : 'is-loss'}`}>
+            {last.dice.join(' + ')} = <strong>{last.total}</strong> · {last.win > 0 ? `+${money(last.win)}` : 'lost'}
+          </div>
+        )}
+        {!rolling && last?.win > 0 && (
+          <div className="bs-total is-win">Won {money(last.win)} at {last.multiplier}×</div>
+        )}
+      </section>
+
+      <div className="gs-strip">
+        {history.slice(0, 14).map(b => (
+          <span key={b.id} className={`gs-pill ${b.win > 0 ? 'win' : 'loss'}`}>{b.total}</span>
+        ))}
+        {!history.length && <span className="gs-pill">—</span>}
+      </div>
+
+      <div className="gs-stats">
+        <div className="gs-stat">
+          <b>{last?.total ?? '—'}</b>
+          <span>Last total</span>
+        </div>
+        <div className="gs-stat">
+          <b>{streak > 0 ? `${streak}×` : '—'}</b>
+          <span>Win streak</span>
+        </div>
+        <div className="gs-stat">
+          <b>{group ? sidePay(group) : '1.95×'}</b>
+          <span>Your bet pays</span>
+        </div>
+      </div>
+
+      <section className="gs-panel gs-hist bs-hist">
+        <div className="gs-panel-title">Recent rolls</div>
+        {history.length ? (
+          history.slice(0, 15).map(b => (
+            <div key={b.id} className="gs-hist-row">
+              <span className="bs-hist-mini">
+                {b.dice.map((d, i) => <i key={i}>{d}</i>)}
+              </span>
+              <b className="bs-hist-total">{b.total}</b>
+              <span className="bs-hist-type">{b.betType}{b.pick != null ? ` ${b.pick}` : ''}</span>
+              <span className="bs-hist-stake">{money(b.amount)}</span>
+              <span className={b.win > 0 ? 'win' : 'lose'}>{b.win > 0 ? `+${money(b.win)}` : 'Lost'}</span>
+              <span className="gs-hist-time">{new Date(b.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+          ))
+        ) : <p className="gs-hist-empty">No rolls yet — shake them bones</p>}
+      </section>
+
+      <details className="gs-rules">
+        <summary>How to play</summary>
+        <ul>
+          <li>Three dice, total 3–18</li>
+          <li><strong>Small 4–10</strong> / <strong>Big 11–17</strong> pay 1.95× — but a <strong>triple</strong> kills both</li>
+          <li><strong>Odd / even</strong> totals pay 1.9×</li>
+          <li><strong>Doubles</strong> (exactly two) 11× · <strong>triples</strong> 31× / specific triple 181×</li>
+          <li>Exact totals pay by rarity: common 7×, rare 61×</li>
+        </ul>
+      </details>
 
       <Popup
         open={lowBalance}
@@ -242,6 +308,6 @@ export default function BigSmall() {
         You need at least <strong>{money(minPlay)}</strong> in your wallet to play.
         Your balance is <strong>{money(balance)}</strong>.
       </Popup>
-    </div>
+    </GameShell>
   )
 }

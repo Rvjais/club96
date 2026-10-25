@@ -3,10 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '../../lib/api'
 import { useAuth } from '../../auth/authContext'
 import { money } from '../../lib/format'
-import { Icon } from '../../components/Icons'
-import BottomNav from '../../components/BottomNav'
 import Popup from '../../components/Popup'
 import { useSiteConfig } from '../../lib/siteConfig'
+import GameShell from '../lib/GameShell'
 import './Baccarat.css'
 
 const SUIT_COLORS = { '♠': '#1a1a1a', '♥': '#dc2626', '♦': '#dc2626', '♣': '#1a1a1a' }
@@ -74,21 +73,15 @@ export default function Baccarat() {
   )
 
   return (
-    <div className="bc-root">
-      <header className="bc-header">
-        <div className="bc-title">
-          <Icon name="heart" size={22} strokeWidth={2.2} />
-          <span>Baccarat</span>
-        </div>
-        <div className="bc-balance">
-          <span>₹{money(balance)}</span>
-          <button className={`bc-refresh ${spinning ? 'spin' : ''}`} onClick={refresh} disabled={spinning} aria-label="Refresh">
-            <Icon name="refresh" size={18} strokeWidth={2} />
-          </button>
-        </div>
-      </header>
-
-      <main className="bc-main">
+    <GameShell
+      icon="diamond"
+      title="Baccarat"
+      tagline="Player · Banker · Tie"
+      accent="#ff4757"
+      toast={toast}
+      onRefresh={refresh}
+    >
+      <div className="bc-main">
         <section className="bc-table">
           <div className="bc-seats">
             <div className={`bc-seat ${state?.active?.betOn === 'player' ? 'active' : ''}`} onClick={() => handleBet('player')}>
@@ -177,16 +170,7 @@ export default function Baccarat() {
             <p className="bc-empty">No hands yet</p>
           )}
         </div>
-      </main>
-
-      <BottomNav onSoon={text => showToast('info', text)} />
-
-      {toast && (
-        <div key={toast.id} className={`bc-toast bc-toast-${toast.kind}`} role="status">
-          <Icon name={toast.kind === 'success' ? 'circleCheck' : toast.kind === 'error' ? 'circleAlert' : 'info'} size={16} />
-          {toast.text}
-        </div>
-      )}
+      </div>
 
       <Popup
         open={lowBalance}
@@ -203,7 +187,7 @@ export default function Baccarat() {
         You need at least <strong>₹{money(minPlay)}</strong> in your wallet to play.
         Your balance is <strong>₹{money(balance)}</strong>.
       </Popup>
-    </div>
+    </GameShell>
   )
 }
 

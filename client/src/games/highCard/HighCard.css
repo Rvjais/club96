@@ -1,47 +1,227 @@
-.hc-root { display: flex; flex-direction: column; min-height: 100vh; background: #0b0d12; color: #e8e8e8; }
-.hc-header { display: flex; align-items: center; justify-content: space-between; padding: 16px; border-bottom: 1px solid #1f232a; position: sticky; top: 0; background: rgba(11,13,18,0.95); backdrop-filter: blur(8px); z-index: 10; }
-.hc-title { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 18px; color: #fff; }
-.hc-balance { font-weight: 600; font-size: 16px; }
+/* ════════════════════════════════════════════════════════════════════
+   High Card Draw — duel stage built on the GameShell kit (accent ice)
+   ════════════════════════════════════════════════════════════════════ */
 
-.hc-main { flex: 1; padding: 16px; padding-bottom: 120px; display: flex; flex-direction: column; gap: 16px; }
+.hc-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 300px;
+}
 
-.hc-table { background: linear-gradient(170deg, #0d3b34 0%, #0a2622 100%); border: 1px solid #145c52; border-radius: 16px; padding: 22px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.hc-hand { display: flex; flex-direction: column; align-items: center; gap: 10px; flex: 1; }
-.hc-label { font-size: 12px; font-weight: 700; letter-spacing: 2px; color: #8fd8cc; }
-.hc-vs { font-size: 13px; font-weight: 800; color: #2dd4bf; border: 2px solid #2dd4bf; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+/* table glow behind the duel */
+.hc-felt {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.hc-felt::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  width: 320px;
+  height: 250px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--gs-accent) 18%, transparent), transparent 64%);
+  filter: blur(9px);
+  animation: hc-breathe 3.2s ease-in-out infinite;
+}
+.hc-felt::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  width: 250px;
+  height: 196px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px dashed color-mix(in srgb, var(--gs-accent) 28%, transparent);
+  animation: hc-ring 18s linear infinite;
+}
+@keyframes hc-breathe {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+@keyframes hc-ring {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
 
-.hc-banner { text-align: center; font-weight: 800; font-size: 15px; padding: 12px; border-radius: 12px; }
-.hc-banner.is-win { background: #064e3b; color: #6ee7b7; }
-.hc-banner.is-push { background: #1e3a5f; color: #93c5fd; }
-.hc-banner.is-loss { background: #450a0a; color: #fca5a5; }
+/* ── the duel row ────────────────────────────────────────────────── */
+.hc-duel {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  max-width: 430px;
+}
 
-.hc-controls { background: #12151c; border: 1px solid #1f232a; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-.hc-stake { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #888; }
-.hc-stake input { background: #0b0d12; border: 1px solid #2a2f3a; border-radius: 10px; padding: 12px 14px; color: #fff; font-size: 16px; outline: none; }
-.hc-stake input:focus { border-color: #14b8a6; }
-.hc-quick { display: flex; flex-wrap: wrap; gap: 8px; }
-.hc-quick button { background: #1a1d24; border: 1px solid #2a2f3a; border-radius: 8px; padding: 6px 14px; color: #ccc; font-size: 13px; cursor: pointer; }
-.hc-quick button:hover { color: #fff; }
-.hc-draw { display: flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #14b8a6, #0f766e); border: none; border-radius: 12px; padding: 14px; color: #04211e; font-weight: 800; font-size: 15px; cursor: pointer; }
-.hc-draw:disabled { opacity: 0.55; }
+.hc-duelist {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
 
-.hc-rules { background: #12151c; border: 1px solid #1f232a; border-radius: 14px; padding: 12px 16px; }
-.hc-rules summary { cursor: pointer; font-weight: 600; color: #aaa; list-style: none; display: flex; justify-content: space-between; }
-.hc-rules summary::-webkit-details-marker { display: none; }
-.hc-rules summary::after { content: '+'; font-size: 18px; color: #666; }
-.hc-rules[open] summary::after { transform: rotate(45deg); }
-.hc-rules ul { margin: 10px 0 0; padding-left: 18px; color: #bbb; font-size: 13px; line-height: 1.8; }
+.hc-side {
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: #9aa4b8;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+}
 
-.hc-history h3 { font-size: 14px; font-weight: 600; color: #888; margin: 0 0 10px; }
-.hc-hist-list { display: flex; flex-direction: column; gap: 6px; }
-.hc-hist-item { display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: 10px; background: #0b0d12; border: 1px solid #1f232a; border-radius: 10px; padding: 8px 12px; font-size: 13px; }
-.hc-hist-cards { font-weight: 700; color: #2dd4bf; }
-.hc-hist-item .win { color: #4ade80; font-weight: 700; }
-.hc-hist-item .lose { color: #f87171; font-weight: 700; }
-.hc-hist-time { color: #666; font-size: 11px; }
-.hc-empty { text-align: center; color: #666; padding: 16px; font-size: 14px; }
+/* oversized card faces */
+.hc-duelist .cf-card {
+  width: 96px;
+  height: 134px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  border: 1px solid #d3d9e6;
+  box-shadow:
+    0 12px 26px rgba(0, 0, 0, 0.52),
+    0 0 26px color-mix(in srgb, var(--gs-accent) 12%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.hc-duelist .cf-rank { font-size: 27px; }
+.hc-duelist .cf-suit { font-size: 32px; }
+.hc-duelist .cf-rune { font-size: 28px; }
 
-.hc-toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 100; }
-.hc-toast-success { background: #065f46; color: #6ee7b7; }
-.hc-toast-error { background: #7f1d1d; color: #fca5a5; }
-.hc-toast-info { background: #1e3a5f; color: #93c5fd; }
+/* deal-in + flip reveal (retriggers via key on .hc-duel) */
+.hc-you { animation: hc-in-l 0.45s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+.hc-banker { animation: hc-in-r 0.45s cubic-bezier(0.2, 0.8, 0.3, 1) 0.07s both; }
+.hc-vs { animation: hc-pop 0.38s cubic-bezier(0.2, 1.35, 0.4, 1) 0.2s both; }
+@keyframes hc-in-l {
+  0% { opacity: 0; transform: translateX(-34px) rotate(-9deg); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes hc-in-r {
+  0% { opacity: 0; transform: translateX(34px) rotate(9deg); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes hc-pop {
+  0% { opacity: 0; transform: scale(0.4); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.hc-duelist .cf-card {
+  animation: hc-flip 0.55s cubic-bezier(0.2, 0.7, 0.25, 1) 0.16s both;
+}
+@keyframes hc-flip {
+  0% { opacity: 0; transform: rotateY(88deg) scale(0.85); }
+  60% { opacity: 1; transform: rotateY(-9deg) scale(1.03); }
+  100% { opacity: 1; transform: none; }
+}
+
+/* result glows on the winning hand */
+.hc-duel.is-player .hc-you .cf-card {
+  border-color: rgba(74, 222, 128, 0.55);
+  box-shadow:
+    0 12px 26px rgba(0, 0, 0, 0.52),
+    0 0 30px rgba(74, 222, 128, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.hc-duel.is-dealer .hc-banker .cf-card {
+  border-color: rgba(255, 107, 107, 0.5);
+  box-shadow:
+    0 12px 26px rgba(0, 0, 0, 0.52),
+    0 0 30px rgba(255, 107, 107, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.hc-duel.is-push .cf-card {
+  border-color: color-mix(in srgb, var(--gs-accent) 45%, transparent);
+  box-shadow:
+    0 12px 26px rgba(0, 0, 0, 0.52),
+    0 0 26px color-mix(in srgb, var(--gs-accent) 26%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* ── centre VS badge (icon-style divider, never raw text) ────────── */
+.hc-vs {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  position: relative;
+  z-index: 1;
+  font-size: 12.5px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #ffffff;
+  background: linear-gradient(180deg, rgba(22, 28, 42, 0.82), rgba(12, 15, 24, 0.82));
+  border: 1px solid color-mix(in srgb, var(--gs-accent) 45%, transparent);
+  box-shadow:
+    0 0 18px color-mix(in srgb, var(--gs-accent) 28%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.hc-vs span {
+  text-shadow: 0 0 12px color-mix(in srgb, var(--gs-accent) 60%, transparent);
+}
+
+/* ── stage banner (kit banner, constrained) ──────────────────────── */
+.hc-stage .gs-banner {
+  width: 100%;
+  max-width: 350px;
+}
+
+/* ── history bits ────────────────────────────────────────────────── */
+.hc-hist-badge {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+}
+.hc-hist-badge.w {
+  color: #86efac;
+  background: rgba(74, 222, 128, 0.14);
+  border: 1px solid rgba(74, 222, 128, 0.32);
+}
+.hc-hist-badge.p {
+  color: #cdd6e8;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+.hc-hist-badge.l {
+  color: #ffb3b3;
+  background: rgba(255, 107, 107, 0.12);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+.hc-hist-cards {
+  font-weight: 800;
+  color: #e2e8f4;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hc-hist-stake {
+  color: #aab3c6;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── dock ────────────────────────────────────────────────────────── */
+.hc-dock { width: 100%; }
+
+/* ── wider phones ────────────────────────────────────────────────── */
+@media (min-width: 720px) {
+  .hc-duel { gap: 10px; max-width: 460px; }
+}
+@media (max-width: 350px) {
+  .hc-duelist .cf-card { width: 84px; height: 118px; }
+  .hc-duelist .cf-rank { font-size: 23px; }
+  .hc-duelist .cf-suit { font-size: 27px; }
+}

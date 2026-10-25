@@ -4,9 +4,9 @@ import { api } from '../../lib/api'
 import { useAuth } from '../../auth/authContext'
 import { money } from '../../lib/format'
 import { Icon } from '../../components/Icons'
-import BottomNav from '../../components/BottomNav'
 import Popup from '../../components/Popup'
 import { useSiteConfig } from '../../lib/siteConfig'
+import GameShell from '../lib/GameShell'
 import { CardFace } from '../lib/cards'
 import '../lib/cards.css'
 import './RedDog.css'
@@ -30,6 +30,9 @@ export default function RedDog() {
   const [toast, setToast] = useState(null)
   const [lowBalance, setLowBalance] = useState(false)
   const minPlay = config?.minPlayBalance ?? 0
+
+  const minBet = rules?.minBet ?? 10
+  const maxBet = rules?.maxBet ?? 10000
 
   const showToast = (kind, text) => {
     setToast({ kind, text, id: Date.now() })
@@ -72,86 +75,183 @@ export default function RedDog() {
     ? null
     : reveal?.spread
 
-  return (
-    <div className="rd-root">
-      <header className="rd-header">
-        <div className="rd-title"><Icon name="spade" size={22} strokeWidth={2.2} /><span>Red Dog</span></div>
-        <div className="rd-balance"><span>{money(balance)}</span></div>
-      </header>
+  const halfStake = () => setStake(String(Math.max(minBet, Math.floor((Number(stake) || 0) / 2) || minBet)))
+  const doubleStake = () => setStake(String(Math.min(maxBet, Math.max(minBet, Math.floor((Number(stake) || 0) * 2)))))
+  const maxStake = () => setStake(String(Math.max(minBet, Math.min(maxBet, Math.floor(Number(balance) || 0)))))
 
-      <main className="rd-main">
-        <section className="rd-table">
+  const last = history[0]
+  let streak = 0
+  for (const b of history) { if (b.win > b.amount) streak++; else break }
+
+  return (
+    <GameShell
+      icon="spade"
+      title="Red Dog"
+      tagline="Shoot the spread"
+      accent="#ff6b6b"
+      busy={busy}
+      toast={toast}
+      onRefresh={fetchState}
+      footer={(
+        <div className="rd-dock">
+          <div className="gs-input-row">
+            <div className="gs-field">
+              <span className="gs-cur">₹</span>
+              <input
+                className="gs-input"
+                type="number"
+                min={minBet}
+                max={maxBet}
+                value={stake}
+                onChange={e => setStake(e.target.value)}
+                inputMode="decimal"
+                aria-label="Stake"
+              />
+            </div>
+            <button type="button" className="gs-chip" onClick={halfStake}>1/2</button>
+            <button type="button" className="gs-chip" onClick={doubleStake}>2×</button>
+            <button type="button" className="gs-chip" onClick={maxStake}>MAX</button>
+          </div>
+          <div className="gs-quick">
+            {[10, 50, 100, 500].filter(v => v >= minBet && v <= maxBet).map(v => (
+              <button key={v} type="button" className="gs-chip" onClick={() => setStake(String(v))}>₹{v}</button>
+            ))}
+          </div>
+          <button type="button" className="gs-cta" onClick={deal} disabled={busy}>
+            <Icon name="shuffle" size={17} strokeWidth={2.6} />
+            {busy ? 'Dealing…' : 'DEAL'}
+          </button>
+        </div>
+      )}
+    >
+      <section className="gs-stage rd-stage">
+        <div className="rd-felt" aria-hidden="true" />
+        <div
+          className="rd-table"
+          key={reveal?.id ?? 'rd-idle'}
+        >
           <div className="rd-cards">
             <CardFace card={reveal?.card1} back={!reveal?.card1} />
             <div className="rd-middle">
-              <span className="rd-spread-pill">
-                {reveal?.result === 'push' ? 'PUSH' : spread != null && spread > 0 ? `GAP ${spread}` : '↔'}
-              </span>
+              <div className={`rd-spreadzone ${reveal && (reveal.result === 'win' || reveal.result === 'triple') ? 'win-zone' : ''}`}>
+                {reveal?.result === 'push'
+                  ? <span className="rd-spread-tag push">PUSH</span>
+                  : spread != null && spread > 0
+                    ? (
+                      <span className="rd-spread-tag gap">
+                        <b>{spread}</b>
+                        <i>gap</i>
+                      </span>
+                      )
+                    : <span className="rd-spread-tag edge">↔</span>}
+                {reveal && reveal.result !== 'push' && spread != null && spread > 0 && spread <= 8 && (
+                  <div className="rd-dots">
+                    {Array.from({ length: spread }).map((_, j) => <i key={j} />)}
+                  </div>
+                )}
+              </div>
               <CardFace card={reveal?.card3} back={!reveal?.card3} dim={reveal?.result === 'lose'} />
               <small>third card</small>
             </div>
             <CardFace card={reveal?.card2} back={!reveal?.card2} />
           </div>
-          {reveal && (
-            <div className={`rd-banner ${reveal.win > reveal.amount ? 'is-win' : reveal.result === 'push' ? 'is-push' : 'is-loss'}`}>
-              {RESULT_TEXT[reveal.result]}{reveal.result === 'win' ? ` ${reveal.multiplier}×` : ''}
-            </div>
-          )}
-        </section>
-
-        <section className="rd-controls">
-          <label className="rd-stake">
-            <span>Stake</span>
-            <input type="number" min={rules?.minBet ?? 10} max={rules?.maxBet ?? 10000} value={stake} onChange={e => setStake(e.target.value)} inputMode="decimal" />
-          </label>
-          <div className="rd-quick">
-            {[10, 50, 100, 500].filter(v => v >= (rules?.minBet ?? 10) && v <= (rules?.maxBet ?? 10000)).map(v => (
-              <button key={v} type="button" onClick={() => setStake(String(v))}>₹{v}</button>
-            ))}
+        </div>
+        {reveal && (
+          <div className={`gs-banner ${reveal.win > reveal.amount ? 'win' : reveal.result === 'push' ? 'push' : 'loss'}`}>
+            {RESULT_TEXT[reveal.result]}{reveal.result === 'win' ? ` ${reveal.multiplier}×` : ''}
           </div>
-          <button type="button" className="rd-deal" onClick={deal} disabled={busy}>
-            <Icon name="shuffle" size={16} strokeWidth={2.5} /> {busy ? 'Dealing…' : 'DEAL'}
-          </button>
-        </section>
+        )}
+      </section>
 
-        <details className="rd-rules">
-          <summary>How to play</summary>
-          <ul>
-            <li>Two cards are dealt; a third card decides</li>
-            <li>Falls <strong>between</strong> → paid by the spread:</li>
-            <li>1 gap <strong>5×</strong> · 2 gaps <strong>4×</strong> · 3 gaps <strong>2×</strong> · 4+ gaps <strong>1×</strong></li>
-            <li>Consecutive cards and pairs <strong>push</strong></li>
-            <li>A pair that becomes trips pays <strong>11×</strong></li>
-          </ul>
-        </details>
+      <div className="gs-strip">
+        {history.slice(0, 14).map(b => (
+          <span key={b.id} className={`gs-pill ${b.result === 'win' || b.result === 'triple' ? 'gold' : b.result === 'push' ? '' : 'loss'}`}>
+            {b.result === 'win'
+              ? `${b.multiplier}×`
+              : b.result === 'triple'
+                ? '11×'
+                : b.result === 'push'
+                  ? 'PUSH'
+                  : 'MISS'}
+          </span>
+        ))}
+        {!history.length && <span className="gs-pill">—</span>}
+      </div>
 
-        <div className="rd-history">
-          <h3>Recent deals</h3>
-          {history.length ? (
-            <div className="rd-hist-list">
-              {history.slice(0, 15).map(b => (
-                <div key={b.id} className="rd-hist-item">
-                  <span className="rd-hist-cards">{b.card1} {b.card2} → {b.card3}</span>
-                  <span>{money(b.amount)}</span>
-                  <span className={b.result === 'win' ? 'win' : b.result === 'push' ? 'push' : 'lose'}>
-                    {b.win > b.amount ? `+${money(b.win - b.amount)}` : b.result === 'push' ? 'Push' : 'Lost'}
-                  </span>
-                  <span className="rd-hist-time">{new Date(b.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                </div>
-              ))}
+      <div className="gs-stats">
+        <div className="gs-stat">
+          <b>{streak > 0 ? `${streak}×` : '—'}</b>
+          <span>Win streak</span>
+        </div>
+        <div className="gs-stat">
+          <b>{rules?.pairTriple ?? 11}×</b>
+          <span>Top pay</span>
+        </div>
+        <div className="gs-stat">
+          <b>{money(last ? (last.win > last.amount ? last.win : last.amount) : 0)}</b>
+          <span>Last round</span>
+        </div>
+      </div>
+
+      <section className="gs-panel">
+        <div className="gs-panel-title">Payout ladder</div>
+        <div className="rd-ladder">
+          <div className="rd-lrow">
+            <span><Icon name="arrowRight" size={13} strokeWidth={2.4} /> 1 gap</span>
+            <b>5×</b>
+          </div>
+          <div className="rd-lrow">
+            <span><Icon name="arrowRight" size={13} strokeWidth={2.4} /> 2 gaps</span>
+            <b>4×</b>
+          </div>
+          <div className="rd-lrow">
+            <span><Icon name="arrowRight" size={13} strokeWidth={2.4} /> 3 gaps</span>
+            <b>2×</b>
+          </div>
+          <div className="rd-lrow">
+            <span><Icon name="arrowRight" size={13} strokeWidth={2.4} /> 4+ gaps</span>
+            <b>1×</b>
+          </div>
+          <div className="rd-lrow">
+            <span><Icon name="circleHalf" size={13} strokeWidth={2.4} /> Consecutive / pair</span>
+            <b className="rd-push">PUSH</b>
+          </div>
+          <div className="rd-lrow">
+            <span><Icon name="crown" size={13} strokeWidth={2.4} /> Pair turns trips</span>
+            <b>11×</b>
+          </div>
+        </div>
+      </section>
+
+      <section className="gs-panel gs-hist">
+        <div className="gs-panel-title">Recent deals</div>
+        {history.length ? (
+          history.slice(0, 15).map(b => (
+            <div key={b.id} className="gs-hist-row">
+              <span className={`rd-hist-badge ${b.result === 'win' ? 'w' : b.result === 'push' ? 'p' : 'l'}`}>
+                <Icon name={b.result === 'win' ? 'trophy' : b.result === 'push' ? 'circleHalf' : 'spade'} size={13} strokeWidth={2.2} />
+              </span>
+              <span className="rd-hist-cards">{b.card1} {b.card2} → {b.card3}</span>
+              <span className="rd-hist-stake">{money(b.amount)}</span>
+              <span className={b.result === 'win' ? 'win' : b.result === 'push' ? 'push' : 'lose'}>
+                {b.win > b.amount ? `+${money(b.win - b.amount)}` : b.result === 'push' ? 'Push' : 'Lost'}
+              </span>
+              <span className="gs-hist-time">{new Date(b.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
-          ) : <p className="rd-empty">No deals yet</p>}
-        </div>
-      </main>
+          ))
+        ) : <p className="gs-hist-empty">No deals yet — shoot the spread</p>}
+      </section>
 
-      <BottomNav onSoon={t => showToast('info', t)} />
-
-      {toast && (
-        <div key={toast.id} className={`rd-toast rd-toast-${toast.kind}`} role="status">
-          <Icon name={toast.kind === 'success' ? 'circleCheck' : toast.kind === 'error' ? 'circleAlert' : 'info'} size={16} />
-          {toast.text}
-        </div>
-      )}
+      <details className="gs-rules">
+        <summary>How to play</summary>
+        <ul>
+          <li>Two cards are dealt; a third card decides</li>
+          <li>Falls <strong>between</strong> → paid by the spread:</li>
+          <li>1 gap <strong>5×</strong> · 2 gaps <strong>4×</strong> · 3 gaps <strong>2×</strong> · 4+ gaps <strong>1×</strong></li>
+          <li>Consecutive cards and pairs <strong>push</strong></li>
+          <li>A pair that becomes trips pays <strong>11×</strong></li>
+        </ul>
+      </details>
 
       <Popup
         open={lowBalance}
@@ -168,6 +268,6 @@ export default function RedDog() {
         You need at least <strong>{money(minPlay)}</strong> in your wallet to play.
         Your balance is <strong>{money(balance)}</strong>.
       </Popup>
-    </div>
+    </GameShell>
   )
 }

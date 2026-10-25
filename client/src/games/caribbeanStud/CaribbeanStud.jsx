@@ -4,9 +4,9 @@ import { api } from '../../lib/api'
 import { useAuth } from '../../auth/authContext'
 import { money } from '../../lib/format'
 import { Icon } from '../../components/Icons'
-import BottomNav from '../../components/BottomNav'
 import Popup from '../../components/Popup'
 import { useSiteConfig } from '../../lib/siteConfig'
+import GameShell from '../lib/GameShell'
 import { CardFace } from '../lib/cards'
 import '../lib/cards.css'
 import './CaribbeanStud.css'
@@ -31,6 +31,9 @@ export default function CaribbeanStud() {
   const [toast, setToast] = useState(null)
   const [lowBalance, setLowBalance] = useState(false)
   const minPlay = config?.minPlayBalance ?? 0
+
+  const minBet = rules?.minBet ?? 10
+  const maxBet = rules?.maxBet ?? 10000
 
   const showToast = (kind, text) => {
     setToast({ kind, text, id: Date.now() })
@@ -102,99 +105,154 @@ export default function CaribbeanStud() {
   const last = !active ? history[0] : null
   const cards = active ?? last
 
+  // purely-visual fan keys so the deal animations replay each hand
+  const playerFanKey = active ? `a${active.playerCards.join('')}` : last ? `l${last.id || ''}` : 'idle'
+  const dealerFanKey = last ? `d${last.dealerCards.join('')}` : 'idle'
+
+  const halfAnte = () => setAnte(String(Math.max(minBet, Math.floor((Number(ante) || 0) / 2) || minBet)))
+  const doubleAnte = () => setAnte(String(Math.min(maxBet, Math.max(minBet, Math.floor((Number(ante) || 0) * 2)))))
+  const maxAnte = () => setAnte(String(Math.max(minBet, Math.min(maxBet, Math.floor(Number(balance) || 0)))))
+
   return (
-    <div className="cs-root">
-      <header className="cs-header">
-        <div className="cs-title"><Icon name="spade" size={22} strokeWidth={2.2} /><span>Caribbean Stud</span></div>
-        <div className="cs-balance"><span>{money(balance)}</span></div>
-      </header>
-
-      <main className="cs-main">
-        <section className="cs-table">
-          <div className="cs-pos">
-            <span className="cs-label">YOU</span>
-            <div className="cs-cards">
-              {cards
-                ? cards.playerCards.map((c, i) => <CardFace key={i} card={c} small />)
-                : <><CardFace back small /><CardFace back small /><CardFace back small /><CardFace back small /><CardFace back small /></>}
+    <GameShell
+      icon="shuffle"
+      title="Caribbean Stud"
+      tagline="5-card vs house"
+      accent="#ff9f45"
+      wide
+      busy={busy}
+      toast={toast}
+      onRefresh={fetchState}
+      footer={(
+        <div className="cs-dock">
+          {active ? (
+            <div className="cs-dock-actions">
+              <button type="button" className="gs-cta" onClick={play} disabled={busy}>
+                <Icon name="trendingUp" size={17} strokeWidth={2.6} /> RAISE (2× ante = {money(active.ante * 2)})
+              </button>
+              <button type="button" className="gs-btn-ghost cs-fold" onClick={fold} disabled={busy}>
+                FOLD (-{money(active.ante)})
+              </button>
             </div>
-            {last && <em className="cs-hand-name">{last.playerHand}</em>}
-          </div>
-          <div className="cs-pos">
-            <span className="cs-label">DEALER</span>
-            <div className="cs-cards">
-              {last
-                ? last.dealerCards.map((c, i) => <CardFace key={i} card={c} small />)
-                : <><CardFace back small /><CardFace back small /><CardFace back small /><CardFace back small /><CardFace back small /></>}
-            </div>
-            {last ? <em className={`cs-hand-name ${last.dealerQualified === false ? 'dim' : ''}`}>{last.dealerHand}{last.dealerQualified === false ? ' · no Q' : ''}</em> : <em className="cs-note">K-high to qualify</em>}
-          </div>
-        </section>
-
-        {active ? (
-          <section className="cs-actions">
-            <button type="button" className="cs-play" onClick={play} disabled={busy}>
-              <Icon name="play" size={16} strokeWidth={3} /> PLAY (2× ante = {money(active.ante * 2)})
-            </button>
-            <button type="button" className="cs-fold" onClick={fold} disabled={busy}>
-              FOLD (-{money(active.ante)})
-            </button>
-          </section>
-        ) : (
-          <section className="cs-controls">
-            <label className="cs-stake">
-              <span>Ante</span>
-              <input type="number" min={rules?.minBet ?? 10} max={rules?.maxBet ?? 10000} value={ante} onChange={e => setAnte(e.target.value)} inputMode="decimal" />
-            </label>
-            <button type="button" className="cs-deal" onClick={deal} disabled={busy}>
-              <Icon name="shuffle" size={16} strokeWidth={2.5} /> {busy ? 'Dealing…' : 'DEAL'}
-            </button>
-          </section>
-        )}
-
-        {last && (
-          <div className={`cs-banner ${last.win > last.amount ? 'is-win' : last.result === 'push' || last.result === 'dealerNoQualify' ? 'is-push' : 'is-loss'}`}>
-            {RESULT_TEXT[last.result]}{last.win > 0 ? ` — ${last.win > last.amount ? `+${money(last.win - last.amount)}` : money(last.win)}` : ''}
-          </div>
-        )}
-
-        <details className="cs-rules">
-          <summary>How to play</summary>
-          <ul>
-            <li>Place an <strong>ante</strong>, get 5 cards</li>
-            <li><strong>Play</strong> raises exactly <strong>2× the ante</strong>, or fold</li>
-            <li>Dealer needs <strong>K-high+</strong>: no qualify → ante pays, raise pushes</li>
-            <li>Raise pays up to <strong>50× (straight flush)</strong>, 20× quads, 7× full house…</li>
-          </ul>
-        </details>
-
-        <div className="cs-history">
-          <h3>Recent hands</h3>
-          {history.length ? (
-            <div className="cs-hist-list">
-              {history.slice(0, 12).map(b => (
-                <div key={b.id} className="cs-hist-item">
-                  <span className="cs-hist-hand">{b.playerHand}</span>
-                  <span>{money(b.ante)}</span>
-                  <span className={b.win > b.amount ? 'win' : 'lose'}>
-                    {b.win > b.amount ? `+${money(b.win - b.amount)}` : b.result === 'push' ? 'Push' : b.win > 0 ? `+${money(b.win)}` : 'Lost'}
-                  </span>
-                  <span className="cs-hist-time">{new Date(b.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+          ) : (
+            <>
+              <div className="gs-input-row">
+                <div className="gs-field">
+                  <span className="gs-cur">₹</span>
+                  <input
+                    className="gs-input"
+                    type="number"
+                    min={minBet}
+                    max={maxBet}
+                    value={ante}
+                    onChange={e => setAnte(e.target.value)}
+                    inputMode="decimal"
+                    aria-label="Ante"
+                  />
                 </div>
-              ))}
-            </div>
-          ) : <p className="cs-empty">No hands yet</p>}
-        </div>
-      </main>
-
-      <BottomNav onSoon={t => showToast('info', t)} />
-
-      {toast && (
-        <div key={toast.id} className={`cs-toast cs-toast-${toast.kind}`} role="status">
-          <Icon name={toast.kind === 'success' ? 'circleCheck' : toast.kind === 'error' ? 'circleAlert' : 'info'} size={16} />
-          {toast.text}
+                <button type="button" className="gs-chip" onClick={halfAnte}>1/2</button>
+                <button type="button" className="gs-chip" onClick={doubleAnte}>2×</button>
+                <button type="button" className="gs-chip" onClick={maxAnte}>MAX</button>
+              </div>
+              <div className="gs-quick">
+                {[10, 50, 100, 500].filter(v => v >= minBet && v <= maxBet).map(v => (
+                  <button key={v} type="button" className="gs-chip" onClick={() => setAnte(String(v))}>₹{v}</button>
+                ))}
+              </div>
+              <button type="button" className="gs-cta" onClick={deal} disabled={busy}>
+                <Icon name={busy ? 'refresh' : 'shuffle'} size={17} strokeWidth={2.6} />
+                {busy ? 'Dealing…' : 'DEAL'}
+              </button>
+            </>
+          )}
         </div>
       )}
+    >
+      <section className="gs-stage cs-stage">
+        <div className="cs-glow" aria-hidden="true" />
+
+        <div className="cs-row">
+          <span className="cs-seat">DEALER</span>
+          <div className="cs-fan cs-fan-dealer" key={dealerFanKey}>
+            {last
+              ? last.dealerCards.map((c, i) => <span key={i} className="cs-slot"><CardFace card={c} small /></span>)
+              : Array.from({ length: 5 }, (_, i) => <span key={i} className="cs-slot"><CardFace back small /></span>)}
+          </div>
+          {last
+            ? <em className={`cs-hand-name ${last.dealerQualified === false ? 'dim' : ''}`}>{last.dealerHand}{last.dealerQualified === false ? ' · no Q' : ''}</em>
+            : <em className="cs-note">K-high to qualify</em>}
+        </div>
+
+        <div className="cs-bridge">
+          <span className="cs-vs-chip"><Icon name="shuffle" size={11} strokeWidth={2.6} /> VS</span>
+        </div>
+
+        <div className="cs-row cs-row-player">
+          <div className="cs-fan cs-fan-player" key={playerFanKey}>
+            {cards
+              ? cards.playerCards.map((c, i) => <span key={i} className="cs-slot"><CardFace card={c} small /></span>)
+              : Array.from({ length: 5 }, (_, i) => <span key={i} className="cs-slot"><CardFace back small /></span>)}
+          </div>
+          {last && <em className="cs-hand-name">{last.playerHand}</em>}
+        </div>
+      </section>
+
+      {last && (
+        <div className={`gs-banner ${last.win > last.amount ? 'win' : last.result === 'push' || last.result === 'dealerNoQualify' ? 'push' : 'loss'}`}>
+          {RESULT_TEXT[last.result]}{last.win > 0 ? ` — ${last.win > last.amount ? `+${money(last.win - last.amount)}` : money(last.win)}` : ''}
+        </div>
+      )}
+
+      <div className="gs-strip">
+        {history.slice(0, 14).map(b => (
+          <span key={b.id} className={`gs-pill ${b.win > b.amount ? 'win' : b.result === 'push' || b.result === 'dealerNoQualify' ? '' : 'loss'}`}>{b.playerHand}</span>
+        ))}
+        {!history.length && <span className="gs-pill">—</span>}
+      </div>
+
+      <div className="gs-stats">
+        <div className="gs-stat">
+          <b>{history.length}</b>
+          <span>Hands</span>
+        </div>
+        <div className="gs-stat">
+          <b>{last ? (last.win > last.amount ? `+${money(last.win - last.amount)}` : last.win > 0 ? `+${money(last.win)}` : 'LOST') : '—'}</b>
+          <span>Last payout</span>
+        </div>
+        <div className="gs-stat">
+          <b>{money(Number(ante) || 0)}</b>
+          <span>Ante now</span>
+        </div>
+      </div>
+
+      <section className="gs-panel gs-hist cs-hist">
+        <div className="gs-panel-title"><Icon name="history" size={12} strokeWidth={2.4} /> Recent hands</div>
+        {history.length ? (
+          history.slice(0, 12).map(b => (
+            <div key={b.id} className="gs-hist-row">
+              <span className="cs-hist-hand">{b.playerHand}</span>
+              <span className="cs-hist-line">
+                ante {money(b.ante)}
+                {b.amount > b.ante && <em className="cs-hist-raise">· raise {money(b.amount - b.ante)}</em>}
+              </span>
+              <span className={`cs-hist-res ${b.win > b.amount ? 'win' : 'lose'}`}>
+                {b.win > b.amount ? `+${money(b.win - b.amount)}` : b.result === 'push' ? 'Push' : b.win > 0 ? `+${money(b.win)}` : 'Lost'}
+              </span>
+              <span className="gs-hist-time">{new Date(b.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+          ))
+        ) : <p className="gs-hist-empty">No hands yet</p>}
+      </section>
+
+      <details className="gs-rules">
+        <summary>How to play</summary>
+        <ul>
+          <li>Place an <strong>ante</strong>, get 5 cards</li>
+          <li><strong>Play</strong> raises exactly <strong>2× the ante</strong>, or fold</li>
+          <li>Dealer needs <strong>K-high+</strong>: no qualify &#8594; ante pays, raise pushes</li>
+          <li>Raise pays up to <strong>50× (straight flush)</strong>, 20× quads, 7× full house&#8230;</li>
+        </ul>
+      </details>
 
       <Popup
         open={lowBalance}
@@ -211,6 +269,6 @@ export default function CaribbeanStud() {
         You need at least <strong>{money(minPlay)}</strong> in your wallet to play.
         Your balance is <strong>{money(balance)}</strong>.
       </Popup>
-    </div>
+    </GameShell>
   )
 }

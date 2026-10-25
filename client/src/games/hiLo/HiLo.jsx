@@ -5,8 +5,8 @@ import { useAuth } from '../../auth/authContext'
 import { money } from '../../lib/format'
 import { useSiteConfig } from '../../lib/siteConfig'
 import { Icon } from '../../components/Icons'
-import BottomNav from '../../components/BottomNav'
 import Popup from '../../components/Popup'
+import GameShell from '../lib/GameShell'
 import './HiLo.css'
 
 const SUIT_ICONS = { h: '♥', d: '♦', c: '♣', s: '♠' }
@@ -119,21 +119,15 @@ export default function HiLo() {
   const nextMultiplier = active ? state?.rules?.nextMultiplier?? (active.streak < 15 ? [1.95,2.0,2.1,2.25,2.5,3.0,4.0,5.5,8.0,12.0,18.0,28.0,45.0,70.0,110.0][active.streak] : 110.0) : null
 
   return (
-    <div className="hilo-root">
-      <header className="hilo-header">
-        <div className="hilo-title">
-          <Icon name="sortUp" size={22} strokeWidth={2.2} />
-          <span>Hi-Lo</span>
-        </div>
-        <div className="hilo-balance">
-          <span>₹{money(balance)}</span>
-          <button className={`hilo-refresh ${spinning ? 'spin' : ''}`} onClick={refresh} disabled={spinning} aria-label="Refresh">
-            <Icon name="refresh" size={18} strokeWidth={2} />
-          </button>
-        </div>
-      </header>
-
-      <main className="hilo-main">
+    <GameShell
+      icon="arrowUpDown"
+      title="Hi-Lo"
+      tagline="Higher or lower"
+      accent="#5cc8ff"
+      toast={toast}
+      onRefresh={refresh}
+    >
+      <div className="hilo-main">
         {/* Current card display */}
         <div className="hilo-card-area">
           {active ? (
@@ -288,16 +282,7 @@ export default function HiLo() {
             <p className="hilo-empty">No rounds yet</p>
           )}
         </div>
-      </main>
-
-      <BottomNav onSoon={text => showToast('info', text)} />
-
-      {toast && (
-        <div key={toast.id} className={`hilo-toast hilo-toast-${toast.kind}`} role="status">
-          <Icon name={toast.kind === 'success' ? 'circleCheck' : toast.kind === 'error' ? 'circleAlert' : 'info'} size={16} />
-          {toast.text}
-        </div>
-      )}
+      </div>
 
       <Popup
         open={lowBalance}
@@ -314,6 +299,6 @@ export default function HiLo() {
         You need at least <strong>₹{money(minPlay)}</strong> in your wallet to play.
         Your balance is <strong>₹{money(balance)}</strong>.
       </Popup>
-    </div>
+    </GameShell>
   )
 }

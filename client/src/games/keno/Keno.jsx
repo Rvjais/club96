@@ -5,8 +5,8 @@ import { useAuth } from '../../auth/authContext'
 import { money } from '../../lib/format'
 import { useSiteConfig } from '../../lib/siteConfig'
 import { Icon } from '../../components/Icons'
-import BottomNav from '../../components/BottomNav'
 import Popup from '../../components/Popup'
+import GameShell from '../lib/GameShell'
 import './Keno.css'
 
 const ROOM_ORDER = ['30s', '1m', '3m', '5m']
@@ -140,21 +140,15 @@ export default function Keno() {
   const isLocked = roomConfig && state?.serverNow && (state.serverNow >= (Math.floor(state.serverNow / roomConfig.intervalMs) + 1) * roomConfig.intervalMs - (state.rules.lockSeconds * 1000))
 
   return (
-    <div className="keno-root">
-      <header className="keno-header">
-        <div className="keno-title">
-          <Icon name="grid" size={22} strokeWidth={2.2} />
-          <span>Keno</span>
-        </div>
-        <div className="keno-balance">
-          <span>₹{money(balance)}</span>
-          <button className={`keno-refresh ${spinning ? 'spin' : ''}`} onClick={refresh} disabled={spinning} aria-label="Refresh">
-            <Icon name="refresh" size={18} strokeWidth={2} />
-          </button>
-        </div>
-      </header>
-
-      <main className="keno-main">
+    <GameShell
+      icon="grid"
+      title="Keno"
+      tagline="Pick your numbers"
+      accent="#7c5cff"
+      toast={toast}
+      onRefresh={refresh}
+    >
+      <div className="keno-main">
         {/* Room tabs */}
         <div className="keno-rooms" role="tablist">
           {ROOM_ORDER.map(key => {
@@ -329,16 +323,7 @@ export default function Keno() {
             <p className="keno-empty">No results yet</p>
           )}
         </div>
-      </main>
-
-      <BottomNav onSoon={text => showToast('info', text)} />
-
-      {toast && (
-        <div key={toast.id} className={`keno-toast keno-toast-${toast.kind}`} role="status">
-          <Icon name={toast.kind === 'success' ? 'circleCheck' : toast.kind === 'error' ? 'circleAlert' : 'info'} size={16} />
-          {toast.text}
-        </div>
-      )}
+      </div>
 
       <Popup
         open={lowBalance}
@@ -355,6 +340,6 @@ export default function Keno() {
         You need at least <strong>₹{money(minPlay)}</strong> in your wallet to play.
         Your balance is <strong>₹{money(balance)}</strong>.
       </Popup>
-    </div>
+    </GameShell>
   )
 }

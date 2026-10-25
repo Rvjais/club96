@@ -4,9 +4,9 @@ import { api } from '../../lib/api'
 import { useAuth } from '../../auth/authContext'
 import { money } from '../../lib/format'
 import { Icon } from '../../components/Icons'
-import BottomNav from '../../components/BottomNav'
 import Popup from '../../components/Popup'
 import { useSiteConfig } from '../../lib/siteConfig'
+import GameShell from '../lib/GameShell'
 import { CardFace } from '../lib/cards'
 import '../lib/cards.css'
 import './CasinoWar.css'
@@ -18,6 +18,8 @@ const RESULT_TEXT = {
   warLoss: 'WAR — you lost',
   surrender: 'Surrendered (half back)',
 }
+
+const isRed = (card) => /[♥♦]$/.test(card || '')
 
 export default function CasinoWar() {
   const navigate = useNavigate()
@@ -31,6 +33,9 @@ export default function CasinoWar() {
   const [toast, setToast] = useState(null)
   const [lowBalance, setLowBalance] = useState(false)
   const minPlay = config?.minPlayBalance ?? 0
+
+  const minBet = rules?.minBet ?? 10
+  const maxBet = rules?.maxBet ?? 10000
 
   const showToast = (kind, text) => {
     setToast({ kind, text, id: Date.now() })
@@ -107,102 +112,158 @@ export default function CasinoWar() {
   // last finished bet for the table display
   const last = !active ? history[0] : null
 
+  // purely-visual key so the card-reveal + emblem animations replay each round
+  const roundKey = active
+    ? `t${active.playerCard || ''}${active.dealerCard || ''}`
+    : last ? `r${last.id || ''}${last.playerCard || ''}${last.warPlayerCard || ''}${last.result || ''}` : 'idle'
+
+  const halfStake = () => setStake(String(Math.max(minBet, Math.floor((Number(stake) || 0) / 2) || minBet)))
+  const doubleStake = () => setStake(String(Math.min(maxBet, Math.max(minBet, Math.floor((Number(stake) || 0) * 2)))))
+  const maxStake = () => setStake(String(Math.max(minBet, Math.min(maxBet, Math.floor(Number(balance) || 0)))))
+
+  const wars = history.filter(b => b.result === 'warWin' || b.result === 'warLoss').length
+
   return (
-    <div className="cw-root">
-      <header className="cw-header">
-        <div className="cw-title"><Icon name="crown" size={22} strokeWidth={2.2} /><span>Casino War</span></div>
-        <div className="cw-balance"><span>{money(balance)}</span></div>
-      </header>
-
-      <main className="cw-main">
-        <section className="cw-table">
-          <div className="cw-hand">
-            <span className="cw-label">YOU</span>
-            <CardFace card={active?.playerCard ?? last?.playerCard} back={!(active || last)} />
-          </div>
-          <div className="cw-vs">{active ? 'TIE!' : 'VS'}</div>
-          <div className="cw-hand">
-            <span className="cw-label">DEALER</span>
-            <CardFace card={active?.dealerCard ?? last?.dealerCard} back={!(active || last)} />
-          </div>
-        </section>
-
-        {active ? (
-          <>
-            <div className="cw-tie-note">
-              High-card tie! Raise <strong>{money(active.amount)}</strong> to go to war —
-              win pays 1:1 on the ante, the war stake pushes — or surrender and keep half.
-            </div>
+    <GameShell
+      icon="crown"
+      title="Casino War"
+      tagline="Tie? Go to war"
+      accent="#ffb347"
+      busy={busy}
+      toast={toast}
+      onRefresh={fetchState}
+      footer={(
+        <div className="cw-dock">
+          {active ? (
             <div className="cw-war-actions">
-              <button type="button" className="cw-go-war" onClick={war} disabled={busy}>
-                <Icon name="zap" size={16} strokeWidth={2.4} /> GO TO WAR
+              <button type="button" className="gs-cta" onClick={war} disabled={busy}>
+                <Icon name="zap" size={17} strokeWidth={2.6} /> GO TO WAR
               </button>
-              <button type="button" className="cw-surrender" onClick={surrender} disabled={busy}>
+              <button type="button" className="gs-btn-ghost cw-surrender" onClick={surrender} disabled={busy}>
                 SURRENDER (½)
               </button>
             </div>
-          </>
-        ) : (
-          <section className="cw-controls">
-            <label className="cw-stake">
-              <span>Stake</span>
-              <input type="number" min={rules?.minBet ?? 10} max={rules?.maxBet ?? 10000} value={stake} onChange={e => setStake(e.target.value)} inputMode="decimal" />
-            </label>
-            <div className="cw-quick">
-              {[10, 50, 100, 500].filter(v => v >= (rules?.minBet ?? 10) && v <= (rules?.maxBet ?? 10000)).map(v => (
-                <button key={v} type="button" onClick={() => setStake(String(v))}>₹{v}</button>
-              ))}
-            </div>
-            <button type="button" className="cw-bet" onClick={bet} disabled={busy}>
-              <Icon name="play" size={16} strokeWidth={2.5} /> {busy ? 'Dealing…' : 'BATTLE'}
-            </button>
-          </section>
-        )}
+          ) : (
+            <>
+              <div className="gs-input-row">
+                <div className="gs-field">
+                  <span className="gs-cur">₹</span>
+                  <input
+                    className="gs-input"
+                    type="number"
+                    min={minBet}
+                    max={maxBet}
+                    value={stake}
+                    onChange={e => setStake(e.target.value)}
+                    inputMode="decimal"
+                    aria-label="Stake"
+                  />
+                </div>
+                <button type="button" className="gs-chip" onClick={halfStake}>1/2</button>
+                <button type="button" className="gs-chip" onClick={doubleStake}>2×</button>
+                <button type="button" className="gs-chip" onClick={maxStake}>MAX</button>
+              </div>
+              <div className="gs-quick">
+                {[10, 50, 100, 500].filter(v => v >= minBet && v <= maxBet).map(v => (
+                  <button key={v} type="button" className="gs-chip" onClick={() => setStake(String(v))}>₹{v}</button>
+                ))}
+              </div>
+              <button type="button" className="gs-cta" onClick={bet} disabled={busy}>
+                <Icon name={busy ? 'refresh' : 'crown'} size={17} strokeWidth={2.6} />
+                {busy ? 'Dealing…' : 'BATTLE'}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    >
+      <section className="gs-stage cw-stage">
+        <div className="cw-glow" aria-hidden="true" />
+        <div className="cw-table" key={roundKey}>
+          <div className="cw-seat">
+            <span className="cw-seat-label">YOU</span>
+            <span className="cw-card-in cw-in-l">
+              <CardFace card={active?.playerCard ?? last?.playerCard} back={!(active || last)} />
+            </span>
+          </div>
+          <div className={`cw-vs ${active ? 'cw-vs-war' : ''} ${!active && last ? (last.win > 0 ? 'cw-vs-win' : 'cw-vs-loss') : ''}`}>
+            <Icon name="crown" size={active ? 19 : 14} strokeWidth={2.3} />
+            <span>{active ? 'WAR!' : 'VS'}</span>
+          </div>
+          <div className="cw-seat cw-seat-r">
+            <span className="cw-card-in cw-in-r">
+              <CardFace card={active?.dealerCard ?? last?.dealerCard} back={!(active || last)} />
+            </span>
+            <span className="cw-seat-label">DEALER</span>
+          </div>
+        </div>
 
-        {last && (
-          <div className={`cw-banner ${last.win > 0 && last.result !== 'surrender' ? 'is-win' : last.result !== 'dealerWins' && last.result !== 'warLoss' ? 'is-push' : 'is-loss'}`}>
-            {RESULT_TEXT[last.result]}{last.win > 0 ? ` — ${last.result === 'surrender' ? money(last.win) : '+' + money(last.win)}` : ''}
+        {active && (
+          <div className="cw-tie-note">
+            High-card tie! Raise <strong>{money(active.amount)}</strong> to go to war —
+            win pays 1:1 on the ante, the war stake pushes — or surrender and keep half.
           </div>
         )}
 
-        <details className="cw-rules">
-          <summary>How to play</summary>
-          <ul>
-            <li>One card each — <strong>higher card wins 1:1</strong></li>
-            <li><strong>Tie?</strong> Go to war: match your stake to battle again</li>
-            <li>Win the war → ante pays 1:1, war stake pushes</li>
-            <li>Or surrender and get <strong>half</strong> the stake back</li>
-            <li>Ace is high</li>
-          </ul>
-        </details>
+        {last && (
+          <div className={`gs-banner cw-res ${last.win > 0 && last.result !== 'surrender' ? 'win' : last.result !== 'dealerWins' && last.result !== 'warLoss' ? 'push' : 'loss'}`}>
+            {RESULT_TEXT[last.result]}{last.win > 0 ? ` — ${last.result === 'surrender' ? money(last.win) : '+' + money(last.win)}` : ''}
+          </div>
+        )}
+      </section>
 
-        <div className="cw-history">
-          <h3>Recent battles</h3>
-          {history.length ? (
-            <div className="cw-hist-list">
-              {history.slice(0, 15).map(b => (
-                <div key={b.id} className="cw-hist-item">
-                  <span className="cw-hist-cards">{b.playerCard} vs {b.dealerCard}{b.result === 'warWin' || b.result === 'warLoss' ? ` ⚔ ${b.warPlayerCard}/${b.warDealerCard}` : ''}</span>
-                  <span>{money(b.staked)}</span>
-                  <span className={b.result === 'playerWins' || b.result === 'warWin' ? 'win' : b.result === 'surrender' ? 'push' : 'lose'}>
-                    {b.result === 'surrender' ? `+${money(b.win)}` : b.win > 0 ? `+${money(b.win)}` : 'Lost'}
-                  </span>
-                  <span className="cw-hist-time">{new Date(b.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                </div>
-              ))}
+      <div className="gs-strip">
+        {history.slice(0, 14).map(b => (
+          <span key={b.id} className={`gs-pill ${b.win > 0 ? (b.result === 'warWin' ? 'gold' : 'win') : b.result === 'surrender' ? '' : 'loss'}`}>{b.playerCard}</span>
+        ))}
+        {!history.length && <span className="gs-pill">—</span>}
+      </div>
+
+      <div className="gs-stats">
+        <div className="gs-stat">
+          <b>{history.length}</b>
+          <span>Battles</span>
+        </div>
+        <div className="gs-stat">
+          <b>{wars || '—'}</b>
+          <span>Wars fought</span>
+        </div>
+        <div className="gs-stat">
+          <b>{money(last ? (last.win > 0 ? last.win : last.staked) : 0)}</b>
+          <span>Last round</span>
+        </div>
+      </div>
+
+      <section className="gs-panel gs-hist cw-hist">
+        <div className="gs-panel-title"><Icon name="receipt" size={12} strokeWidth={2.4} /> Recent battles</div>
+        {history.length ? (
+          history.slice(0, 15).map(b => (
+            <div key={b.id} className="gs-hist-row">
+              <span className={`cw-hist-card ${isRed(b.playerCard) ? 'is-red' : 'is-black'}`}>{b.playerCard}</span>
+              <span className="cw-hist-line">
+                vs {b.dealerCard}
+                {(b.result === 'warWin' || b.result === 'warLoss') && <em className="cw-hist-war">· ⚔ {b.warPlayerCard}/{b.warDealerCard}</em>}
+              </span>
+              <span className="cw-hist-stake">{money(b.staked)}</span>
+              <span className={b.result === 'playerWins' || b.result === 'warWin' ? 'win' : b.result === 'surrender' ? 'push' : 'lose'}>
+                {b.result === 'surrender' ? `+${money(b.win)}` : b.win > 0 ? `+${money(b.win)}` : 'Lost'}
+              </span>
+              <span className="gs-hist-time">{new Date(b.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
-          ) : <p className="cw-empty">No battles yet</p>}
-        </div>
-      </main>
+          ))
+        ) : <p className="gs-hist-empty">No battles yet</p>}
+      </section>
 
-      <BottomNav onSoon={t => showToast('info', t)} />
-
-      {toast && (
-        <div key={toast.id} className={`cw-toast cw-toast-${toast.kind}`} role="status">
-          <Icon name={toast.kind === 'success' ? 'circleCheck' : toast.kind === 'error' ? 'circleAlert' : 'info'} size={16} />
-          {toast.text}
-        </div>
-      )}
+      <details className="gs-rules">
+        <summary>How to play</summary>
+        <ul>
+          <li>One card each — <strong>higher card wins 1:1</strong></li>
+          <li><strong>Tie?</strong> Go to war: match your stake to battle again</li>
+          <li>Win the war &#8594; ante pays 1:1, war stake pushes</li>
+          <li>Or surrender and get <strong>half</strong> the stake back</li>
+          <li>Ace is high</li>
+        </ul>
+      </details>
 
       <Popup
         open={lowBalance}
@@ -219,6 +280,6 @@ export default function CasinoWar() {
         You need at least <strong>{money(minPlay)}</strong> in your wallet to play.
         Your balance is <strong>{money(balance)}</strong>.
       </Popup>
-    </div>
+    </GameShell>
   )
 }

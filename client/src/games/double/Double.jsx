@@ -5,8 +5,8 @@ import { useAuth } from '../../auth/authContext'
 import { money } from '../../lib/format'
 import { useSiteConfig } from '../../lib/siteConfig'
 import { Icon } from '../../components/Icons'
-import BottomNav from '../../components/BottomNav'
 import Popup from '../../components/Popup'
+import GameShell from '../lib/GameShell'
 import './Double.css'
 
 const COLORS = [
@@ -80,21 +80,15 @@ export default function Double() {
   }
 
   return (
-    <div className="dbl-root">
-      <header className="dbl-header">
-        <div className="dbl-title">
-          <Icon name="circleHalf" size={22} strokeWidth={2.2} />
-          <span>Double</span>
-        </div>
-        <div className="dbl-balance">
-          <span>₹{money(balance)}</span>
-          <button className={`dbl-refresh ${spinning ? 'spin' : ''}`} onClick={refresh} disabled={spinning} aria-label="Refresh">
-            <Icon name="refresh" size={18} strokeWidth={2} />
-          </button>
-        </div>
-      </header>
-
-      <main className="dbl-main">
+    <GameShell
+      icon="flame"
+      title="Double"
+      tagline="Red or black"
+      accent="#ff5a5f"
+      toast={toast}
+      onRefresh={refresh}
+    >
+      <div className="dbl-main">
         {/* Last result display */}
         <div className="dbl-last-result">
           {lastResult && (
@@ -180,16 +174,7 @@ export default function Double() {
             <p className="dbl-empty">No bets yet</p>
           )}
         </div>
-      </main>
-
-      <BottomNav onSoon={text => showToast('info', text)} />
-
-      {toast && (
-        <div key={toast.id} className={`dbl-toast dbl-toast-${toast.kind}`} role="status">
-          <Icon name={toast.kind === 'success' ? 'circleCheck' : toast.kind === 'error' ? 'circleAlert' : 'info'} size={16} />
-          {toast.text}
-        </div>
-      )}
+      </div>
 
       <Popup
         open={lowBalance}
@@ -206,6 +191,6 @@ export default function Double() {
         You need at least <strong>₹{money(minPlay)}</strong> in your wallet to play.
         Your balance is <strong>₹{money(balance)}</strong>.
       </Popup>
-    </div>
+    </GameShell>
   )
 }

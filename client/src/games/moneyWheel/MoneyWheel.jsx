@@ -4,9 +4,9 @@ import { api } from '../../lib/api'
 import { useAuth } from '../../auth/authContext'
 import { money } from '../../lib/format'
 import { Icon } from '../../components/Icons'
-import BottomNav from '../../components/BottomNav'
 import Popup from '../../components/Popup'
 import { useSiteConfig } from '../../lib/siteConfig'
+import GameShell from '../lib/GameShell'
 import './MoneyWheel.css'
 
 // fallback (server sends the real layout via rules.wheel)
@@ -38,6 +38,8 @@ export default function MoneyWheel() {
   const [toast, setToast] = useState(null)
   const [lowBalance, setLowBalance] = useState(false)
   const minPlay = config?.minPlayBalance ?? 0
+  const minBet = rules?.minBet ?? 10
+  const maxBet = rules?.maxBet ?? 10000
 
   const showToast = (kind, text) => {
     setToast({ kind, text, id: Date.now() })
@@ -93,111 +95,191 @@ export default function MoneyWheel() {
     }
   }
 
-  const rotation = spinning ? -pointerIndex * SEG_ANGLE : -(pointerIndex % segCount) * SEG_ANGLE + 360 * (Math.floor(pointerIndex / segCount) % 2)
+  const halfStake = () => setStake(String(Math.max(minBet, Math.floor((Number(stake) || 0) / 2) || minBet)))
+  const doubleStake = () => setStake(String(Math.min(maxBet, Math.max(minBet, Math.floor((Number(stake) || 0) * 2)))))
+  const maxStake = () => setStake(String(Math.max(minBet, Math.min(maxBet, Math.floor(Number(balance) || 0)))))
+
+  // purely visual: disc paint from the exact segment ladder + landing rotation
+  const wheelStops = wheel.map((seg, i) => {
+    const meta = SPOT_META[seg.spot] ?? SPOT_META.x1
+    return `${meta.color} ${i * SEG_ANGLE}deg ${(i + 1) * SEG_ANGLE}deg`
+  }).join(', ')
+  const wheelBg = `conic-gradient(from -${SEG_ANGLE / 2}deg, ${wheelStops})`
+
   const last = history[0]
+  const bestWin = history.reduce((m, b) => Math.max(m, b.win), 0)
+  const selMeta = SPOT_META[spot] ?? SPOT_META.x1
+  const landMeta = result ? (SPOT_META[result.landedSpot] ?? SPOT_META.x1) : null
+
+  // disc paints segment i centred at +i·SEG (clockwise). Landing needs θ ≡ −idx·SEG:
+  // spin phase uses the full target (+6 extra turns); idle collapses it mod 360 (invisible)
+  const rotation = spinning
+    ? pointerIndex * SEG_ANGLE
+    : (pointerIndex % segCount) * SEG_ANGLE + 360 * (Math.floor(pointerIndex / segCount) % 2)
 
   return (
-    <div className="mw-root">
-      <header className="mw-header">
-        <div className="mw-title"><Icon name="wheel" size={22} strokeWidth={2.2} /><span>Money Wheel</span></div>
-        <div className="mw-balance"><span>{money(balance)}</span></div>
-      </header>
-
-      <main className="mw-main">
-        <section className="mw-stage">
-          <div className="mw-pointer" />
-          <div className="mw-plate" style={{ transform: `rotate(${rotation}deg)`, transition: spinning ? 'transform 1.6s cubic-bezier(0.15, 0.85, 0.2, 1)' : 'none' }}>
-            {wheel.map((seg, i) => {
-              const meta = SPOT_META[seg.spot] ?? SPOT_META.x1
-              return (
-                <span
-                  key={i}
-                  className="mw-seg"
-                  style={{
-                    '--ca': `${i * SEG_ANGLE}deg`,
-                    background: meta.color,
-                    color: meta.text,
-                  }}
-                >
-                  {meta.label}
-                </span>
-              )
-            })}
-            <span className="mw-hub" />
-          </div>
-          {result && (
-            <div className={`mw-callout ${result.win > result.amount ? 'is-win' : result.win > 0 ? 'is-push' : 'is-loss'}`}>
-              {result.win > result.amount
-                ? `Won ${money(result.win)}!`
-                : result.win > 0
-                  ? `Returned ${money(result.win)}`
-                  : 'No luck — try again'}
-            </div>
-          )}
-        </section>
-
-        <section className="mw-spots">
-          {Object.entries(SPOT_META).map(([id, m]) => (
-            <button key={id} type="button" className={`mw-spot ${spot === id ? 'active' : ''}`} style={{ '--cc': m.color }} onClick={() => setSpot(id)}>
-              <span className="mw-spot-label">{m.label}</span>
-              <em>{m.pay}</em>
-            </button>
-          ))}
-        </section>
-
-        <section className="mw-controls">
-          <label className="mw-stake">
-            <span>Stake</span>
-            <input type="number" min={rules?.minBet ?? 10} max={rules?.maxBet ?? 10000} value={stake} onChange={e => setStake(e.target.value)} inputMode="decimal" />
-          </label>
-          <div className="mw-quick">
-            {[10, 50, 100, 500].filter(v => v >= (rules?.minBet ?? 10) && v <= (rules?.maxBet ?? 10000)).map(v => (
-              <button key={v} type="button" onClick={() => setStake(String(v))}>₹{v}</button>
+    <GameShell
+      icon="star"
+      title="Money Wheel"
+      tagline="Big Six spins"
+      accent="#7c5cff"
+      busy={busy}
+      toast={toast}
+      onRefresh={fetchState}
+      wide={true}
+      footer={(
+        <div className="mw-dock">
+          <div className="mw-spots">
+            {Object.entries(SPOT_META).map(([id, m]) => (
+              <button key={id} type="button" className={`gs-chip mw-spot ${spot === id ? 'is-on' : ''}`} style={{ '--cc': m.color }} onClick={() => setSpot(id)}>
+                <span className="mw-spot-dot" style={{ background: m.color, color: m.text }}>{m.label}</span>
+                <em>{m.pay}</em>
+              </button>
             ))}
           </div>
-          <button type="button" className="mw-spin" onClick={spin} disabled={busy}>
+
+          <div className="gs-input-row">
+            <div className="gs-field">
+              <span className="gs-cur">₹</span>
+              <input
+                className="gs-input"
+                type="number"
+                min={minBet}
+                max={maxBet}
+                value={stake}
+                onChange={e => setStake(e.target.value)}
+                inputMode="decimal"
+                aria-label="Stake"
+              />
+            </div>
+            <button type="button" className="gs-chip" onClick={halfStake}>1/2</button>
+            <button type="button" className="gs-chip" onClick={doubleStake}>2×</button>
+            <button type="button" className="gs-chip" onClick={maxStake}>MAX</button>
+          </div>
+
+          <div className="gs-quick">
+            {[10, 50, 100, 500].filter(v => v >= minBet && v <= maxBet).map(v => (
+              <button key={v} type="button" className="gs-chip" onClick={() => setStake(String(v))}>₹{v}</button>
+            ))}
+          </div>
+
+          <button type="button" className="gs-cta" onClick={spin} disabled={busy}>
+            <Icon name={spinning ? 'refresh' : 'play'} size={17} strokeWidth={2.6} />
             {spinning ? 'SPINNING…' : 'SPIN THE WHEEL'}
           </button>
-        </section>
-
-        <details className="mw-rules">
-          <summary>How to play</summary>
-          <ul>
-            <li>Bet on one spot: <strong>1</strong>, <strong>2</strong>, <strong>5</strong>, <strong>10</strong>, <strong>20</strong> or the <strong>Joker</strong></li>
-            <li>54 segments: 1 is most common, Joker rarest</li>
-            <li>Land on your spot → paid <strong>2× up to 41×</strong> the stake</li>
-            <li>Every spin is a fresh, fair result</li>
-          </ul>
-        </details>
-
-        <div className="mw-history">
-          <h3>Recent spins</h3>
-          {history.length ? (
-            <div className="mw-hist-list">
-              {history.slice(0, 15).map(b => (
-                <div key={b.id} className="mw-hist-item">
-                  <span className="mw-hist-spot" style={{ background: (SPOT_META[b.spot] ?? SPOT_META.x1).color, color: (SPOT_META[b.spot] ?? SPOT_META.x1).text }}>
-                    {(SPOT_META[b.spot] ?? SPOT_META.x1).label}
-                  </span>
-                  <span>→ {(SPOT_META[b.landedSpot] ?? SPOT_META.x1).label}</span>
-                  <span>{money(b.amount)}</span>
-                  <span className={b.win > 0 ? 'win' : 'lose'}>{b.win > 0 ? `+${money(b.win)}` : 'Lost'}</span>
-                  <span className="mw-hist-time">{new Date(b.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                </div>
-              ))}
-            </div>
-          ) : <p className="mw-empty">No spins yet</p>}
-        </div>
-      </main>
-
-      <BottomNav onSoon={t => showToast('info', t)} />
-
-      {toast && (
-        <div key={toast.id} className={`mw-toast mw-toast-${toast.kind}`} role="status">
-          <Icon name={toast.kind === 'success' ? 'circleCheck' : toast.kind === 'error' ? 'circleAlert' : 'info'} size={16} />
-          {toast.text}
         </div>
       )}
+    >
+      <section className="gs-stage mw-stage">
+        <div className="mw-spotlight" aria-hidden="true" />
+        <div className="mw-scene">
+          <div className={`mw-wheelwrap ${spinning ? 'is-spinning' : ''}`}>
+            <span className="mw-pointer" aria-hidden="true" />
+            <div className="mw-plate-holder">
+              <div
+                className="mw-plate"
+                style={{
+                  background: wheelBg,
+                  transform: `rotate(${rotation}deg)`,
+                  transition: spinning ? 'transform 1.62s cubic-bezier(0.12, 0.74, 0.12, 1)' : 'none',
+                }}
+              >
+                {wheel.map((seg, i) => {
+                  const meta = SPOT_META[seg.spot] ?? SPOT_META.x1
+                  return (
+                    <span key={i} className="mw-segwrap" style={{ '--ca': `${i * SEG_ANGLE}deg` }}>
+                      <i className="mw-seg" style={{ color: meta.text }}>{meta.label}</i>
+                    </span>
+                  )
+                })}
+              </div>
+              <span className="mw-hub" aria-hidden="true" />
+            </div>
+          </div>
+
+          <div className="mw-teller">
+            <div className="mw-landed">
+              {landMeta ? (
+                <>
+                  <span className="mw-landed-coin" style={{ background: landMeta.color, color: landMeta.text }}>{landMeta.label}</span>
+                  <span className="mw-landed-mult">{landMeta.pay}</span>
+                </>
+              ) : (
+                <>
+                  <span className="mw-landed-coin idle">?</span>
+                  <span className="mw-landed-mult">{spinning ? 'SPINNING' : 'READY'}</span>
+                </>
+              )}
+            </div>
+            {result && (
+              <div className={`gs-banner ${result.win > result.amount ? 'win' : result.win > 0 ? 'push' : 'loss'}`}>
+                {result.win > result.amount
+                  ? `Won ${money(result.win)}!`
+                  : result.win > 0
+                    ? `Returned ${money(result.win)}`
+                    : 'No luck — try again'}
+              </div>
+            )}
+            <p className="mw-note">Betting on <strong style={{ color: selMeta.color }}>{selMeta.label}</strong> pays <strong>{selMeta.pay}</strong></p>
+          </div>
+        </div>
+      </section>
+
+      <div className="gs-strip">
+        {history.slice(0, 16).map(b => {
+          const m = SPOT_META[b.landedSpot] ?? SPOT_META.x1
+          return (
+            <span key={b.id} className="gs-pill mw-pill" style={{ background: m.color, color: m.text, borderColor: 'transparent' }}>
+              {m.label}
+            </span>
+          )
+        })}
+        {!history.length && <span className="gs-pill">—</span>}
+      </div>
+
+      <div className="gs-stats">
+        <div className="gs-stat">
+          <b>{last ? (SPOT_META[last.landedSpot] ?? SPOT_META.x1).label : '—'}</b>
+          <span>Last landed</span>
+        </div>
+        <div className="gs-stat">
+          <b>{bestWin > 0 ? money(bestWin) : '—'}</b>
+          <span>Best win</span>
+        </div>
+        <div className="gs-stat">
+          <b>{selMeta.pay}</b>
+          <span>{selMeta.label} pays</span>
+        </div>
+      </div>
+
+      <section className="gs-panel gs-hist mw-hist">
+        <div className="gs-panel-title">Recent spins</div>
+        {history.length ? (
+          history.slice(0, 15).map(b => {
+            const bet = SPOT_META[b.spot] ?? SPOT_META.x1
+            const land = SPOT_META[b.landedSpot] ?? SPOT_META.x1
+            return (
+              <div key={b.id} className="gs-hist-row">
+                <span className="mw-hist-spot" style={{ background: bet.color, color: bet.text }}>{bet.label}</span>
+                <span className="mw-hist-land">→ <i style={{ color: land.color, borderColor: land.color }}>{land.label}</i></span>
+                <span className="mw-hist-stake">{money(b.amount)}</span>
+                <span className={b.win > 0 ? 'win' : 'lose'}>{b.win > 0 ? `+${money(b.win)}` : 'Lost'}</span>
+                <span className="gs-hist-time">{new Date(b.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+            )
+          })
+        ) : <p className="gs-hist-empty">No spins yet — pick your spot</p>}
+      </section>
+
+      <details className="gs-rules">
+        <summary>How to play</summary>
+        <ul>
+          <li>Bet on one spot: <strong>1</strong>, <strong>2</strong>, <strong>5</strong>, <strong>10</strong>, <strong>20</strong> or the <strong>Joker</strong></li>
+          <li>54 segments: 1 is most common, Joker rarest</li>
+          <li>Land on your spot → paid <strong>2× up to 41×</strong> the stake</li>
+          <li>Every spin is a fresh, fair result</li>
+        </ul>
+      </details>
 
       <Popup
         open={lowBalance}
@@ -214,6 +296,6 @@ export default function MoneyWheel() {
         You need at least <strong>{money(minPlay)}</strong> in your wallet to play.
         Your balance is <strong>{money(balance)}</strong>.
       </Popup>
-    </div>
+    </GameShell>
   )
 }

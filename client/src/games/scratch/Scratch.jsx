@@ -4,9 +4,9 @@ import { api } from '../../lib/api'
 import { useAuth } from '../../auth/authContext'
 import { money } from '../../lib/format'
 import { Icon } from '../../components/Icons'
-import BottomNav from '../../components/BottomNav'
 import Popup from '../../components/Popup'
 import { useSiteConfig } from '../../lib/siteConfig'
+import GameShell from '../lib/GameShell'
 import './Scratch.css'
 
 const PANELS = 3
@@ -87,21 +87,15 @@ export default function Scratch() {
   const isRevealed = activeCard?.revealed ?? false
 
   return (
-    <div className="scratch-root">
-      <header className="scratch-header">
-        <div className="scratch-title">
-          <Icon name="gift" size={22} strokeWidth={2.2} />
-          <span>Scratch Cards</span>
-        </div>
-        <div className="scratch-balance">
-          <span>₹{money(balance)}</span>
-          <button className={`scratch-refresh ${spinning ? 'spin' : ''}`} onClick={refresh} disabled={spinning} aria-label="Refresh">
-            <Icon name="refresh" size={18} strokeWidth={2} />
-          </button>
-        </div>
-      </header>
-
-      <main className="scratch-main">
+    <GameShell
+      icon="ticket"
+      title="Scratch"
+      tagline="Scratch to reveal"
+      accent="#42d7a7"
+      toast={toast}
+      onRefresh={refresh}
+    >
+      <div className="scratch-main">
         {!activeCard ? (
           <section className="scratch-buy">
             <label>Card Price (₹)</label>
@@ -187,16 +181,7 @@ export default function Scratch() {
             <p className="scratch-empty">No cards yet</p>
           )}
         </div>
-      </main>
-
-      <BottomNav onSoon={text => showToast('info', text)} />
-
-      {toast && (
-        <div key={toast.id} className={`scratch-toast scratch-toast-${toast.kind}`} role="status">
-          <Icon name={toast.kind === 'success' ? 'circleCheck' : toast.kind === 'error' ? 'circleAlert' : 'info'} size={16} />
-          {toast.text}
-        </div>
-      )}
+      </div>
 
       <Popup
         open={lowBalance}
@@ -213,6 +198,6 @@ export default function Scratch() {
         You need at least <strong>₹{money(minPlay)}</strong> in your wallet to play.
         Your balance is <strong>₹{money(balance)}</strong>.
       </Popup>
-    </div>
+    </GameShell>
   )
 }
