@@ -9,7 +9,7 @@ export default {
   path: '/games/balloon-pop',
   icon: 'zap',
   image,
-  bg: 'linear-gradient(160deg,#ec4899 0%,#be185d 45%,#500724 100%)',
+  bg: '#be185d',
   glow: '#f472b6',
   badge: 'NEW',
   component: lazy(() => import('./BalloonPop')),

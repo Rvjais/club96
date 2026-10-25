@@ -42,9 +42,9 @@ export default function CaribbeanStud() {
 
   const fetchState = async () => {
     const res = await api.get('/games/caribbean-stud/state')
-    setRules(res.data.rules)
-    setActive(res.data.active)
-    setHistory(res.data.history)
+    setRules(res.rules)
+    setActive(res.active)
+    setHistory(res.history)
   }
 
   useEffect(() => { fetchState() }, [])
@@ -57,10 +57,10 @@ export default function CaribbeanStud() {
     setBusy(true)
     try {
       const res = await api.post('/games/caribbean-stud/deal', { ante: a })
-      setActive(res.data.active)
+      setActive(res.active)
       showToast('info', 'Dealt — play for 2× the ante, or fold')
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'Deal failed')
+      showToast('error', e.message || 'Deal failed')
     } finally {
       setBusy(false)
     }
@@ -72,8 +72,8 @@ export default function CaribbeanStud() {
     try {
       const res = await api.post('/games/caribbean-stud/play')
       setActive(null)
-      setHistory(res.data.history)
-      const b = res.data.history?.[0]
+      setHistory(res.history)
+      const b = res.history?.[0]
       if (b) {
         const profit = b.win - b.amount
         showToast(b.win > b.amount ? 'success' : 'error',
@@ -81,7 +81,7 @@ export default function CaribbeanStud() {
       }
       refreshWallet().catch(() => {})
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'Play failed')
+      showToast('error', e.message || 'Play failed')
     } finally {
       setBusy(false)
     }
@@ -93,10 +93,10 @@ export default function CaribbeanStud() {
     try {
       const res = await api.post('/games/caribbean-stud/fold')
       setActive(null)
-      setHistory(res.data.history)
+      setHistory(res.history)
       showToast('error', 'Folded — ante lost')
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'Fold failed')
+      showToast('error', e.message || 'Fold failed')
     } finally {
       setBusy(false)
     }

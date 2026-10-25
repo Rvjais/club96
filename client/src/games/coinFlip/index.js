@@ -9,7 +9,7 @@ export default {
   path: '/games/coin-flip',
   icon: 'coins',
   image,
-  bg: 'linear-gradient(160deg,#fbbf24 0%,#d97706 45%,#7c2d12 100%)',
+  bg: '#d97706',
   glow: '#fcd34d',
   badge: 'NEW',
   component: lazy(() => import('./CoinFlip')),

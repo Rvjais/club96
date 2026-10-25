@@ -9,7 +9,7 @@ export default {
   path: '/games/thai-lottery',
   icon: 'ticket',
   image,
-  bg: 'linear-gradient(160deg,#f59e0b 0%,#b45309 45%,#713f12 100%)',
+  bg: '#b45309',
   glow: '#fbbf24',
   badge: 'NEW',
   component: lazy(() => import('./ThaiLottery')),

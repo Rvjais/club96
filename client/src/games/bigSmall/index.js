@@ -9,7 +9,7 @@ export default {
   path: '/games/big-small',
   icon: 'dices',
   image,
-  bg: 'linear-gradient(160deg,#ef4444 0%,#991b1b 45%,#450a0a 100%)',
+  bg: '#991b1b',
   glow: '#fca5a5',
   badge: 'NEW',
   component: lazy(() => import('./BigSmall')),

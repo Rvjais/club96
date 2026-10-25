@@ -9,7 +9,7 @@ export default {
   path: '/games/money-wheel',
   icon: 'wheel',
   image,
-  bg: 'linear-gradient(160deg,#a855f7 0%,#6d28d9 45%,#2e1065 100%)',
+  bg: '#6d28d9',
   glow: '#c084fc',
   badge: 'NEW',
   component: lazy(() => import('./MoneyWheel')),

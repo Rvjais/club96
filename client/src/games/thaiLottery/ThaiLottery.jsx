@@ -36,8 +36,8 @@ export default function ThaiLottery() {
 
   const fetchState = async () => {
     const res = await api.get('/games/thai-lottery/state')
-    setRules(res.data.rules)
-    setHistory(res.data.history)
+    setRules(res.rules)
+    setHistory(res.history)
   }
 
   useEffect(() => { fetchState() }, [])
@@ -61,14 +61,14 @@ export default function ThaiLottery() {
     setBusy(true)
     try {
       const res = await api.post('/games/thai-lottery/bet', { mode, betType, pick, amount })
-      const b = res.data.history?.[0]
+      const b = res.history?.[0]
       setDraw({ draw: b.draw, pick: b.pick, win: b.win, status: b.status })
-      setHistory(res.data.history)
+      setHistory(res.history)
       showToast(b.win > 0 ? 'success' : 'error', b.win > 0 ? `🎉 ${b.draw} — won ${money(b.win)}!` : `${b.draw} — no match`)
       setPick('')
       refreshWallet().catch(() => {})
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'Bet failed')
+      showToast('error', e.message || 'Bet failed')
     } finally {
       setBusy(false)
     }

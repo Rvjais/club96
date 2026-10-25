@@ -42,8 +42,8 @@ export default function PaiGow() {
 
   const fetchState = async () => {
     const res = await api.get('/games/pai-gow/state')
-    setRules(res.data.rules)
-    setHistory(res.data.history)
+    setRules(res.rules)
+    setHistory(res.history)
   }
 
   useEffect(() => { fetchState() }, [])
@@ -56,13 +56,13 @@ export default function PaiGow() {
     setBusy(true)
     try {
       const res = await api.post('/games/pai-gow/deal', { amount })
-      const b = res.data.history?.[0]
+      const b = res.history?.[0]
       setLast(b)
-      setHistory(res.data.history)
+      setHistory(res.history)
       showToast(b.result === 'playerWins' ? 'success' : b.result === 'push' ? 'info' : 'error', RESULT_TEXT[b.result])
       refreshWallet().catch(() => {})
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'Deal failed')
+      showToast('error', e.message || 'Deal failed')
     } finally {
       setBusy(false)
     }

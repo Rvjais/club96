@@ -9,7 +9,7 @@ export default {
   path: '/games/double',
   icon: 'circleHalf',
   image,
-  bg: 'linear-gradient(160deg,#ff6b6b 0%,#c62828 45%,#1a1a2e 100%)',
+  bg: '#c62828',
   glow: '#ff4d4d',
   badge: 'NEW',
   component: lazy(() => import('./Double')),

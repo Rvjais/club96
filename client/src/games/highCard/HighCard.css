@@ -11,24 +11,11 @@
   min-height: 300px;
 }
 
-/* table glow behind the duel */
+/* flat decorative dashed ring behind the duel */
 .hc-felt {
   position: absolute;
   inset: 0;
   pointer-events: none;
-}
-.hc-felt::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 42%;
-  width: 320px;
-  height: 250px;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: radial-gradient(circle, color-mix(in srgb, var(--gs-accent) 18%, transparent), transparent 64%);
-  filter: blur(9px);
-  animation: hc-breathe 3.2s ease-in-out infinite;
 }
 .hc-felt::after {
   content: '';
@@ -89,10 +76,7 @@
   padding: 9px 10px;
   border-radius: 12px;
   border: 1px solid #d3d9e6;
-  box-shadow:
-    0 12px 26px rgba(0, 0, 0, 0.52),
-    0 0 26px color-mix(in srgb, var(--gs-accent) 12%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
 }
 .hc-duelist .cf-rank { font-size: 27px; }
 .hc-duelist .cf-suit { font-size: 32px; }
@@ -124,27 +108,21 @@
   100% { opacity: 1; transform: none; }
 }
 
-/* result glows on the winning hand */
+/* result tints on the winning hand */
 .hc-duel.is-player .hc-you .cf-card {
-  border-color: rgba(74, 222, 128, 0.55);
-  box-shadow:
-    0 12px 26px rgba(0, 0, 0, 0.52),
-    0 0 30px rgba(74, 222, 128, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  border-color: rgba(74, 222, 128, 0.45);
+  background: rgba(74, 222, 128, 0.12);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
 }
 .hc-duel.is-dealer .hc-banker .cf-card {
-  border-color: rgba(255, 107, 107, 0.5);
-  box-shadow:
-    0 12px 26px rgba(0, 0, 0, 0.52),
-    0 0 30px rgba(255, 107, 107, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  border-color: rgba(255, 107, 107, 0.45);
+  background: rgba(255, 107, 107, 0.12);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
 }
 .hc-duel.is-push .cf-card {
   border-color: color-mix(in srgb, var(--gs-accent) 45%, transparent);
-  box-shadow:
-    0 12px 26px rgba(0, 0, 0, 0.52),
-    0 0 26px color-mix(in srgb, var(--gs-accent) 26%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  background: color-mix(in srgb, var(--gs-accent) 12%, transparent);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
 }
 
 /* ── centre VS badge (icon-style divider, never raw text) ────────── */
@@ -159,15 +137,10 @@
   font-size: 12.5px;
   font-weight: 900;
   letter-spacing: 0.08em;
-  color: #ffffff;
-  background: linear-gradient(180deg, rgba(22, 28, 42, 0.82), rgba(12, 15, 24, 0.82));
+  color: #dfe8ee;
+  background: var(--gs-raise);
   border: 1px solid color-mix(in srgb, var(--gs-accent) 45%, transparent);
-  box-shadow:
-    0 0 18px color-mix(in srgb, var(--gs-accent) 28%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
-}
-.hc-vs span {
-  text-shadow: 0 0 12px color-mix(in srgb, var(--gs-accent) 60%, transparent);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
 }
 
 /* ── stage banner (kit banner, constrained) ──────────────────────── */

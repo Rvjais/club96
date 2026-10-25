@@ -9,22 +9,17 @@
   flex-direction: column;
   min-height: 240px;
   padding: 20px 12px 18px;
-  background:
-    radial-gradient(120% 90% at 50% 0%, rgba(167, 139, 250, 0.13), transparent 62%),
-    linear-gradient(180deg, #141127 0%, #0c0a15 100%);
-  border: 1px solid rgba(167, 139, 250, 0.22);
-  box-shadow:
-    0 26px 60px -30px rgba(0, 0, 0, 0.85),
-    0 0 44px -18px rgba(167, 139, 250, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  background: #100e1e;
+  border: 1px solid rgba(167, 139, 250, 0.4);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
 }
 .pg-stage.is-dealing { animation: pg-breathe 0.9s ease-in-out infinite; }
 @keyframes pg-breathe {
-  0%, 100% { box-shadow: 0 26px 60px -30px rgba(0, 0, 0, 0.85), 0 0 40px -18px rgba(167, 139, 250, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05); }
-  50% { box-shadow: 0 26px 60px -30px rgba(0, 0, 0, 0.85), 0 0 62px -12px rgba(167, 139, 250, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05); }
+  0%, 100% { background: #100e1e; border-color: rgba(167, 139, 250, 0.4); }
+  50% { background: #17132b; border-color: rgba(167, 139, 250, 0.85); }
 }
 
-/* glowing rail along the top of the felt */
+/* accent rail along the top of the felt */
 .pg-rail {
   position: absolute;
   top: 10px;
@@ -32,7 +27,7 @@
   right: 8%;
   height: 1px;
   pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgba(167, 139, 250, 0.7), transparent);
+  background: rgba(167, 139, 250, 0.45);
   opacity: 0.7;
 }
 
@@ -55,7 +50,7 @@
   text-transform: uppercase;
   color: #a78bfa;
   background: rgba(167, 139, 250, 0.12);
-  border: 1px solid rgba(167, 139, 250, 0.34);
+  border: 1px solid rgba(167, 139, 250, 0.45);
 }
 .pg-sidechip.dealer { color: #c3cade; background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.13); }
 
@@ -69,7 +64,7 @@
   bottom: 20px;
   width: 2px;
   border-radius: 2px;
-  background: linear-gradient(180deg, rgba(167, 139, 250, 0.65), rgba(167, 139, 250, 0.08));
+  background: rgba(167, 139, 250, 0.35);
 }
 
 .pg-row { position: relative; display: grid; grid-template-columns: 64px 1fr; gap: 8px; align-items: center; }
@@ -87,11 +82,9 @@
   gap: 2px;
   text-align: center;
   padding: 6px 3px;
-  background: rgba(12, 10, 22, 0.78);
-  border: 1px solid rgba(167, 139, 250, 0.3);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 0 14px -6px rgba(167, 139, 250, 0.5);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: #0d0b18;
+  border: 1px solid rgba(167, 139, 250, 0.45);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
 }
 .pg-rowlabel b { font-size: 10.5px; font-weight: 900; letter-spacing: 0.16em; text-transform: uppercase; color: #efeaff; }
 .pg-rowlabel i { font-style: normal; font-size: 8.5px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: #a78bfa; }
@@ -141,8 +134,8 @@
   font-weight: 900;
   letter-spacing: 0.08em;
   color: #170f2e;
-  background: linear-gradient(180deg, #d3c4ff 0%, #a78bfa 58%, #7c5fe0 100%);
-  box-shadow: 0 0 20px rgba(167, 139, 250, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 4px 10px rgba(0, 0, 0, 0.4);
+  background: #a78bfa;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
 }
 
 /* ── idle table before the first deal ───────────────────────────── */
@@ -155,9 +148,9 @@
 
 /* ── history micro-bits ─────────────────────────────────────────── */
 .pg-dot { width: 8px; height: 8px; border-radius: 50%; justify-self: center; }
-.pg-dot.win { background: #4ade80; box-shadow: 0 0 8px rgba(74, 222, 128, 0.8); }
-.pg-dot.lose { background: #ff6b6b; box-shadow: 0 0 8px rgba(255, 107, 107, 0.7); }
-.pg-dot.pg-push { background: #93c5fd; box-shadow: 0 0 8px rgba(147, 197, 253, 0.7); }
+.pg-dot.win { background: #4ade80; }
+.pg-dot.lose { background: #ff6b6b; }
+.pg-dot.pg-push { background: #93c5fd; }
 .pg-push { color: #93c5fd !important; font-weight: 800; }
 .pg-staketxt { color: #aab3c6; font-variant-numeric: tabular-nums; }
 

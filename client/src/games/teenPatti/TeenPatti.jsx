@@ -51,8 +51,8 @@ export default function TeenPatti() {
 
   const fetchState = async () => {
     const res = await api.get('/games/teen-patti/state')
-    setState(res.data)
-    setActive(res.data.active)
+    setState(res)
+    setActive(res.active)
   }
 
   useEffect(() => { fetchState() }, [])
@@ -65,36 +65,36 @@ export default function TeenPatti() {
 
     try {
       const res = await api.post('/games/teen-patti/deal', { ante: antePaise / 100, pairPlus: ppPaise / 100 })
-      setState(res.data)
-      setActive(res.data.active)
+      setState(res)
+      setActive(res.active)
       setAnte('')
       setPairPlus('')
       showToast('info', `Dealt: ${active?.playerCards?.join(' ')} — ${active?.playerHand}`)
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'Deal failed')
+      showToast('error', e.message || 'Deal failed')
     }
   }
 
   const handlePlay = async () => {
     try {
       const res = await api.post('/games/teen-patti/play')
-      setState(res.data)
+      setState(res)
       setActive(null)
-      const r = res.data.recent?.[0]
+      const r = res.recent?.[0]
       showToast(r.win > 0 ? 'success' : 'error', r.result === 'folded' ? 'Folded' : `${r.result} — +${money(r.win)}`)
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'Play failed')
+      showToast('error', e.message || 'Play failed')
     }
   }
 
   const handleFold = async () => {
     try {
       const res = await api.post('/games/teen-patti/fold')
-      setState(res.data)
+      setState(res)
       setActive(null)
       showToast('info', 'Folded — ante lost')
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'Fold failed')
+      showToast('error', e.message || 'Fold failed')
     }
   }
 

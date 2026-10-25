@@ -10,7 +10,7 @@ export default {
   path: '/games/plinko',
   icon: 'pyramid',
   image, // lobby / history artwork (src/games/icons)
-  bg: 'linear-gradient(160deg,#5eead4 0%,#0f766e 45%,#0e1721 100%)',
+  bg: '#0f766e',
   glow: '#ffc53d',
   badge: 'NEW',
   component: lazy(() => import('./Plinko')),

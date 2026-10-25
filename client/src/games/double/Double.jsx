@@ -10,8 +10,8 @@ import GameShell from '../lib/GameShell'
 import './Double.css'
 
 const COLORS = [
-  { id: 'red', label: 'RED', icon: 'circle', bg: 'linear-gradient(135deg,#ff6b6b,#c62828)', glow: '#ff4d4d' },
-  { id: 'black', label: 'BLACK', icon: 'circle', bg: 'linear-gradient(135deg,#424242,#000000)', glow: '#666666' },
+  { id: 'red', label: 'RED', icon: 'circle', bg: '#e5484d', glow: '#ff8a8a' },
+  { id: 'black', label: 'BLACK', icon: 'circle', bg: '#2b3948', glow: '#b7c6d6' },
 ]
 
 export default function Double() {
@@ -42,7 +42,7 @@ export default function Double() {
 
   const fetchState = async () => {
     const res = await api.get('/games/double/state')
-    setState(res.data)
+    setState(res)
   }
 
   useEffect(() => {
@@ -57,14 +57,14 @@ export default function Double() {
 
     try {
       const res = await api.post('/games/double/bet', { color: selected, amount: paise / 100 })
-      setState(res.data)
+      setState(res)
       setAmount('')
       setSelected(null)
-      setLastResult({ color: res.data.history[0]?.result, win: res.data.history[0]?.win })
-      showToast(res.data.history[0]?.win > 0 ? 'success' : 'error',
-        res.data.history[0]?.win > 0 ? `Won ${money(res.data.history[0].win)}` : 'Lost')
+      setLastResult({ color: res.history[0]?.result, win: res.history[0]?.win })
+      showToast(res.history[0]?.win > 0 ? 'success' : 'error',
+        res.history[0]?.win > 0 ? `Won ${money(res.history[0].win)}` : 'Lost')
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'Bet failed')
+      showToast('error', e.message || 'Bet failed')
     }
   }
 
@@ -72,8 +72,8 @@ export default function Double() {
     if (!color) return null
     const c = COLORS.find(x => x.id === color)
     return (
-      <div className="dbl-result" style={{ background: c.bg, boxShadow: `0 0 30px ${c.glow}` }}>
-        <Icon name={c.icon} size={48} fill={c.id === 'red' ? '#ff6b6b' : '#fff'} strokeWidth={0} />
+      <div className="dbl-result" style={{ background: c.bg }}>
+        <Icon name={c.icon} size={48} fill={c.id === 'red' ? '#ff8a8a' : '#dfe8ee'} strokeWidth={0} />
         <span>{c.label}</span>
       </div>
     )
@@ -108,7 +108,7 @@ export default function Double() {
               key={c.id}
               type="button"
               className={`dbl-color-btn ${selected === c.id ? 'selected' : ''}`}
-              style={{ background: c.bg, boxShadow: selected === c.id ? `0 0 0 3px ${c.glow}, 0 0 30px ${c.glow}` : 'none' }}
+              style={{ background: c.bg, boxShadow: selected === c.id ? `0 0 0 3px ${c.glow}` : 'none' }}
               onClick={() => setSelected(c.id)}
             >
               <Icon name={c.icon} size={36} fill={c.id === 'red' ? '#ff6b6b' : '#fff'} strokeWidth={0} />

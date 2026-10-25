@@ -53,8 +53,8 @@ export default function HiLo() {
 
   const fetchState = async () => {
     const res = await api.get('/games/hi-lo/state')
-    setState(res.data)
-    setActive(res.data.active)
+    setState(res)
+    setActive(res.active)
   }
 
   useEffect(() => { fetchState() }, [])
@@ -66,12 +66,13 @@ export default function HiLo() {
 
     try {
       const res = await api.post('/games/hi-lo/start', { amount: paise / 100 })
-      setState(res.data)
-      setActive(res.data.active)
+      setState(res)
+      setActive(res.active)
       setAmount('')
-      showToast('info', `First card: ${rankLabel(parseCard(res.data.active.currentCard).rank)}${SUIT_ICONS[parseCard(res.data.active.currentCard).suit]}`)
+      refreshWallet().catch(() => {})
+      showToast('info', `First card: ${rankLabel(parseCard(res.active.currentCard).rank)}${SUIT_ICONS[parseCard(res.active.currentCard).suit]}`)
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'Failed to start')
+      showToast('error', e.message || 'Failed to start')
     }
   }
 
@@ -82,22 +83,23 @@ export default function HiLo() {
 
     try {
       const res = await api.post('/games/hi-lo/guess', { direction })
-      setState(res.data)
-      setActive(res.data.active)
+      setState(res)
+      setActive(res.active)
 
-      if (res.data.active?.status === 'lost') {
+      if (res.outcome === 'lost') {
         setAnimating(true)
-        setLastResult({ card: active.deck[0], won: false })
+        setLastResult({ card: res.drawn, won: false })
         setTimeout(() => { setAnimating(false); setLastResult(null) }, 1500)
-        showToast('error', `Hit ${rankLabel(parseCard(active.deck[0]).rank)} — Lost!`)
-      } else if (res.data.active) {
+        showToast('error', `Hit ${rankLabel(parseCard(res.drawn).rank)} — Lost!`)
+        refreshWallet().catch(() => {})
+      } else if (res.outcome === 'win') {
         setAnimating(true)
-        setLastResult({ card: active.deck[0], won: true, streak: res.data.active.streak })
+        setLastResult({ card: res.drawn, won: true, streak: res.active.streak })
         setTimeout(() => { setAnimating(false); setLastResult(null) }, 1200)
-        showToast('success', `Correct! Streak: ${res.data.active.streak}`)
+        showToast('success', `Correct! Streak: ${res.active.streak}`)
       }
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'Guess failed')
+      showToast('error', e.message || 'Guess failed')
     } finally {
       setGuessing(false)
     }
@@ -107,16 +109,17 @@ export default function HiLo() {
     if (!active || active.streak === 0) return
     try {
       const res = await api.post('/games/hi-lo/cashout')
-      setState(res.data)
-      setActive(null)
-      showToast('success', `Cashed out ${money(res.data.bet.win)} (${res.data.bet.multiplier}x)`)
+      setState(res)
+      setActive(res.active)
+      showToast('success', `Cashed out ${money(res.bet.win)} (${res.bet.multiplier}x)`)
+      refreshWallet().catch(() => {})
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'Cashout failed')
+      showToast('error', e.message || 'Cashout failed')
     }
   }
 
   const currentCard = active ? parseCard(active.currentCard) : null
-  const nextMultiplier = active ? state?.rules?.nextMultiplier?? (active.streak < 15 ? [1.95,2.0,2.1,2.25,2.5,3.0,4.0,5.5,8.0,12.0,18.0,28.0,45.0,70.0,110.0][active.streak] : 110.0) : null
+  const nextMultiplier = active ? active.nextMultiplier ?? (active.streak < 15 ? [1.95,2.0,2.1,2.25,2.5,3.0,4.0,5.5,8.0,12.0,18.0,28.0,45.0,70.0,110.0][active.streak] : 110.0) : null
 
   return (
     <GameShell

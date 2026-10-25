@@ -56,7 +56,6 @@ export default function HorseRacing() {
     }
   }
 
-  // wallet-track refresh (header spinner) — keeps the current selection
   const refreshState = () => api.get('/games/horse-racing/state').then((data) => {
     setRules(data.rules)
     setHorses(data.horses)
@@ -68,7 +67,7 @@ export default function HorseRacing() {
   const doubleBet = () => setAmount(a => Math.min(maxBet, Math.max(minBet, Math.floor((Number(a) || 0) * 2))))
   const maxStake = () => setAmount(Math.max(minBet, Math.min(maxBet, Math.floor(Number(balance) || 0))))
 
-  const eyebrow = running ? 'RACE IN PROGRESS' : race ? 'RESULT' : 'NEXT RACE · 1200M'
+  const statusText = running ? 'RACE IN PROGRESS' : race ? 'RESULT' : 'NEXT RACE · 1200M'
 
   return (
     <GameShell
@@ -134,44 +133,44 @@ export default function HorseRacing() {
         <section className="gs-stage hr-areastage">
           <div className="hr-card-head">
             <div>
-              <span className="hr-eyebrow"><i /> {eyebrow}</span>
+              <span className={`hr-status ${running ? 'is-running' : race ? 'is-done' : ''}`}>
+                <i aria-hidden="true" /> {statusText}
+              </span>
               <h1>Royal Sprint</h1>
-              <p>Six thoroughbreds. One finish line.</p>
-            </div>
-            <div className="hr-condition" aria-hidden="true">
-              <span>☀</span>
-              <div><b>GOOD</b><small>TURF CONDITION</small></div>
+              <p>1200m · Good turf · 6 runners</p>
             </div>
           </div>
 
           <div className={`hr-track ${running ? 'is-running' : ''} ${race ? 'is-finished' : ''}`}>
-            <div className="hr-track-meta"><span>START</span><span>1200 M</span><span>FINISH <b>▥</b></span></div>
             {horses.map((horse, i) => (
               <div
                 key={horse.id}
                 className={`hr-lane ${race?.first.id === horse.id ? 'lane-winner' : ''} ${race?.second.id === horse.id ? 'lane-placed' : ''}`}
               >
-                <span className="hr-lane-number" style={{ '--silk': horse.silk }}>{horse.id}</span>
-                <div className="hr-lane-ground">
-                  <span className="hr-gate" aria-hidden="true">▥</span>
-                  <span
-                    className="hr-runner"
+                <div className="hr-lane-top">
+                  <span className="hr-num" style={{ '--silk': horse.silk }}>{horse.id}</span>
+                  <div className="hr-rider-info">
+                    <b>{horse.name}</b>
+                    <small>{horse.jockey} · Form {horse.form}</small>
+                  </div>
+                  {race?.first.id === horse.id && <b className="hr-badge">1ST</b>}
+                  {race?.second.id === horse.id && <b className="hr-badge place">2ND</b>}
+                </div>
+                <div className="hr-rail">
+                  <i
+                    className="hr-rider"
                     style={{ '--silk': horse.silk, '--lane': i, '--finish': race?.first.id === horse.id ? '1' : race?.second.id === horse.id ? '.86' : '.72' }}
                     aria-hidden="true"
-                  >
-                    🏇
-                  </span>
-                  <span className="hr-finish-line" aria-hidden="true" />
+                  />
+                  <span className="hr-tick" aria-hidden="true" />
                 </div>
-                {race?.first.id === horse.id && <b className="hr-result-badge">1ST</b>}
-                {race?.second.id === horse.id && <b className="hr-result-badge place">2ND</b>}
               </div>
             ))}
             {!horses.length && <div className="hr-track-loading">Loading the field…</div>}
           </div>
 
           <div className="hr-commentary">
-            <span className={running ? 'commentary-live' : ''} aria-hidden="true">●</span>
+            <i className={running ? 'commentary-live' : ''} aria-hidden="true" />
             {running
               ? 'And they’re off! The field is charging down the home stretch…'
               : race
@@ -181,7 +180,7 @@ export default function HorseRacing() {
 
           {race && (
             <div className={`gs-banner ${race.placed ? 'win' : 'loss'}`}>
-              {race.placed ? `🏆 BET WON — +${money(race.win)}` : 'RACE COMPLETE · BET NOT PLACED'}
+              {race.placed ? `BET WON — +${money(race.win)}` : 'RACE COMPLETE · BET NOT PLACED'}
             </div>
           )}
           {race && (
@@ -216,7 +215,7 @@ export default function HorseRacing() {
                 onClick={() => setHorseId(horse.id)}
                 disabled={busy}
               >
-                <span className="hr-silk" style={{ '--silk': horse.silk }}>{horse.id}<i aria-hidden="true" /></span>
+                <span className="hr-silk" style={{ '--silk': horse.silk }}>{horse.id}</span>
                 <span className="hr-horse-copy">
                   <strong>{horse.name}</strong>
                   <small>{horse.jockey} · Form {horse.form}</small>

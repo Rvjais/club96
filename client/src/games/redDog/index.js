@@ -9,7 +9,7 @@ export default {
   path: '/games/red-dog',
   icon: 'spade',
   image,
-  bg: 'linear-gradient(160deg,#ea580c 0%,#9a3412 45%,#431407 100%)',
+  bg: '#9a3412',
   glow: '#fb923c',
   badge: 'NEW',
   component: lazy(() => import('./RedDog')),

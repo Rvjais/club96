@@ -41,8 +41,8 @@ export default function Blackjack() {
 
   const fetchState = async () => {
     const res = await api.get('/games/blackjack/state')
-    setState(res.data)
-    setActive(res.data.active)
+    setState(res)
+    setActive(res.active)
   }
 
   useEffect(() => { fetchState() }, [])
@@ -54,55 +54,55 @@ export default function Blackjack() {
 
     try {
       const res = await api.post('/games/blackjack/deal', { amount: paise / 100 })
-      setState(res.data)
-      setActive(res.data.active)
+      setState(res)
+      setActive(res.active)
       setAmount('')
       showToast('info', `Dealt: ${active?.playerCards?.map(c => c.rank + c.suit).join(' ')} (${active?.playerValue})`)
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'Deal failed')
+      showToast('error', e.message || 'Deal failed')
     }
   }
 
   const handleHit = async () => {
     try {
       const res = await api.post('/games/blackjack/hit')
-      setState(res.data)
-      setActive(res.data.active)
-      if (res.data.hit?.bust) {
-        showToast('error', `Bust! Drew ${res.data.hit.card.rank}${res.data.hit.card.suit}`)
+      setState(res)
+      setActive(res.active)
+      if (res.hit?.bust) {
+        showToast('error', `Bust! Drew ${res.hit.card.rank}${res.hit.card.suit}`)
       } else {
-        showToast('info', `Drew ${res.data.hit.card.rank}${res.data.hit.card.suit} → ${res.data.hit.value}`)
+        showToast('info', `Drew ${res.hit.card.rank}${res.hit.card.suit} → ${res.hit.value}`)
       }
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'Hit failed')
+      showToast('error', e.message || 'Hit failed')
     }
   }
 
   const handleStand = async () => {
     try {
       const res = await api.post('/games/blackjack/stand')
-      setState(res.data)
+      setState(res)
       setActive(null)
-      const r = res.data.recent?.[0]
+      const r = res.recent?.[0]
       if (r?.result === 'blackjack') showToast('success', 'Blackjack! 🃏')
       else if (r?.result === 'dealerBust') showToast('success', 'Dealer bust! You win!')
       else if (r?.result === 'playerWins') showToast('success', 'You win!')
       else if (r?.result === 'dealerWins') showToast('error', 'Dealer wins')
       else showToast('info', 'Push — bet returned')
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'Stand failed')
+      showToast('error', e.message || 'Stand failed')
     }
   }
 
   const handleDouble = async () => {
     try {
       const res = await api.post('/games/blackjack/double')
-      setState(res.data)
+      setState(res)
       setActive(null)
-      const r = res.data.recent?.[0]
+      const r = res.recent?.[0]
       showToast(r.win > 0 ? 'success' : 'error', r.result === 'bust' ? 'Bust on double!' : `Doubled — ${r.result}`)
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'Double failed')
+      showToast('error', e.message || 'Double failed')
     }
   }
 

@@ -13,10 +13,10 @@ import './GamingPage.css'
 const wingo = games.find((g) => g.id === 'wingo')
 const wheel = games.find((g) => g.id === 'wheel')
 const ROOM_STYLES = {
-  '30s': { bg: 'linear-gradient(135deg,#ff6b6b,#e02020)', label: 'Draw every 30 seconds' },
-  '1m': { bg: 'linear-gradient(135deg,#ff9800,#ffb74d)', label: 'Draw every minute' },
-  '3m': { bg: 'linear-gradient(135deg,#8e24aa,#ce93d8)', label: 'Draw every 3 minutes' },
-  '5m': { bg: 'linear-gradient(135deg,#1565c0,#42a5f5)', label: 'Draw every 5 minutes' },
+  '30s': { bg: '#e02020', label: 'Draw every 30 seconds' },
+  '1m': { bg: '#ff9800', label: 'Draw every minute' },
+  '3m': { bg: '#9c27b0', label: 'Draw every 3 minutes' },
+  '5m': { bg: '#1565c0', label: 'Draw every 5 minutes' },
 }
 
 export default function GamingPage() {
@@ -267,14 +267,8 @@ export default function GamingPage() {
           )
         })}
 
-        <div style={{ height: 140 }} />
+        <div style={{ height: 100 }} />
       </main>
-
-      {/* ── Floating "Add to Desktop" ────────────────────── */}
-      <button type="button" className="gp-add-desktop">
-        <span className="gp-add-icon">55</span>
-        Add to Desktop
-      </button>
 
       {toast && (
         <div key={toast.id} className={`gp-toast gp-toast-${toast.kind}`} role="status">

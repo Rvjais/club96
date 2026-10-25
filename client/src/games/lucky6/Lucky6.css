@@ -1,6 +1,7 @@
 /* ══════════════════════════════════════════════════════════════════
    Lucky 6/49 — bespoke visuals on top of the GameShell kit
    Accent: neon green #51e07f
+   Flat pass: solid surfaces and 1px borders — no gloss, no glows.
    ══════════════════════════════════════════════════════════════════ */
 
 /* ── stage: draw machine, neon balls ────────────────────────────── */
@@ -12,26 +13,12 @@
   justify-content: center;
   gap: 13px;
   padding: 20px 14px;
-  background:
-    radial-gradient(90% 70% at 50% 0%, rgba(81, 224, 127, 0.12), transparent 62%),
-    linear-gradient(180deg, #0d1712 0%, #071009 100%);
-  border-color: rgba(81, 224, 127, 0.22);
+  background: var(--gs-panel);
+  border-color: rgba(81, 224, 127, 0.4);
 }
 
+/* flat pass: the old halo wash is retired — shell and keyframes kept */
 .l6-halo { position: absolute; inset: 0; pointer-events: none; }
-.l6-halo::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 44%;
-  width: 280px;
-  height: 130px;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(81, 224, 127, 0.16), transparent);
-  filter: blur(8px);
-  animation: l6-halo 2.8s ease-in-out infinite;
-}
 @keyframes l6-halo {
   0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
   50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
@@ -52,6 +39,7 @@
 
 .l6-balls { position: relative; z-index: 1; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 
+/* draw ball: one flat green circle + crisp spec highlight */
 .l6-ball {
   width: 48px;
   height: 48px;
@@ -61,15 +49,12 @@
   place-items: center;
   font-size: 16px;
   font-weight: 900;
-  color: #052412;
+  color: var(--gs-ink);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
   font-variant-numeric: tabular-nums;
-  background: radial-gradient(120% 120% at 30% 22%, #d9ffe6 0%, #51e07f 46%, #23b05f 78%, #128043 100%);
-  box-shadow:
-    0 5px 0 rgba(9, 74, 38, 0.55),
-    0 10px 22px rgba(0, 0, 0, 0.5),
-    0 8px 24px rgba(81, 224, 127, 0.24),
-    inset 0 3px 5px rgba(255, 255, 255, 0.5),
-    inset 0 -7px 10px rgba(11, 92, 49, 0.45);
+  background: #51e07f;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
   animation: l6-drop 0.55s cubic-bezier(0.24, 0.9, 0.32, 1.28) backwards;
   animation-delay: calc(var(--i, 0) * 110ms);
 }
@@ -81,8 +66,7 @@
   width: 46%;
   height: 26%;
   border-radius: 50%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), transparent);
-  filter: blur(1px);
+  background: rgba(255, 255, 255, 0.35);
 }
 @keyframes l6-drop {
   0% { opacity: 0; transform: translateY(-46px) scale(0.55); }
@@ -90,47 +74,46 @@
   100% { opacity: 1; transform: none; }
 }
 
-/* matched picks light up */
-.l6-ball.match { box-shadow: 0 0 0 3px rgba(134, 242, 176, 0.55), 0 5px 0 rgba(9, 74, 38, 0.55), 0 12px 30px rgba(81, 224, 127, 0.45), inset 0 3px 5px rgba(255, 255, 255, 0.5); }
+/* matched picks: flat ring marker instead of a glow halo */
+.l6-ball.match { border: 3px solid rgba(255, 255, 255, 0.55); }
 
-/* golden bonus ball — loud on purpose */
+/* golden bonus ball — loud by size and gold fill, not by glow */
 .l6-ball.bonus {
   width: 52px;
   height: 52px;
-  color: #3d2b05;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
-  background: radial-gradient(120% 120% at 30% 22%, #fff3c4 0%, #ffd43b 46%, #e2a914 78%, #b07c0a 100%);
-  box-shadow:
-    0 0 0 3px rgba(255, 212, 59, 0.28),
-    0 6px 0 rgba(122, 86, 6, 0.5),
-    0 14px 34px rgba(255, 212, 59, 0.45),
-    inset 0 3px 6px rgba(255, 255, 255, 0.55),
-    inset 0 -8px 12px rgba(140, 96, 6, 0.45);
+  color: var(--gs-ink);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  background: #ffd43b;
+  border: 2px solid #ffd43b;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
 }
 .l6-ball.bonus::after {
   content: '';
   position: absolute;
   inset: -7px;
   border-radius: 50%;
-  border: 1.5px solid rgba(255, 212, 59, 0.55);
-  animation: l6-ring 1.9s ease-out infinite;
+  border: 2px solid rgba(255, 212, 59, 0.5);
+  animation: l6-ring 1.9s ease-in-out infinite;
 }
+/* flat pass: was an expanding fading glow ring, now a pure scale pulse */
 @keyframes l6-ring {
-  0% { transform: scale(0.85); opacity: 0.9; }
-  100% { transform: scale(1.4); opacity: 0; }
+  0%, 100% { transform: scale(0.94); }
+  50% { transform: scale(1.08); }
 }
 
 .l6-ball.ghost {
   color: #4f7a61;
+  text-shadow: none;
   background: rgba(255, 255, 255, 0.03);
-  border: 1.5px dashed rgba(81, 224, 127, 0.3);
+  border: 1.5px dashed rgba(81, 224, 127, 0.4);
   box-shadow: none;
   animation: none;
   font-size: 15px;
 }
+.l6-ball.ghost::before { content: none; }
 .l6-ball.ghost.bonus {
   color: #99854c;
-  border-color: rgba(255, 212, 59, 0.35);
+  border-color: rgba(255, 212, 59, 0.4);
 }
 
 .l6-bonusnote {
@@ -181,9 +164,9 @@
   justify-content: center;
   font-size: 12px;
   font-weight: 900;
-  color: #0b2415;
-  background: linear-gradient(180deg, #86f2b0 0%, #51e07f 60%, #2fb964 100%);
-  box-shadow: 0 2px 8px rgba(81, 224, 127, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  color: var(--gs-ink);
+  background: var(--gs-accent);
+  box-shadow: none;
   font-variant-numeric: tabular-nums;
 }
 
@@ -196,21 +179,21 @@
   place-items: center;
   font-size: 14.5px;
   font-weight: 800;
-  color: #93a89b;
+  color: #aebbc7;
   font-variant-numeric: tabular-nums;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  transition: transform 0.1s ease, background 0.15s ease, box-shadow 0.2s ease, color 0.15s ease;
+  background: var(--gs-raise);
+  border: 1px solid var(--gs-line);
+  box-shadow: none;
+  transition: transform 0.1s ease, background 0.15s ease, border-color 0.2s ease, color 0.15s ease;
 }
 .l6-tile:active { transform: scale(0.92); }
 
 .l6-tile.is-on {
-  color: #062b15;
+  color: var(--gs-ink);
   font-weight: 900;
-  background: linear-gradient(180deg, #86f2b0 0%, #51e07f 60%, #27b45f 100%);
+  background: var(--gs-accent);
   border-color: transparent;
-  box-shadow: 0 0 16px rgba(81, 224, 127, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  box-shadow: none;
   animation: l6-tilepop 0.18s ease;
 }
 @keyframes l6-tilepop {
@@ -218,14 +201,19 @@
   100% { transform: none; }
 }
 
-/* after a draw: matched picks + bonus location marked on the board */
+/* after a draw: matched picks get a crisp ring, bonus tile gets a
+   flat gold tint — the accent fill stays untouched */
 .l6-tile.is-hit {
-  box-shadow: 0 0 0 2px rgba(134, 242, 176, 0.9), 0 0 24px rgba(81, 224, 127, 0.55);
+  border-color: rgba(255, 255, 255, 0.7);
+  box-shadow: none;
 }
 .l6-tile.is-bn {
-  border-color: rgba(255, 212, 59, 0.65);
-  box-shadow: 0 0 14px rgba(255, 212, 59, 0.3);
+  border-color: rgba(255, 212, 59, 0.5);
+  box-shadow: none;
+}
+.l6-tile.is-bn:not(.is-on) {
   color: #ffd43b;
+  background: rgba(255, 212, 59, 0.12);
 }
 
 .l6-actions { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin-top: 12px; }

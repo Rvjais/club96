@@ -48,8 +48,8 @@ export default function MoneyWheel() {
 
   const fetchState = async () => {
     const res = await api.get('/games/money-wheel/state')
-    setRules(res.data.rules)
-    setHistory(res.data.history)
+    setRules(res.rules)
+    setHistory(res.history)
   }
 
   useEffect(() => { fetchState() }, [])
@@ -69,7 +69,7 @@ export default function MoneyWheel() {
     setResult(null)
     try {
       const res = await api.post('/games/money-wheel/spin', { spot, amount })
-      const b = res.data.history?.[0]
+      const b = res.history?.[0]
       // spin the wheel 6 extra turns and land on the drawn segment under the pointer (top)
       const fullTurns = 6 * segCount
       const target = fullTurns + ((segCount - (b?.index ?? 0)) % segCount)
@@ -78,7 +78,7 @@ export default function MoneyWheel() {
         setSpinning(false)
         setBusy(false)
         setResult({ landed: b?.landedSpot, win: b?.win, amount: b?.amount })
-        setHistory(res.data.history)
+        setHistory(res.history)
         if (b) {
           const meta = SPOT_META[b.landedSpot]
           showToast(b.win > 0 ? 'success' : 'error',
@@ -91,7 +91,7 @@ export default function MoneyWheel() {
     } catch (e) {
       setSpinning(false)
       setBusy(false)
-      showToast('error', e.response?.data?.error || 'Spin failed')
+      showToast('error', e.message || 'Spin failed')
     }
   }
 

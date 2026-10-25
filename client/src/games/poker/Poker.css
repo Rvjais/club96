@@ -17,10 +17,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background:
-    radial-gradient(circle at 85% 10%, rgba(220, 38, 38, 0.12), transparent 40%),
-    radial-gradient(circle at 15% 90%, rgba(16, 185, 129, 0.1), transparent 40%),
-    var(--pk-bg);
+  background: var(--pk-bg);
   color: var(--pk-text);
   font-family: 'Outfit', 'Inter', 'Segoe UI', system-ui, sans-serif;
   font-size: 14px;
@@ -47,9 +44,7 @@
   align-items: center;
   gap: 6px;
   padding: 10px 12px;
-  background: rgba(11, 12, 16, 0.86);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: var(--pk-bg);
   border-bottom: 1px solid var(--pk-line);
 }
 
@@ -76,8 +71,7 @@
   place-items: center;
   flex-shrink: 0;
   color: #06220f;
-  background: linear-gradient(145deg, #6ee7b7, #10b981);
-  box-shadow: 0 4px 14px -4px rgba(16, 185, 129, 0.7);
+  background: #10b981;
 }
 
 .pk-balance {
@@ -128,8 +122,8 @@
   aspect-ratio: 2.05 / 1;
   padding: 16px;
   border-radius: 999px;
-  background: linear-gradient(135deg, #2a2d32 0%, #111315 50%, #1f2226 100%);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 3px #3a3f47, inset 0 2px 4px rgba(255, 255, 255, 0.18);
+  background: #3b2f28;
+  box-shadow: 0 0 0 3px #2b241f;
 }
 
 .pk-felt {
@@ -137,9 +131,8 @@
   width: 100%;
   height: 100%;
   border-radius: 999px;
-  border: 1px solid rgba(16, 185, 129, 0.25);
-  background: radial-gradient(ellipse at center, #1b854e 0%, #0c4225 80%, #072e19 100%);
-  box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.75), inset 0 0 14px rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(61, 220, 132, 0.28);
+  background: #145437;
 }
 
 .pk-watermark {
@@ -236,9 +229,6 @@
 
 .pk-card.is-back {
   background-color: var(--pk-pink);
-  background-image: radial-gradient(#fff 15%, transparent 16%), radial-gradient(#fff 15%, transparent 16%);
-  background-size: 8px 8px;
-  background-position: 0 0, 4px 4px;
   border: 2px solid #fff;
   color: var(--pk-pink);
 }
@@ -296,7 +286,7 @@
 }
 .pk-seat.is-hero .pk-seat-box { min-width: 136px; border-color: rgba(245, 165, 36, 0.45); }
 .pk-seat.is-turn .pk-seat-box { border-color: #eab308; animation: pk-ring 1.5s infinite; }
-.pk-seat.is-winner .pk-seat-box { border-color: var(--pk-green); box-shadow: 0 0 22px -2px rgba(52, 211, 153, 0.7); }
+.pk-seat.is-winner .pk-seat-box { border-color: var(--pk-green); }
 .pk-seat.is-folded { opacity: 0.5; }
 
 .pk-avatar {
@@ -374,7 +364,7 @@
   height: 14px;
   border-radius: 50%;
   border: 2px dashed rgba(255, 255, 255, 0.75);
-  background: radial-gradient(circle, #f97316 40%, #c2410c 100%);
+  background: #f97316;
 }
 .pk-pos-b .pk-bet { top: -30px; left: calc(100% + 4px); }
 .pk-pos-t .pk-bet { bottom: -28px; }
@@ -441,11 +431,10 @@
   gap: 8px;
   height: 52px;
   border-radius: 14px;
-  background: linear-gradient(90deg, #059669, #10b981) !important;
+  background: #10b981 !important;
   color: #fff !important;
   font-size: 16px !important;
   font-weight: 800 !important;
-  box-shadow: 0 10px 24px -10px rgba(16, 185, 129, 0.8);
 }
 .pk-play small { font-size: 13px; font-weight: 700; opacity: 0.85; }
 
@@ -493,9 +482,9 @@
 }
 .pk-btn:active:not(:disabled) { transform: scale(0.97); }
 .pk-btn:hover:not(:disabled) { filter: brightness(1.1); }
-.pk-btn-fold { background: linear-gradient(90deg, #b91c1c, #e11d48) !important; }
-.pk-btn-call { background: linear-gradient(90deg, #1d4ed8, #4f46e5) !important; }
-.pk-btn-raise { background: linear-gradient(90deg, #d97706, #f97316) !important; color: #1a0d00 !important; }
+.pk-btn-fold { background: #e11d48 !important; }
+.pk-btn-call { background: #4f46e5 !important; }
+.pk-btn-raise { background: #ea8a0e !important; color: #1a0d00 !important; }
 .pk-btn-ghost { background: var(--pk-card) !important; border: 1px solid var(--pk-line) !important; color: var(--pk-text) !important; }
 
 .pk-leave-link { align-self: center; font-size: 12px; font-weight: 700; color: var(--pk-dim) !important; }
@@ -515,7 +504,6 @@
   place-items: center;
   padding: 16px;
   background: rgba(0, 0, 0, 0.72);
-  backdrop-filter: blur(4px);
 }
 .pk-modal-card {
   width: 100%;

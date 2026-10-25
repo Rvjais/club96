@@ -9,7 +9,7 @@ export default {
   path: '/games/casino-war',
   icon: 'crown',
   image,
-  bg: 'linear-gradient(160deg,#2563eb 0%,#1e3a8a 45%,#111c4f 100%)',
+  bg: '#1e3a8a',
   glow: '#60a5fa',
   badge: 'NEW',
   component: lazy(() => import('./CasinoWar')),

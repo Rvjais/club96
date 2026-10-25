@@ -9,7 +9,7 @@ export default {
   path: '/games/teen-patti',
   icon: 'heart',
   image,
-  bg: 'linear-gradient(160deg,#dc2626 0%,#b91c1c 45%,#450a0a 100%)',
+  bg: '#b91c1c',
   glow: '#f87171',
   badge: 'NEW',
   component: lazy(() => import('./TeenPatti')),

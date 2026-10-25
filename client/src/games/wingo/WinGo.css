@@ -46,8 +46,7 @@
   gap: 6px;
   padding: 10px 12px;
   color: #fff;
-  background: linear-gradient(90deg, var(--wg-red), var(--wg-red-2));
-  box-shadow: 0 4px 14px -6px rgba(224, 32, 32, 0.6);
+  background: var(--wg-red-2);
 }
 .wg-root .wg-icon-btn { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; transition: background 0.15s; }
 .wg-root .wg-icon-btn:hover { background: rgba(255, 255, 255, 0.15); }
@@ -63,9 +62,7 @@
   gap: 4px;
   padding: 16px 14px 14px;
   border-radius: 16px;
-  background:
-    radial-gradient(circle at 90% 0%, rgba(251, 91, 91, 0.12), transparent 50%),
-    var(--wg-card);
+  background: var(--wg-card);
   box-shadow: 0 4px 16px -8px rgba(30, 38, 55, 0.18);
 }
 .wg-wallet-amount { display: flex; align-items: center; gap: 6px; font-size: 24px; font-weight: 900; font-variant-numeric: tabular-nums; }
@@ -75,8 +72,8 @@
 .wg-wallet-label .icon { color: var(--wg-red-2); }
 .wg-wallet-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; margin-top: 10px; }
 .wg-root .wg-wallet-actions button { height: 40px; border-radius: 999px; font-size: 15px; font-weight: 800; color: #fff; }
-.wg-root .wg-btn-withdraw { background: linear-gradient(180deg, #ff8a8a, var(--wg-red-2)); box-shadow: 0 6px 14px -6px rgba(224, 32, 32, 0.8); }
-.wg-root .wg-btn-deposit { background: linear-gradient(180deg, #4ade80, var(--wg-green-2)); box-shadow: 0 6px 14px -6px rgba(15, 157, 88, 0.8); }
+.wg-root .wg-btn-withdraw { background: var(--wg-red-2); }
+.wg-root .wg-btn-deposit { background: var(--wg-green-2); }
 
 /* ─── Rooms ──────────────────────────────────────────────────── */
 .wg-rooms { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 5px; border-radius: 16px; background: var(--wg-card); box-shadow: 0 4px 16px -10px rgba(30, 38, 55, 0.25); }
@@ -93,7 +90,7 @@
 .wg-room .icon { color: #c3c8d4; margin-bottom: 2px; }
 .wg-room span { font-size: 11.5px; font-weight: 600; }
 .wg-room strong { font-size: 13px; font-weight: 800; }
-.wg-root .wg-room.is-active { color: #fff; background: linear-gradient(180deg, var(--wg-red), var(--wg-red-2)); box-shadow: 0 8px 16px -8px rgba(224, 32, 32, 0.8); }
+.wg-root .wg-room.is-active { color: #fff; background: var(--wg-red-2); }
 .wg-room.is-active .icon { color: #fff; }
 .wg-root .wg-room.is-closed { opacity: 0.45; }
 
@@ -106,11 +103,8 @@
   padding: 14px;
   border-radius: 16px;
   color: #fff;
-  background:
-    radial-gradient(circle at 0% 100%, rgba(255, 255, 255, 0.18), transparent 40%),
-    linear-gradient(120deg, #ff7a7a, var(--wg-red-2));
+  background: var(--wg-red-2);
   overflow: hidden;
-  box-shadow: 0 10px 24px -12px rgba(224, 32, 32, 0.8);
 }
 .wg-timer::after {
   content: '';
@@ -166,16 +160,27 @@
   font-weight: 900;
   font-size: 14px;
   color: #fff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.18), inset 0 2px 0 rgba(255, 255, 255, 0.35);
+  position: relative;
+  isolation: isolate;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
-.wg-ball-red { background: radial-gradient(circle at 35% 30%, #ff9a9a, var(--wg-red-2)); }
-.wg-ball-green { background: radial-gradient(circle at 35% 30%, #6fe39f, var(--wg-green-2)); }
-.wg-ball-red-violet { background: linear-gradient(135deg, var(--wg-red-2) 50%, var(--wg-violet-2) 50%); }
-.wg-ball-green-violet { background: linear-gradient(135deg, var(--wg-green-2) 50%, var(--wg-violet-2) 50%); }
+.wg-ball-red { background: #e5484d; }
+.wg-ball-green { background: #2fbf71; }
+.wg-ball-red-violet { background: #e5484d; }
+.wg-ball-green-violet { background: #2fbf71; }
+.wg-ball-red-violet::before,
+.wg-ball-green-violet::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: #8b5cf6;
+  clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%);
+}
 .wg-ball.is-xs { width: 20px; height: 20px; font-size: 10.5px; }
 .wg-ball.is-sm { width: 26px; height: 26px; font-size: 12.5px; }
-.wg-ball.is-lg { width: 100%; height: auto; aspect-ratio: 1; font-size: 22px; border: 3px solid #fff; box-shadow: 0 6px 12px -6px rgba(0, 0, 0, 0.4), inset 0 -4px 0 rgba(0, 0, 0, 0.18); }
+.wg-ball.is-lg { width: 100%; height: auto; aspect-ratio: 1; font-size: 22px; border: 3px solid #fff; }
 
 /* ─── Betting board ──────────────────────────────────────────── */
 .wg-board {
@@ -199,7 +204,6 @@
   gap: 12px;
   border-radius: 16px;
   background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(1px);
   animation: wg-fade 0.2s ease-out;
 }
 .wg-lock b {
@@ -232,9 +236,9 @@
 .wg-color small { font-size: 10.5px; font-weight: 700; opacity: 0.9; }
 .wg-root .wg-color:active { transform: scale(0.96); }
 .wg-root .wg-color:hover { filter: brightness(1.05); }
-.wg-root .wg-color-green { background: linear-gradient(180deg, #34d27b, var(--wg-green-2)); border-radius: 4px 14px 4px 14px; box-shadow: 0 6px 12px -6px rgba(15, 157, 88, 0.9); }
-.wg-root .wg-color-violet { background: linear-gradient(180deg, var(--wg-violet), var(--wg-violet-2)); border-radius: 10px; box-shadow: 0 6px 12px -6px rgba(156, 39, 176, 0.9); }
-.wg-root .wg-color-red { background: linear-gradient(180deg, #ff7a7a, var(--wg-red-2)); border-radius: 14px 4px 14px 4px; box-shadow: 0 6px 12px -6px rgba(224, 32, 32, 0.9); }
+.wg-root .wg-color-green { background: #2fbf71; border-radius: 4px 14px 4px 14px; }
+.wg-root .wg-color-violet { background: #8b5cf6; border-radius: 10px; }
+.wg-root .wg-color-red { background: #e5484d; border-radius: 14px 4px 14px 4px; }
 
 .wg-numbers {
   display: grid;
@@ -244,7 +248,7 @@
   border-radius: 14px;
   background: #f5f6fb;
 }
-.wg-root .wg-number { transition: transform 0.1s; }
+.wg-root .wg-number { border: 1px solid #e3e6ee; border-radius: 14px; background: var(--wg-card); transition: transform 0.1s; }
 .wg-root .wg-number:hover { transform: translateY(-2px); }
 .wg-root .wg-number:active { transform: scale(0.94); }
 
@@ -267,8 +271,8 @@
 .wg-size { display: grid; grid-template-columns: 1fr 1fr; border-radius: 999px; overflow: hidden; }
 .wg-root .wg-size button { height: 42px; font-size: 16px; font-weight: 800; color: #fff; display: flex; align-items: center; justify-content: center; gap: 6px; }
 .wg-size small { font-size: 11px; font-weight: 700; opacity: 0.85; }
-.wg-root .wg-big { background: linear-gradient(180deg, #ffc46b, var(--wg-big)); }
-.wg-root .wg-small { background: linear-gradient(180deg, #9cc4ff, var(--wg-small)); }
+.wg-root .wg-big { background: var(--wg-big); }
+.wg-root .wg-small { background: var(--wg-small); }
 .wg-root .wg-size button:active { filter: brightness(0.95); }
 
 /* ─── Cards / tabs ───────────────────────────────────────────── */
@@ -287,7 +291,7 @@
 
 .wg-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px; }
 .wg-root .wg-tabs button { height: 36px; border-radius: 10px; font-size: 13px; font-weight: 700; color: var(--wg-sub); background: #f3f4f9; transition: all 0.15s; }
-.wg-root .wg-tabs button.is-active { color: #fff; background: linear-gradient(180deg, var(--wg-red), var(--wg-red-2)); box-shadow: 0 6px 12px -6px rgba(224, 32, 32, 0.8); }
+.wg-root .wg-tabs button.is-active { color: #fff; background: var(--wg-red-2); }
 
 .wg-table { display: flex; flex-direction: column; border-radius: 10px; overflow: hidden; }
 .wg-table-head, .wg-table-row { display: grid; grid-template-columns: 1.8fr 0.9fr 1fr 0.8fr; align-items: center; text-align: center; }
@@ -297,8 +301,8 @@
 .wg-num { font-size: 22px; font-weight: 900; }
 .wg-num-red { color: var(--wg-red-2); }
 .wg-num-green { color: var(--wg-green-2); }
-.wg-num-red-violet { background: linear-gradient(135deg, var(--wg-red-2) 50%, var(--wg-violet-2) 50%); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.wg-num-green-violet { background: linear-gradient(135deg, var(--wg-green-2) 50%, var(--wg-violet-2) 50%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.wg-num-red-violet { color: var(--wg-red-2); }
+.wg-num-green-violet { color: var(--wg-green-2); }
 .wg-dots { display: inline-flex; gap: 3px; justify-content: center; }
 .wg-dots i { width: 11px; height: 11px; border-radius: 50%; }
 .wg-dot-red { background: var(--wg-red-2); }
@@ -362,11 +366,11 @@
 }
 .wg-sheet-head strong { font-size: 18px; font-weight: 900; }
 .wg-sheet-head span { padding: 5px 14px; border-radius: 999px; background: #fff; font-size: 13px; font-weight: 700; color: var(--wg-text); }
-.wg-sheet-head.is-green { background: linear-gradient(180deg, #34d27b, var(--wg-green-2)); }
-.wg-sheet-head.is-red { background: linear-gradient(180deg, #ff7a7a, var(--wg-red-2)); }
-.wg-sheet-head.is-violet { background: linear-gradient(180deg, var(--wg-violet), var(--wg-violet-2)); }
-.wg-sheet-head.is-big { background: linear-gradient(180deg, #ffc46b, var(--wg-big)); }
-.wg-sheet-head.is-small { background: linear-gradient(180deg, #9cc4ff, var(--wg-small)); }
+.wg-sheet-head.is-green { background: #2fbf71; }
+.wg-sheet-head.is-red { background: #e5484d; }
+.wg-sheet-head.is-violet { background: #8b5cf6; }
+.wg-sheet-head.is-big { background: var(--wg-big); }
+.wg-sheet-head.is-small { background: var(--wg-small); }
 
 .wg-sheet-body { display: flex; flex-direction: column; gap: 14px; padding: 14px 16px 16px; }
 .wg-sheet-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -426,8 +430,8 @@
   animation: wg-pop 0.35s cubic-bezier(0.2, 1.4, 0.4, 1);
 }
 .wg-popup-top { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 22px 16px 16px; color: #fff; }
-.wg-popup.is-win .wg-popup-top { background: linear-gradient(180deg, #ffb347, #ff6a3d); }
-.wg-popup.is-loss .wg-popup-top { background: linear-gradient(180deg, #8ea3c7, #5a6b8c); }
+.wg-popup.is-win .wg-popup-top { background: var(--wg-big); }
+.wg-popup.is-loss .wg-popup-top { background: #7487aa; }
 .wg-popup-top strong { font-size: 24px; font-weight: 900; }
 .wg-popup-result { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 12px 6px; }
 .wg-popup-result > span { font-size: 12.5px; color: var(--wg-sub); font-weight: 600; }

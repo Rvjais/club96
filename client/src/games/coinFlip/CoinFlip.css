@@ -9,24 +9,11 @@
   justify-content: center;
 }
 
-/* pulsing accent halo behind the coin */
+/* flat decorative dashed ring behind the coin */
 .cfp-halo {
   position: absolute;
   inset: 0;
   pointer-events: none;
-}
-.cfp-halo::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 46%;
-  width: 230px;
-  height: 230px;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(247, 201, 72, 0.22), transparent 62%);
-  filter: blur(6px);
-  animation: cfp-halo 2.6s ease-in-out infinite;
 }
 .cfp-halo::after {
   content: '';
@@ -66,16 +53,11 @@
   gap: 1px;
   position: relative;
   color: #36260a;
-  background:
-    radial-gradient(115% 115% at 30% 22%, #ffe9a3 0%, #f7c948 46%, #d9a01f 78%, #b5811a 100%),
-    #f7c948;
-  border: none;
+  background: #f7c948;
+  border: 1px solid rgba(0, 0, 0, 0.3);
   box-shadow:
-    0 6px 0 #8a5f12,
-    0 14px 34px rgba(247, 201, 72, 0.34),
-    0 22px 40px rgba(0, 0, 0, 0.5),
-    inset 0 3px 6px rgba(255, 255, 255, 0.55),
-    inset 0 -8px 14px rgba(120, 82, 8, 0.5);
+    inset 0 0 0 4px rgba(255, 255, 255, 0.35),
+    0 2px 10px rgba(0, 0, 0, 0.35);
   transition: background 0.1s linear;
   z-index: 1;
 }
@@ -95,20 +77,12 @@
   width: 40%;
   height: 24%;
   border-radius: 50%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.42), transparent);
-  filter: blur(2px);
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .cfp-coin.tails {
   color: #dfe7f2;
-  background:
-    radial-gradient(115% 115% at 30% 22%, #f3f6fb 0%, #b9c3d4 46%, #7f8ba0 78%, #57627a 100%);
-  box-shadow:
-    0 6px 0 #3c4557,
-    0 14px 34px rgba(150, 165, 195, 0.22),
-    0 22px 40px rgba(0, 0, 0, 0.5),
-    inset 0 3px 6px rgba(255, 255, 255, 0.5),
-    inset 0 -8px 14px rgba(38, 47, 66, 0.55);
+  background: #b9c3d4;
 }
 .cfp-coin.tails::before { border-color: rgba(240, 246, 255, 0.6); box-shadow: inset 0 0 0 2px rgba(43, 53, 72, 0.4); }
 
@@ -117,7 +91,7 @@
   font-weight: 900;
   line-height: 1;
   letter-spacing: 0.02em;
-  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.22), 0 1px 0 rgba(255, 255, 255, 0.35);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 .cfp-coin-sub {
   font-size: 10.5px;
@@ -143,7 +117,7 @@
   height: 13px;
   margin-top: 16px;
   border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.55), transparent);
+  background: rgba(0, 0, 0, 0.45);
   animation: cfp-shadow 0.52s cubic-bezier(0.4, 0.1, 0.6, 1) infinite;
   animation-play-state: paused;
 }
@@ -215,12 +189,12 @@
   font-size: 17px;
   font-weight: 900;
   color: #36260a;
-  background: radial-gradient(120% 120% at 30% 25%, #ffe9a3, #f7c948 55%, #c79522);
-  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.5), 0 2px 5px rgba(0, 0, 0, 0.4);
+  background: #f7c948;
+  border: 1px solid rgba(0, 0, 0, 0.3);
 }
 .cfp-side.tails .cfp-side-face {
   color: #e2e9f4;
-  background: radial-gradient(120% 120% at 30% 25%, #f2f5fa, #aab4c6 55%, #6d7890);
+  background: #b9c3d4;
 }
 
 .cfp-side-txt {
@@ -243,13 +217,11 @@
 .cfp-side.is-on {
   border-color: rgba(247, 201, 72, 0.55);
   background: color-mix(in srgb, #f7c948 12%, transparent);
-  box-shadow: 0 0 20px rgba(247, 201, 72, 0.22), inset 0 0 14px rgba(247, 201, 72, 0.12);
 }
 .cfp-side.is-on .cfp-side-txt em { color: #f7c948; }
 .cfp-side.tails.is-on {
   border-color: rgba(199, 210, 228, 0.5);
   background: rgba(199, 210, 228, 0.1);
-  box-shadow: 0 0 20px rgba(199, 210, 228, 0.16), inset 0 0 14px rgba(199, 210, 228, 0.1);
 }
 
 /* ── history bits ───────────────────────────────────────────────── */
@@ -264,11 +236,13 @@
 }
 .cfp-hist-coin.gold {
   color: #36260a;
-  background: radial-gradient(120% 120% at 30% 25%, #ffe09a, #f7c948 60%, #cf9820);
+  background: #f7c948;
+  border: 1px solid rgba(0, 0, 0, 0.3);
 }
 .cfp-hist-coin.silver {
   color: #eef2f8;
-  background: radial-gradient(120% 120% at 30% 25%, #eef1f6, #a9b3c5 60%, #67728a);
+  background: #b9c3d4;
+  border: 1px solid rgba(0, 0, 0, 0.3);
 }
 
 .cfp-hist-stake { color: #aab3c6; font-variant-numeric: tabular-nums; }

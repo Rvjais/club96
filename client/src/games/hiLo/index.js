@@ -9,7 +9,7 @@ export default {
   path: '/games/hi-lo',
   icon: 'sortUp',
   image,
-  bg: 'linear-gradient(160deg,#22c55e 0%,#15803d 45%,#0a1a0f 100%)',
+  bg: '#15803d',
   glow: '#4ade80',
   badge: 'NEW',
   component: lazy(() => import('./HiLo')),

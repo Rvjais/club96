@@ -9,7 +9,7 @@ export default {
   path: '/games/pai-gow',
   icon: 'layers',
   image,
-  bg: 'linear-gradient(160deg,#84cc16 0%,#4d7c0f 45%,#1a2e05 100%)',
+  bg: '#4d7c0f',
   glow: '#a3e635',
   badge: 'NEW',
   component: lazy(() => import('./PaiGow')),

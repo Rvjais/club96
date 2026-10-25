@@ -35,8 +35,8 @@ export default function BalloonPop() {
 
   const fetchState = async () => {
     const res = await api.get('/games/balloon-pop/state')
-    setRules(res.data.rules)
-    setHistory(res.data.history)
+    setRules(res.rules)
+    setHistory(res.history)
   }
 
   useEffect(() => { fetchState() }, [])
@@ -51,14 +51,14 @@ export default function BalloonPop() {
     setBusy(true)
     try {
       const res = await api.post('/games/balloon-pop/pick', { pick: i, amount })
-      const b = res.data.history?.[0]
+      const b = res.history?.[0]
       setLast({ ...b, pick: i })
-      setHistory(res.data.history)
+      setHistory(res.history)
       showToast(b.outcome === 'prize' ? 'success' : 'error',
         b.outcome === 'prize' ? `${b.symbol} ${b.multiplier}× — won ${money(b.win)}!` : '💥 POP! It burst — lost')
       refreshWallet().catch(() => {})
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'Pick failed')
+      showToast('error', e.message || 'Pick failed')
     } finally {
       setBusy(false)
     }

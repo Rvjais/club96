@@ -69,7 +69,6 @@ body {
   font-weight: 900;
   color: #e02020;
   letter-spacing: 0.5px;
-  text-shadow: 0 1px 0 rgba(224, 32, 32, 0.15);
 }
 
 .gp-icon-btn {
@@ -134,15 +133,12 @@ body {
   margin: 10px;
   padding: 16px 16px 12px;
   border-radius: 14px;
-  background:
-    radial-gradient(circle at 85% 20%, rgba(255, 255, 255, 0.25), transparent 40%),
-    radial-gradient(circle at 10% 110%, rgba(255, 255, 255, 0.18), transparent 45%),
-    linear-gradient(135deg, #ff6b6b 0%, #e02020 50%, #ff9a9e 100%);
+  background: #e02020;
   position: relative;
   min-height: 168px;
   overflow: hidden;
   border: 2px solid #b0141c;
-  box-shadow: 0 8px 22px -8px rgba(224, 32, 32, 0.55);
+  box-shadow: 0 8px 22px -8px rgba(0, 0, 0, 0.35);
 }
 
 .gp-banner::before {
@@ -186,7 +182,7 @@ body {
   font-weight: 900;
   font-size: 21px;
   line-height: 1.2;
-  text-shadow: 0 2px 8px rgba(120, 0, 0, 0.35);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 .gp-banner-warp {
@@ -211,7 +207,7 @@ body {
   background: #fff;
   border-radius: 10px;
   padding: 5px 4px;
-  box-shadow: 0 8px 18px rgba(100, 0, 0, 0.35);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
   transform: rotate(-4deg);
 }
 
@@ -220,7 +216,7 @@ body {
   width: 100%;
   height: 100%;
   border-radius: 6px;
-  background: linear-gradient(180deg, #ffe0e0, #fff 40%, #ffd5d5);
+  background: #ffe0e0;
 }
 
 .gp-phone-1 { width: 54px; height: 96px; }
@@ -282,8 +278,8 @@ body {
   width: 11px;
   height: 11px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #ffe082, #f5c542 60%, #d99a00);
-  box-shadow: 0 0 0 1px rgba(217, 154, 0, 0.3);
+  background: #f5c542;
+  border: 1px solid rgba(217, 154, 0, 0.45);
 }
 
 .gp-wallet-amount {
@@ -324,13 +320,13 @@ body {
 .gp-root .gp-btn-withdraw:active, .gp-root .gp-btn-deposit:active { transform: scale(0.95); }
 
 .gp-root .gp-btn-withdraw {
-  background: linear-gradient(180deg, #ffc46b, #ff9800);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 6px 14px -6px rgba(255, 152, 0, 0.8);
+  background: #ff9800;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 .gp-root .gp-btn-deposit {
-  background: linear-gradient(180deg, #ff6b6b, #e02020);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 6px 14px -6px rgba(224, 32, 32, 0.8);
+  background: #e02020;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 /* ─── Feature cards row ──────────────────────────────────────── */
@@ -355,22 +351,12 @@ body {
 }
 .gp-root .gp-feature-card:active { transform: scale(0.97); }
 
-.gp-feature-card::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 55%);
-  pointer-events: none;
-}
-
 .gp-root .gp-fortune {
-  background: linear-gradient(135deg, #e02020 0%, #ff8c00 60%, #ffd54f 100%);
-  box-shadow: 0 6px 16px -8px rgba(224, 32, 32, 0.7);
+  background: #e02020;
 }
 
 .gp-root .gp-vip {
-  background: linear-gradient(135deg, #9c27b0, #e040fb);
-  box-shadow: 0 6px 16px -8px rgba(156, 39, 176, 0.7);
+  background: #9c27b0;
 }
 
 .gp-feature-wheel {
@@ -410,7 +396,6 @@ body {
 .gp-feature-crown {
   color: #ffd54f;
   flex-shrink: 0;
-  filter: drop-shadow(0 2px 4px rgba(80, 0, 90, 0.4));
 }
 
 .gp-feature-label {
@@ -418,7 +403,7 @@ body {
   font-weight: 800;
   color: #fff;
   line-height: 1.1;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
   position: relative;
   z-index: 1;
 }
@@ -556,9 +541,7 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--glow) 55%, transparent), transparent 55%),
-    repeating-conic-gradient(from 0deg at 50% 38%, rgba(255, 255, 255, 0.07) 0 10deg, transparent 10deg 20deg);
+  background: color-mix(in srgb, var(--glow) 20%, transparent);
 }
 
 .gp-game-art {
@@ -567,7 +550,6 @@ body {
   display: grid;
   place-items: center;
   color: #fff;
-  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35));
 }
 
 .gp-game-hot {
@@ -584,7 +566,6 @@ body {
   background: #e02020;
   padding: 2px 6px 2px 4px;
   border-radius: 999px;
-  box-shadow: 0 2px 6px rgba(224, 32, 32, 0.5);
 }
 
 .gp-game-info {
@@ -601,7 +582,7 @@ body {
   color: #fff;
   line-height: 1.05;
   letter-spacing: 0.3px;
-  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35), 0 0 8px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
   -webkit-text-stroke: 0.4px rgba(0, 0, 0, 0.25);
 }
 
@@ -621,8 +602,7 @@ body {
   display: grid;
   place-items: center;
   color: #fff;
-  background: linear-gradient(135deg, #ff6b6b, #e02020);
-  box-shadow: 0 3px 8px -2px rgba(224, 32, 32, 0.5);
+  background: #e02020;
 }
 
 .gp-section-count {
@@ -655,9 +635,7 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(circle at 50% 36%, color-mix(in srgb, var(--glow) 60%, transparent), transparent 55%),
-    repeating-conic-gradient(from 0deg at 50% 36%, rgba(255, 255, 255, 0.07) 0 10deg, transparent 10deg 20deg);
+  background: color-mix(in srgb, var(--glow) 22%, transparent);
 }
 
 .gp-play-art {
@@ -723,7 +701,7 @@ body {
 .gp-lottery-badge {
   width: 30px;
   height: 30px;
-  background: radial-gradient(circle at 35% 30%, #ff7a7a, #e02020 70%);
+  background: #e02020;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -732,7 +710,7 @@ body {
   font-weight: 900;
   color: #fff;
   flex-shrink: 0;
-  box-shadow: 0 3px 8px rgba(224, 32, 32, 0.4), inset 0 0 0 2px rgba(255, 255, 255, 0.4);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.4);
 }
 
 .gp-lottery-sub {
@@ -764,13 +742,6 @@ body {
 }
 .gp-root .gp-lottery-card:active { transform: scale(0.97); }
 
-.gp-lottery-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 50%);
-}
-
 .gp-lottery-ball {
   position: absolute;
   top: 12px;
@@ -790,47 +761,13 @@ body {
   color: #fff;
   letter-spacing: 0.5px;
   line-height: 1.1;
-  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 .gp-lottery-label {
   position: relative;
   font-size: 11px;
   color: rgba(255, 255, 255, 0.9);
-}
-
-/* ─── Floating "Add to Desktop" ──────────────────────────────── */
-.gp-root .gp-add-desktop {
-  position: fixed;
-  left: 50%;
-  bottom: 86px;
-  transform: translateX(-50%);
-  z-index: 90;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 18px 7px 7px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #ff6b6b, #e02020);
-  color: #fff;
-  font-size: 14px;
-  font-weight: 700;
-  box-shadow: 0 8px 22px -6px rgba(224, 32, 32, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.35);
-  transition: transform 0.12s;
-}
-.gp-root .gp-add-desktop:active { transform: translateX(-50%) scale(0.96); }
-
-.gp-add-icon {
-  width: 28px;
-  height: 28px;
-  background: #fff;
-  border-radius: 8px;
-  display: grid;
-  place-items: center;
-  font-size: 11px;
-  font-weight: 900;
-  color: #e02020;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 /* ─── Toast ──────────────────────────────────────────────────── */

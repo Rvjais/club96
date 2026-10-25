@@ -8,7 +8,7 @@ export default {
   path: '/games/horse-racing',
   icon: 'trophy',
   image: '/horse-racing.svg',
-  bg: 'linear-gradient(145deg,#368c54,#132f23 68%,#161a23)',
+  bg: '#132f23',
   glow: '#f7c75a',
   badge: 'NEW',
   component: lazy(() => import('./HorseRacing')),

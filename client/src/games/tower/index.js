@@ -10,7 +10,7 @@ export default {
   path: '/games/tower',
   icon: 'layers',
   image, // lobby / history artwork (src/games/icons)
-  bg: 'linear-gradient(160deg,#ff7a93 0%,#c21d4b 45%,#1f1830 100%)',
+  bg: '#c21d4b',
   glow: '#ff9db0',
   badge: 'NEW',
   component: lazy(() => import('./Tower')),

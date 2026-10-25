@@ -9,7 +9,7 @@ export default {
   path: '/games/scratch',
   icon: 'gift',
   image,
-  bg: 'linear-gradient(160deg,#f59e0b 0%,#d97706 45%,#78350f 100%)',
+  bg: '#d97706',
   glow: '#fbbf24',
   badge: 'NEW',
   component: lazy(() => import('./Scratch')),

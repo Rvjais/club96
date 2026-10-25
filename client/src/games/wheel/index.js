@@ -10,7 +10,7 @@ export default {
   path: '/games/wheel',
   icon: 'wheel',
   image, // lobby / history artwork (src/games/icons)
-  bg: 'linear-gradient(160deg,#c4b5fd 0%,#7c3aed 45%,#1d1938 100%)',
+  bg: '#7c3aed',
   glow: '#ffcf5a',
   badge: 'NEW',
   component: lazy(() => import('./Wheel')),

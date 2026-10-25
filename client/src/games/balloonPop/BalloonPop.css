@@ -6,7 +6,7 @@
   min-height: 300px;
 }
 
-/* drifting haze behind the balloons */
+/* flat tint discs drifting behind the balloons */
 .bp-haze {
   position: absolute;
   inset: 0;
@@ -20,8 +20,7 @@
   width: 280px;
   height: 210px;
   border-radius: 50%;
-  background: radial-gradient(circle, color-mix(in srgb, var(--gs-accent) 16%, transparent), transparent 66%);
-  filter: blur(10px);
+  background: color-mix(in srgb, var(--gs-accent) 7%, transparent);
   animation: bp-drift 7s ease-in-out infinite;
 }
 .bp-haze::after {
@@ -32,8 +31,7 @@
   width: 240px;
   height: 190px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(247, 201, 72, 0.1), transparent 68%);
-  filter: blur(10px);
+  background: rgba(247, 201, 72, 0.06);
   animation: bp-drift 8.2s ease-in-out infinite reverse;
 }
 @keyframes bp-drift {
@@ -59,14 +57,14 @@
   padding: 4% 6% 16%;
   border: none;
   background: transparent;
-  transition: filter 0.15s ease;
+  transition: opacity 0.15s ease, transform 0.15s ease;
 }
 .bp-balloon:disabled {
-  filter: grayscale(0.3) brightness(0.82);
+  opacity: 0.55;
   cursor: default;
 }
-.bp-balloon:hover:not(:disabled) .bp-bubble {
-  filter: brightness(1.12) saturate(1.08);
+.bp-balloon:hover:not(:disabled) {
+  transform: translateY(-2px);
 }
 
 /* balloon body */
@@ -76,15 +74,9 @@
   width: 100%;
   height: 100%;
   border-radius: 52% 52% 49% 49% / 58% 58% 43% 43%;
-  background:
-    radial-gradient(120% 115% at 32% 22%, rgba(255, 255, 255, 0.4), transparent 42%),
-    radial-gradient(115% 120% at 68% 80%, rgba(0, 0, 0, 0.32), transparent 52%),
-    var(--c);
-  box-shadow:
-    inset -5px -8px 12px rgba(0, 0, 0, 0.3),
-    inset 3px 4px 7px rgba(255, 255, 255, 0.26),
-    0 9px 18px rgba(0, 0, 0, 0.42),
-    0 0 20px color-mix(in srgb, var(--c) 24%, transparent);
+  background: var(--c);
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
   animation: bp-float 3s ease-in-out infinite;
   animation-delay: var(--d);
 }
@@ -97,8 +89,7 @@
   width: 30%;
   height: 22%;
   border-radius: 50%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.06));
-  filter: blur(1.5px);
+  background: rgba(255, 255, 255, 0.35);
   transform: rotate(-18deg);
 }
 @keyframes bp-float {
@@ -116,7 +107,7 @@
   height: 9px;
   transform: translateX(-50%);
   clip-path: polygon(50% 0, 0 100%, 100% 100%);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--c) 85%, #000), color-mix(in srgb, var(--c) 55%, #000));
+  background: color-mix(in srgb, var(--c) 62%, #000);
   border-radius: 2px;
   transition: opacity 0.2s ease;
 }
@@ -132,10 +123,10 @@
   animation: bp-flash 0.55s ease both;
 }
 .bp-balloon.burst-pop::before {
-  background: radial-gradient(circle, color-mix(in srgb, var(--gs-accent) 34%, transparent), transparent 66%);
+  background: color-mix(in srgb, var(--gs-accent) 30%, transparent);
 }
 .bp-balloon.burst-prize::before {
-  background: radial-gradient(circle, rgba(247, 201, 72, 0.36), transparent 66%);
+  background: rgba(247, 201, 72, 0.3);
 }
 @keyframes bp-flash {
   0% { opacity: 0; transform: scale(0.5); }
@@ -170,7 +161,6 @@
   font-weight: 900;
   letter-spacing: 0.06em;
   color: #f7c948;
-  text-shadow: 0 0 12px rgba(247, 201, 72, 0.55);
 }
 .bp-balloon.burst-prize .bp-burst {
   animation: bp-prize 0.48s cubic-bezier(0.2, 1.4, 0.4, 1) both;
@@ -213,12 +203,10 @@
   color: #dfe6f3;
   background: color-mix(in srgb, var(--t) 10%, transparent);
   border: 1px solid color-mix(in srgb, var(--t) 38%, transparent);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 .bp-lchip b {
   color: var(--t);
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 12px color-mix(in srgb, var(--t) 55%, transparent);
 }
 
 /* ── dock: hint replaces a fake CTA (balloons are the pickers) ───── */

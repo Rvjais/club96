@@ -9,7 +9,7 @@ export default {
   path: '/games/roulette',
   icon: 'wheel',
   image,
-  bg: 'linear-gradient(160deg,#16a34a 0%,#14532d 45%,#052e16 100%)',
+  bg: '#14532d',
   glow: '#4ade80',
   badge: 'NEW',
   component: lazy(() => import('./Roulette')),

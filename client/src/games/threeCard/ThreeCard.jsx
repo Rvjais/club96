@@ -52,9 +52,9 @@ export default function ThreeCard() {
 
   const fetchState = async () => {
     const res = await api.get('/games/three-card/state')
-    setRules(res.data.rules)
-    setActive(res.data.active)
-    setHistory(res.data.history)
+    setRules(res.rules)
+    setActive(res.active)
+    setHistory(res.history)
   }
 
   useEffect(() => { fetchState() }, [])
@@ -68,10 +68,10 @@ export default function ThreeCard() {
     setBusy(true)
     try {
       const res = await api.post('/games/three-card/deal', { ante: a, pairPlus: pp })
-      setActive(res.data.active)
+      setActive(res.active)
       showToast('info', 'Dealt — play or fold')
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'Deal failed')
+      showToast('error', e.message || 'Deal failed')
     } finally {
       setBusy(false)
     }
@@ -83,8 +83,8 @@ export default function ThreeCard() {
     try {
       const res = await api.post('/games/three-card/play')
       setActive(null)
-      setHistory(res.data.history)
-      const b = res.data.history?.[0]
+      setHistory(res.history)
+      const b = res.history?.[0]
       if (b) {
         const profit = b.win - b.amount
         showToast(b.win > b.amount ? 'success' : b.result === 'push' ? 'info' : 'error',
@@ -92,7 +92,7 @@ export default function ThreeCard() {
       }
       refreshWallet().catch(() => {})
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'Play failed')
+      showToast('error', e.message || 'Play failed')
     } finally {
       setBusy(false)
     }
@@ -104,12 +104,12 @@ export default function ThreeCard() {
     try {
       const res = await api.post('/games/three-card/fold')
       setActive(null)
-      setHistory(res.data.history)
-      const b = res.data.history?.[0]
+      setHistory(res.history)
+      const b = res.history?.[0]
       showToast(b.win > 0 ? 'success' : 'error', b.win > 0 ? `Folded — Pair+ paid ${money(b.win)}` : 'Folded — ante lost')
       refreshWallet().catch(() => {})
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'Fold failed')
+      showToast('error', e.message || 'Fold failed')
     } finally {
       setBusy(false)
     }

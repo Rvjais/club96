@@ -41,8 +41,8 @@ export default function RedDog() {
 
   const fetchState = async () => {
     const res = await api.get('/games/red-dog/state')
-    setRules(res.data.rules)
-    setHistory(res.data.history)
+    setRules(res.rules)
+    setHistory(res.history)
   }
 
   useEffect(() => { fetchState() }, [])
@@ -56,16 +56,16 @@ export default function RedDog() {
     setReveal(null)
     try {
       const res = await api.post('/games/red-dog/deal', { amount })
-      const b = res.data.history?.[0]
+      const b = res.history?.[0]
       setReveal(b)
-      setHistory(res.data.history)
+      setHistory(res.history)
       if (b) {
         const suffix = b.result === 'win' ? ` ${b.multiplier}×` : ''
         showToast(b.win > b.amount ? 'success' : b.result === 'push' ? 'info' : 'error', `${RESULT_TEXT[b.result]}${suffix}`)
       }
       refreshWallet().catch(() => {})
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'Deal failed')
+      showToast('error', e.message || 'Deal failed')
     } finally {
       setBusy(false)
     }

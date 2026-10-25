@@ -54,7 +54,7 @@ export default function Keno() {
 
   const fetchState = async () => {
     const res = await api.get('/games/keno/state')
-    setState(res.data)
+    setState(res)
   }
 
   useEffect(() => {
@@ -101,12 +101,12 @@ export default function Keno() {
 
     try {
       const res = await api.post('/games/keno/bet', { room: selectedRoom, picks, amount: paise / 100 })
-      setState(res.data)
+      setState(res)
       setAmount('')
       setPicks([])
       showToast('success', `Bet placed on ${ROOM_LABELS[selectedRoom]} draw`)
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'Bet failed')
+      showToast('error', e.message || 'Bet failed')
     }
   }
 

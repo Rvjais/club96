@@ -10,7 +10,7 @@ export default {
   path: '/games/dice',
   icon: 'dices',
   image, // lobby / history artwork (src/games/icons)
-  bg: 'linear-gradient(160deg,#60a5fa 0%,#1d4ed8 45%,#0f1528 100%)',
+  bg: '#1d4ed8',
   glow: '#93c5fd',
   badge: 'NEW',
   component: lazy(() => import('./Dice')),

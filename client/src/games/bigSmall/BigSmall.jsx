@@ -72,8 +72,8 @@ export default function BigSmall() {
 
   const fetchState = async () => {
     const res = await api.get('/games/big-small/state')
-    setRules(res.data.rules)
-    setHistory(res.data.history)
+    setRules(res.rules)
+    setHistory(res.history)
   }
 
   useEffect(() => { fetchState() }, [])
@@ -98,10 +98,10 @@ export default function BigSmall() {
       const res = await api.post('/games/big-small/roll', { betType, pick, amount })
       setTimeout(() => {
         clearInterval(tumbler)
-        const b = res.data.history?.[0]
+        const b = res.history?.[0]
         setShown(b?.dice ?? [1, 2, 3])
         setRolling(false)
-        setHistory(res.data.history)
+        setHistory(res.history)
         if (b) {
           const label = group?.label ?? betType
           showToast(b.win > 0 ? 'success' : 'error',
@@ -113,7 +113,7 @@ export default function BigSmall() {
       clearInterval(tumbler)
       setRolling(false)
       setBusy(false)
-      showToast('error', e.response?.data?.error || 'Roll failed')
+      showToast('error', e.message || 'Roll failed')
     }
   }
 

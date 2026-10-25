@@ -38,8 +38,8 @@ export default function CoinFlip() {
 
   const fetchState = async () => {
     const res = await api.get('/games/coin-flip/state')
-    setRules(res.data.rules)
-    setHistory(res.data.history)
+    setRules(res.rules)
+    setHistory(res.history)
   }
 
   useEffect(() => {
@@ -66,16 +66,16 @@ export default function CoinFlip() {
         setFace(flips % 2 === 0 ? 'H' : 'T')
         if (flips >= 8) {
           clearInterval(flipTimer.current)
-          setFace(flipped(res.data.history?.[0]?.result ?? side))
+          setFace(flipped(res.history?.[0]?.result ?? side))
           setSpinning(false)
-          const last = res.data.history?.[0]
+          const last = res.history?.[0]
           if (last) {
             const text = last.win > 0
               ? `${flipped(last.result)} — won ${money(last.win)}!`
               : `${flipped(last.result)} — lost`
             showToast(last.win > 0 ? 'success' : 'error', text)
           }
-          setHistory(res.data.history)
+          setHistory(res.history)
           setBusy(false)
           refreshWallet().catch(() => {})
         }
@@ -83,7 +83,7 @@ export default function CoinFlip() {
     } catch (e) {
       setSpinning(false)
       setBusy(false)
-      showToast('error', e.response?.data?.error || 'Bet failed')
+      showToast('error', e.message || 'Bet failed')
     }
   }
 

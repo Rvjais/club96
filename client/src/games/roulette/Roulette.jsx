@@ -54,8 +54,8 @@ export default function Roulette() {
 
   const fetchState = async () => {
     const res = await api.get('/games/roulette/state')
-    setRules(res.data.rules)
-    setHistory(res.data.history)
+    setRules(res.rules)
+    setHistory(res.history)
   }
 
   useEffect(() => { fetchState() }, [])
@@ -110,14 +110,14 @@ export default function Roulette() {
         }),
       }
       const res = await api.post('/games/roulette/spin', payload)
-      const b = res.data.history?.[0]
+      const b = res.history?.[0]
       if (b) setWheelAngle(planSpin(b.pocket)) // visual only — bets/payouts untouched
       setTimeout(() => {
         setSpinning(false)
         setBusy(false)
         setResult({ pocket: b?.pocket, color: b?.color, win: b?.win, amount: b?.amount })
         setBets({})
-        setHistory(res.data.history)
+        setHistory(res.history)
         if (b) {
           showToast(b.win > b.amount ? 'success' : b.win > 0 ? 'info' : 'error',
             b.win > b.amount
@@ -131,7 +131,7 @@ export default function Roulette() {
     } catch (e) {
       setSpinning(false)
       setBusy(false)
-      showToast('error', e.response?.data?.error || 'Spin failed')
+      showToast('error', e.message || 'Spin failed')
     }
   }
 

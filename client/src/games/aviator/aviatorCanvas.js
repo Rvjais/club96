@@ -27,14 +27,8 @@ function drawBackdrop(ctx, w, h, frame) {
   const ox = PAD_L
   const oy = h - PAD_B
 
-  // Base + vignette
-  ctx.fillStyle = '#19212e'
-  ctx.fillRect(0, 0, w, h)
-  const vg = ctx.createRadialGradient(ox, oy, 0, ox, oy, Math.hypot(w, h))
-  vg.addColorStop(0, 'rgba(255,45,85,0.07)')
-  vg.addColorStop(0.45, 'rgba(25,33,46,0)')
-  vg.addColorStop(1, 'rgba(15,20,28,0.85)')
-  ctx.fillStyle = vg
+  // Base
+  ctx.fillStyle = '#1a2c38'
   ctx.fillRect(0, 0, w, h)
 
   // Rotating sunburst from the origin
@@ -90,10 +84,7 @@ function drawCurve(ctx, head, alpha) {
   ctx.quadraticCurveTo(cpx, sy, tx, ty)
   ctx.lineTo(tx, sy)
   ctx.closePath()
-  const fill = ctx.createLinearGradient(0, ty, 0, sy)
-  fill.addColorStop(0, 'rgba(255,45,85,0.38)')
-  fill.addColorStop(1, 'rgba(255,45,85,0.02)')
-  ctx.fillStyle = fill
+  ctx.fillStyle = 'rgba(255, 45, 85, 0.2)'
   ctx.fill()
 
   ctx.beginPath()
@@ -102,8 +93,6 @@ function drawCurve(ctx, head, alpha) {
   ctx.strokeStyle = RED
   ctx.lineWidth = 4
   ctx.lineCap = 'round'
-  ctx.shadowColor = RED
-  ctx.shadowBlur = 16
   ctx.stroke()
   ctx.restore()
 }
@@ -114,8 +103,6 @@ export function drawPlane(ctx, x, y, angle, scale, now, alpha = 1) {
   ctx.translate(x, y)
   ctx.rotate(angle)
   ctx.scale(scale, scale)
-  ctx.shadowColor = 'rgba(255,45,85,0.75)'
-  ctx.shadowBlur = 22
 
   // Far wing
   ctx.fillStyle = RED_DARK
@@ -128,10 +115,7 @@ export function drawPlane(ctx, x, y, angle, scale, now, alpha = 1) {
   ctx.fill()
 
   // Fuselage + tail
-  const body = ctx.createLinearGradient(0, -10, 0, 8)
-  body.addColorStop(0, '#ff5c7c')
-  body.addColorStop(1, RED_DARK)
-  ctx.fillStyle = body
+  ctx.fillStyle = '#e33d5f'
   ctx.beginPath()
   ctx.moveTo(26, 0)
   ctx.bezierCurveTo(26, -7, 19, -9, 9, -9)
@@ -145,7 +129,6 @@ export function drawPlane(ctx, x, y, angle, scale, now, alpha = 1) {
   ctx.bezierCurveTo(19, 7, 26, 5, 26, 0)
   ctx.closePath()
   ctx.fill()
-  ctx.shadowBlur = 0
 
   // Near wing
   ctx.fillStyle = '#ff7a93'

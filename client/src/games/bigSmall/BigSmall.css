@@ -1,6 +1,7 @@
-/* Big / Small — three-dice sic-bo visuals on top of the GameShell kit */
+/* Big / Small — three-dice sic-bo visuals on top of the GameShell kit
+   Flat pass: solid surfaces and 1px borders — no gloss, no glows. */
 
-/* ── stage: blue felt dice table ─────────────────────────────────── */
+/* ── stage: blue dice table ─────────────────────────────────────── */
 .bs-stage {
   display: flex;
   flex-direction: column;
@@ -11,23 +12,11 @@
   padding: 22px 14px 20px;
 }
 
-/* casino spotlights on the felt */
+/* flat pass: the old spotlight wash is retired — shell kept */
 .bs-spotlight {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background:
-    radial-gradient(430px 200px at 50% -30px, rgba(77, 171, 247, 0.16), transparent 72%),
-    radial-gradient(320px 180px at 50% 106%, rgba(247, 201, 72, 0.09), transparent 74%);
-}
-.bs-spotlight::after {
-  content: '';
-  position: absolute;
-  left: 12%;
-  right: 12%;
-  top: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.14), transparent);
 }
 
 .bs-dice {
@@ -36,18 +25,16 @@
   z-index: 1;
 }
 
+/* die: one flat ivory cube with dark flat pips */
 .bs-die {
   width: 66px;
   height: 66px;
   border-radius: 16px;
   display: grid;
   place-items: center;
-  background: linear-gradient(160deg, #ffffff 0%, #e9eef6 48%, #c3cfdf 100%);
-  box-shadow:
-    0 14px 26px rgba(2, 8, 20, 0.55),
-    0 2px 0 rgba(120, 140, 170, 0.55),
-    inset 0 2px 3px rgba(255, 255, 255, 0.95),
-    inset 0 -8px 12px rgba(104, 124, 152, 0.38);
+  background: #e9f0f6;
+  border: 1px solid #35485a;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
 }
 .bs-pips {
   display: grid;
@@ -62,10 +49,7 @@
   border-radius: 50%;
 }
 .bs-pips i.off { visibility: hidden; }
-.bs-pips i.on {
-  background: radial-gradient(circle at 34% 30%, #3d6b96, #0d2136 72%);
-  box-shadow: inset 0 1.5px 2px rgba(255, 255, 255, 0.3);
-}
+.bs-pips i.on { background: #141c26; }
 
 /* tumbling while the round resolves — staggered per die */
 .bs-die.rolling { animation: bs-tumble 0.46s cubic-bezier(0.4, 0.08, 0.6, 1) infinite; }
@@ -95,23 +79,21 @@
   height: 7px;
   border-radius: 50%;
   background: currentColor;
-  box-shadow: 0 0 9px currentColor;
 }
 .bs-verdict.is-win {
   color: #b7f4ca;
   background: rgba(74, 222, 128, 0.12);
-  border: 1px solid rgba(74, 222, 128, 0.36);
+  border: 1px solid rgba(74, 222, 128, 0.45);
 }
 .bs-verdict.is-loss {
   color: #ffb9b9;
-  background: rgba(255, 107, 107, 0.1);
-  border: 1px solid rgba(255, 107, 107, 0.32);
+  background: rgba(255, 107, 107, 0.12);
+  border: 1px solid rgba(255, 107, 107, 0.45);
 }
 .bs-verdict.is-triple {
   color: #ffd76a;
   background: rgba(247, 201, 72, 0.12);
-  border: 1px solid rgba(247, 201, 72, 0.4);
-  box-shadow: 0 0 20px rgba(247, 201, 72, 0.18);
+  border: 1px solid rgba(247, 201, 72, 0.5);
 }
 
 /* gold total readout tile */
@@ -122,9 +104,9 @@
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: #ffedb8;
-  background: linear-gradient(180deg, rgba(247, 201, 72, 0.16), rgba(247, 201, 72, 0.05));
-  border: 1px solid rgba(247, 201, 72, 0.35);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  background: rgba(247, 201, 72, 0.12);
+  border: 1px solid rgba(247, 201, 72, 0.5);
+  box-shadow: none;
   z-index: 1;
   animation: bs-pop 0.22s ease;
 }
@@ -132,18 +114,17 @@
   font-size: 16px;
   font-weight: 900;
   color: #ffd76a;
-  text-shadow: 0 0 12px rgba(247, 201, 72, 0.45);
 }
 .bs-total.is-win {
   color: #b8f5cb;
-  background: linear-gradient(180deg, rgba(74, 222, 128, 0.16), rgba(74, 222, 128, 0.05));
-  border-color: rgba(74, 222, 128, 0.35);
+  background: rgba(74, 222, 128, 0.12);
+  border-color: rgba(74, 222, 128, 0.45);
 }
-.bs-total.is-win strong { color: #86efac; text-shadow: 0 0 12px rgba(74, 222, 128, 0.4); }
+.bs-total.is-win strong { color: #86efac; }
 .bs-total.is-loss {
   color: #ffc4c4;
-  background: linear-gradient(180deg, rgba(255, 107, 107, 0.13), rgba(255, 107, 107, 0.04));
-  border-color: rgba(255, 107, 107, 0.3);
+  background: rgba(255, 107, 107, 0.12);
+  border-color: rgba(255, 107, 107, 0.45);
 }
 
 @keyframes bs-pop {
@@ -170,9 +151,9 @@
   justify-content: center;
   gap: 11px;
   color: #dfe7f2;
-  background: rgba(255, 255, 255, 0.045);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: transform 0.12s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.2s ease;
+  background: var(--gs-raise);
+  border: 1px solid var(--gs-line);
+  transition: transform 0.12s ease, border-color 0.15s ease, background 0.15s ease;
 }
 .bs-call-btn:active { transform: scale(0.97); }
 
@@ -185,15 +166,15 @@
   place-items: center;
   font-size: 16px;
   font-weight: 900;
-  box-shadow: inset 0 1.5px 2px rgba(255, 255, 255, 0.35), 0 2px 5px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(0, 0, 0, 0.25);
 }
 .bs-call-face.s {
-  color: #062338;
-  background: radial-gradient(120% 120% at 30% 25%, #bfe0ff, #4dabf7 58%, #1d76c2);
+  color: var(--gs-ink);
+  background: #4dabf7;
 }
 .bs-call-face.b {
-  color: #3a0d12;
-  background: radial-gradient(120% 120% at 30% 25%, #ffb3b3, #ff6b6b 58%, #c93f4c);
+  color: var(--gs-ink);
+  background: #ff6b6b;
 }
 
 .bs-call-txt {
@@ -215,15 +196,13 @@
 
 .bs-call-btn.is-on {
   border-color: rgba(77, 171, 247, 0.55);
-  background: linear-gradient(180deg, rgba(77, 171, 247, 0.2), rgba(77, 171, 247, 0.07));
-  box-shadow: 0 0 22px rgba(77, 171, 247, 0.24), inset 0 0 16px rgba(77, 171, 247, 0.12);
+  background: rgba(77, 171, 247, 0.12);
   color: #ffffff;
 }
 .bs-call-btn.is-on .bs-call-txt em { color: #4dabf7; }
 .bs-call-btn.big.is-on {
   border-color: rgba(255, 107, 107, 0.55);
-  background: linear-gradient(180deg, rgba(255, 107, 107, 0.2), rgba(255, 107, 107, 0.07));
-  box-shadow: 0 0 22px rgba(255, 107, 107, 0.22), inset 0 0 16px rgba(255, 107, 107, 0.1);
+  background: rgba(255, 107, 107, 0.12);
 }
 .bs-call-btn.big.is-on .bs-call-txt em { color: #ff8f8f; }
 
@@ -264,10 +243,10 @@
   font-weight: 900;
   font-size: 15px;
   color: #e6ebf6;
-  background: rgba(255, 255, 255, 0.045);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--gs-raise);
+  border: 1px solid var(--gs-line);
   font-variant-numeric: tabular-nums;
-  transition: transform 0.1s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.2s ease;
+  transition: transform 0.1s ease, border-color 0.15s ease, background 0.15s ease;
 }
 .bs-pick:active { transform: scale(0.93); }
 .bs-pick i {
@@ -278,12 +257,11 @@
   color: #ffd76a;
 }
 .bs-pick.is-on {
-  color: #0d2b45;
+  color: var(--gs-ink);
   background: #4dabf7;
   border-color: transparent;
-  box-shadow: 0 0 18px rgba(77, 171, 247, 0.42);
 }
-.bs-pick.is-on i { color: rgba(6, 35, 56, 0.8); }
+.bs-pick.is-on i { color: rgba(11, 21, 32, 0.8); }
 
 /* ── history bits ───────────────────────────────────────────────── */
 .bs-hist .gs-hist-row {
@@ -300,9 +278,9 @@
   font-style: normal;
   font-size: 10.5px;
   font-weight: 900;
-  color: #0d2136;
-  background: linear-gradient(160deg, #ffffff, #cdd7e4);
-  box-shadow: 0 1.5px 3px rgba(0, 0, 0, 0.4);
+  color: #141c26;
+  background: #e9f0f6;
+  border: 1px solid #35485a;
 }
 
 .bs-hist-total {

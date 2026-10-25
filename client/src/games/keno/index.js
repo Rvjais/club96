@@ -9,7 +9,7 @@ export default {
   path: '/games/keno',
   icon: 'grid',
   image,
-  bg: 'linear-gradient(160deg,#a855f7 0%,#7e22ce 45%,#1a0a2e 100%)',
+  bg: '#7e22ce',
   glow: '#d8b4fe',
   badge: 'NEW',
   component: lazy(() => import('./Keno')),

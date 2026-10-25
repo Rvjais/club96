@@ -10,7 +10,7 @@ export default {
   path: '/games/mines',
   icon: 'bomb',
   image, // lobby / history artwork (src/games/icons)
-  bg: 'linear-gradient(160deg,#ffc24d 0%,#b86b00 45%,#1e2940 100%)',
+  bg: '#b86b00',
   glow: '#ffd27a',
   badge: 'NEW',
   component: lazy(() => import('./Mines')),

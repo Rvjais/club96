@@ -37,7 +37,7 @@ export default function Scratch() {
 
   const fetchState = async () => {
     const res = await api.get('/games/scratch/state')
-    setState(res.data)
+    setState(res)
   }
 
   useEffect(() => { fetchState() }, [])
@@ -49,12 +49,12 @@ export default function Scratch() {
 
     try {
       const res = await api.post('/games/scratch/buy', { amount: paise / 100 })
-      setState(res.data)
+      setState(res)
       setAmount('')
       setRevealedPanel(null)
       showToast('info', 'Card bought — scratch to reveal')
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'Buy failed')
+      showToast('error', e.message || 'Buy failed')
     }
   }
 
@@ -66,9 +66,9 @@ export default function Scratch() {
     try {
       await api.post('/games/scratch/reveal')
       const res = await api.get('/games/scratch/state')
-      setState(res.data)
+      setState(res)
 
-      const active = res.data.active
+      const active = res.active
       if (active) {
         if (active.win > 0) {
           showToast('success', `Won ${money(active.win)}! ${active.panels.join(' ')}`)
@@ -77,7 +77,7 @@ export default function Scratch() {
         }
       }
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'Reveal failed')
+      showToast('error', e.message || 'Reveal failed')
     } finally {
       setRevealing(false)
     }

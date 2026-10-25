@@ -9,7 +9,7 @@ export default {
   path: '/games/blackjack',
   icon: 'spade',
   image,
-  bg: 'linear-gradient(160deg,#0f172a 0%,#1e293b 45%,#0b1021 100%)',
+  bg: '#1e293b',
   glow: '#3b82f6',
   badge: 'NEW',
   component: lazy(() => import('./Blackjack')),

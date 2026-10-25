@@ -10,7 +10,7 @@ export default {
   path: '/games/aviator',
   icon: 'plane',
   image, // lobby / history artwork (src/games/icons)
-  bg: 'linear-gradient(160deg,#ff5c7c 0%,#19212e 78%)',
+  bg: '#19212e',
   glow: '#ff2d55',
   badge: 'HOT',
   component: lazy(() => import('./Aviator')),

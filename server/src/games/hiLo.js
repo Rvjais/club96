@@ -151,9 +151,7 @@ hiLoRouter.post('/guess', async (req, res) => {
   const direction = String(req.body?.direction).toLowerCase() // 'higher' or 'lower'
   if (direction !== 'higher' && direction !== 'lower') throw new HttpError(400, 'Guess higher or lower')
 
-  const cfg = getSettings(GAME)
   const bet = await activeRound(req.userId)
-
   const currentVal = rankValue(bet.currentCard.slice(0, -1))
   const nextCard = bet.deck[0]
   const nextVal = rankValue(nextCard.slice(0, -1))
@@ -188,7 +186,7 @@ hiLoRouter.post('/guess', async (req, res) => {
       { new: true },
     ).lean()
     if (!upd) throw raced()
-    return res.json({ bet: serialize(upd, cfg), balance: toRupees(await balanceOf(req.userId)) })
+    return res.json({ ...(await snapshotFor(req.userId)), drawn: nextCard, outcome: 'lost' })
   }
 
   const upd = await HiLoBet.findOneAndUpdate(
@@ -198,14 +196,15 @@ hiLoRouter.post('/guess', async (req, res) => {
   ).lean()
   if (!upd) throw raced()
 
-  res.json({ bet: serialize(upd, cfg), balance: toRupees(await balanceOf(req.userId)) })
+  res.json({ ...(await snapshotFor(req.userId)), drawn: nextCard, outcome: 'win' })
 })
 
 hiLoRouter.post('/cashout', async (req, res) => {
   const cfg = getSettings(GAME)
   const bet = await activeRound(req.userId)
   if (bet.streak === 0) throw new HttpError(400, 'Make at least one correct guess first')
-  res.json(await cashOut(bet, cfg))
+  const { bet: settled } = await cashOut(bet, cfg)
+  res.json({ ...(await snapshotFor(req.userId)), bet: settled, outcome: 'cashed' })
 })
 
 export async function startHiLo() {

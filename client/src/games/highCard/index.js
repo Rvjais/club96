@@ -9,7 +9,7 @@ export default {
   path: '/games/high-card',
   icon: 'spade',
   image,
-  bg: 'linear-gradient(160deg,#14b8a6 0%,#0f766e 45%,#134e4a 100%)',
+  bg: '#0f766e',
   glow: '#2dd4bf',
   badge: 'NEW',
   component: lazy(() => import('./HighCard')),

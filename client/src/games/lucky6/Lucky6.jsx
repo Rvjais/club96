@@ -33,8 +33,8 @@ export default function Lucky6() {
 
   const fetchState = async () => {
     const res = await api.get('/games/lucky-6/state')
-    setRules(res.data.rules)
-    setHistory(res.data.history)
+    setRules(res.rules)
+    setHistory(res.history)
   }
 
   useEffect(() => { fetchState() }, [])
@@ -61,13 +61,13 @@ export default function Lucky6() {
     setBusy(true)
     try {
       const res = await api.post('/games/lucky-6/bet', { picks, amount })
-      const b = res.data.history?.[0]
+      const b = res.history?.[0]
       setLast(b)
-      setHistory(res.data.history)
+      setHistory(res.history)
       showToast(b.win > 0 ? 'success' : 'error',
         b.win > 0 ? `🎉 ${b.matches} matched — won ${money(b.win)}!` : `${b.matches} of 6 — no prize`)
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'Bet failed')
+      showToast('error', e.message || 'Bet failed')
     } finally {
       setBusy(false)
     }

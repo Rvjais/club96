@@ -39,7 +39,7 @@ export default function Baccarat() {
 
   const fetchState = async () => {
     const res = await api.get('/games/baccarat/state')
-    setState(res.data)
+    setState(res)
   }
 
   useEffect(() => { fetchState() }, [])
@@ -51,13 +51,13 @@ export default function Baccarat() {
 
     try {
       const res = await api.post('/games/baccarat/bet', { betOn, amount: paise / 100 })
-      setState(res.data)
+      setState(res)
       setAmount('')
-      const r = res.data.recent?.[0]
+      const r = res.recent?.[0]
       const labels = { player: 'Player', banker: 'Banker', tie: 'Tie' }
       showToast(r.win > 0 ? 'success' : 'error', `${labels[resultLabel(r.result)]} won — ${r.win > 0 ? `+${money(r.win)}` : 'Lost'}`)
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'Bet failed')
+      showToast('error', e.message || 'Bet failed')
     }
   }
 

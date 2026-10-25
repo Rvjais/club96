@@ -114,17 +114,10 @@ export function createPlinkoBoard(canvas, { onLand, onPeg }) {
     }
 
     for (const b of balls) {
-      const g = ctx.createRadialGradient(b.x - ballR * 0.3, b.y - ballR * 0.3, ballR * 0.1, b.x, b.y, ballR)
-      g.addColorStop(0, '#fffbe6')
-      g.addColorStop(0.45, '#ffd84d')
-      g.addColorStop(1, '#ff9f1a')
-      ctx.shadowColor = 'rgba(255, 196, 61, 0.8)'
-      ctx.shadowBlur = 12
       ctx.beginPath()
-      ctx.fillStyle = g
+      ctx.fillStyle = '#ffd84d'
       ctx.arc(b.x, b.y, ballR, 0, Math.PI * 2)
       ctx.fill()
-      ctx.shadowBlur = 0
     }
   }
 

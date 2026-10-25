@@ -44,9 +44,9 @@ export default function CasinoWar() {
 
   const fetchState = async () => {
     const res = await api.get('/games/casino-war/state')
-    setRules(res.data.rules)
-    setActive(res.data.active)
-    setHistory(res.data.history)
+    setRules(res.rules)
+    setActive(res.active)
+    setHistory(res.history)
   }
 
   useEffect(() => { fetchState() }, [])
@@ -59,10 +59,10 @@ export default function CasinoWar() {
     setBusy(true)
     try {
       const res = await api.post('/games/casino-war/bet', { amount })
-      setActive(res.data.active)
-      setHistory(res.data.history)
-      const a = res.data.active
-      const last = res.data.history?.[0]
+      setActive(res.active)
+      setHistory(res.history)
+      const a = res.active
+      const last = res.history?.[0]
       if (!a && last) {
         showToast(last.win > 0 ? 'success' : 'error', `${last.playerCard} vs ${last.dealerCard} — ${RESULT_TEXT[last.result]}`)
         refreshWallet().catch(() => {})
@@ -70,7 +70,7 @@ export default function CasinoWar() {
         showToast('info', `Tie! Go to war or surrender — got ${a.playerCard}`)
       }
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'Bet failed')
+      showToast('error', e.message || 'Bet failed')
     } finally {
       setBusy(false)
     }
@@ -82,12 +82,12 @@ export default function CasinoWar() {
     try {
       const res = await api.post('/games/casino-war/war')
       setActive(null)
-      setHistory(res.data.history)
-      const last = res.data.history?.[0]
+      setHistory(res.history)
+      const last = res.history?.[0]
       showToast(last.win > 0 ? 'success' : 'error', `${last.warPlayerCard} vs ${last.warDealerCard} — ${RESULT_TEXT[last.result]}`)
       refreshWallet().catch(() => {})
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'War failed')
+      showToast('error', e.message || 'War failed')
     } finally {
       setBusy(false)
     }
@@ -99,11 +99,11 @@ export default function CasinoWar() {
     try {
       const res = await api.post('/games/casino-war/surrender')
       setActive(null)
-      setHistory(res.data.history)
+      setHistory(res.history)
       showToast('info', 'Surrendered — half your stake is back')
       refreshWallet().catch(() => {})
     } catch (e) {
-      showToast('error', e.response?.data?.error || 'Surrender failed')
+      showToast('error', e.message || 'Surrender failed')
     } finally {
       setBusy(false)
     }
