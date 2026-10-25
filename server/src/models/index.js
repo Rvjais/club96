@@ -375,6 +375,212 @@ const teenPattiBetSchema = new Schema({
 teenPattiBetSchema.index({ user: 1, createdAt: -1 })
 teenPattiBetSchema.index({ user: 1 }, { unique: true, partialFilterExpression: { status: 'active' } })
 
+// ── Coin Flip: heads/tails, instant 1.95x
+const coinFlipBetSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true, index: true },
+  amount: { type: Number, required: true },
+  side: { type: String, enum: ['heads', 'tails'], required: true },
+  result: { type: String, enum: ['heads', 'tails'], required: true },
+  seed: { type: String, required: true },
+  multiplier: { type: Number, default: 0 },
+  win: { type: Number, default: 0 },
+}, { timestamps: { createdAt: true, updatedAt: false } })
+coinFlipBetSchema.index({ user: 1, createdAt: -1 })
+
+// ── High Card Draw: one card each, tie pushes
+const highCardBetSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true, index: true },
+  amount: { type: Number, required: true },
+  playerCard: { type: String, required: true },
+  dealerCard: { type: String, required: true },
+  seed: { type: String, required: true },
+  result: { type: String, required: true }, // playerWins | dealerWins | push
+  multiplier: { type: Number, default: 0 },
+  win: { type: Number, default: 0 },
+}, { timestamps: { createdAt: true, updatedAt: false } })
+highCardBetSchema.index({ user: 1, createdAt: -1 })
+
+// ── Balloon Pop: one pick, pop or weighted multiplier
+const balloonPopBetSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true, index: true },
+  amount: { type: Number, required: true },
+  pick: { type: Number, required: true },
+  symbol: { type: String, required: true },
+  outcome: { type: String, required: true }, // pop | prize
+  seed: { type: String, required: true },
+  multiplier: { type: Number, default: 0 },
+  win: { type: Number, default: 0 },
+}, { timestamps: { createdAt: true, updatedAt: false } })
+balloonPopBetSchema.index({ user: 1, createdAt: -1 })
+
+// ── Red Dog: bet that the third card falls between the first two
+const redDogBetSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true, index: true },
+  amount: { type: Number, required: true },
+  card1: { type: String, required: true },
+  card2: { type: String, required: true },
+  card3: { type: String, required: true },
+  spread: { type: Number, required: true },
+  seed: { type: String, required: true },
+  result: { type: String, required: true }, // win | push | lose | triple
+  multiplier: { type: Number, default: 0 },
+  win: { type: Number, default: 0 },
+}, { timestamps: { createdAt: true, updatedAt: false } })
+redDogBetSchema.index({ user: 1, createdAt: -1 })
+
+// ── Casino War: active while a tie awaits a war / surrender choice
+const casinoWarBetSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true, index: true },
+  amount: { type: Number, required: true }, // original ante
+  staked: { type: Number, required: true }, // total staked (x2 after war)
+  playerCard: { type: String, required: true },
+  dealerCard: { type: String, required: true },
+  warPlayerCard: String,
+  warDealerCard: String,
+  seed: { type: String, required: true },
+  status: { type: String, enum: ['active', 'won', 'lost', 'refunded'], required: true },
+  result: String, // playerWins | dealerWins | warWin | warLoss | surrender
+  multiplier: { type: Number, default: 0 },
+  win: { type: Number, default: 0 },
+  finished: { type: Boolean, default: false },
+  settledAt: Date,
+}, { timestamps: { createdAt: true, updatedAt: false } })
+casinoWarBetSchema.index({ user: 1, createdAt: -1 })
+casinoWarBetSchema.index({ user: 1 }, { unique: true, partialFilterExpression: { status: 'active' } })
+
+// ── 3 Card Poker: play/fold vs qualifying dealer, Pair Plus side bet
+const threeCardBetSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true, index: true },
+  amount: { type: Number, required: true }, // total staked
+  ante: { type: Number, required: true },
+  pairPlus: { type: Number, default: 0 },
+  seed: { type: String, required: true },
+  playerCards: { type: [String], required: true },
+  dealerCards: { type: [String], required: true },
+  playerRank: { type: Number, required: true },
+  dealerRank: { type: Number, required: true },
+  dealerQualified: Boolean,
+  status: { type: String, enum: ['active', 'won', 'lost', 'refunded'], required: true },
+  multiplier: { type: Number, default: 0 },
+  win: { type: Number, default: 0 },
+  result: String, // playerWins | dealerWins | push | folded | dealerNoQualify
+  finished: { type: Boolean, default: false },
+  settledAt: Date,
+}, { timestamps: { createdAt: true, updatedAt: false } })
+threeCardBetSchema.index({ user: 1, createdAt: -1 })
+threeCardBetSchema.index({ user: 1 }, { unique: true, partialFilterExpression: { status: 'active' } })
+
+// ── Caribbean Stud: 5-card stud vs qualifying dealer (K-high)
+const caribbeanStudBetSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true, index: true },
+  amount: { type: Number, required: true }, // total staked (ante + raise)
+  ante: { type: Number, required: true },
+  seed: { type: String, required: true },
+  playerCards: { type: [String], required: true },
+  dealerCards: { type: [String], required: true },
+  playerRank: { type: Number, required: true },
+  dealerRank: { type: Number, required: true },
+  dealerQualified: Boolean,
+  status: { type: String, enum: ['active', 'won', 'lost', 'refunded'], required: true },
+  multiplier: { type: Number, default: 0 },
+  win: { type: Number, default: 0 },
+  result: String, // playerWins | dealerWins | push | folded | dealerNoQualify
+  finished: { type: Boolean, default: false },
+  settledAt: Date,
+}, { timestamps: { createdAt: true, updatedAt: false } })
+caribbeanStudBetSchema.index({ user: 1, createdAt: -1 })
+caribbeanStudBetSchema.index({ user: 1 }, { unique: true, partialFilterExpression: { status: 'active' } })
+
+// ── Pai Gow Poker: 7 cards auto-split into 5+2 hands vs dealer
+const paiGowBetSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true, index: true },
+  amount: { type: Number, required: true },
+  seed: { type: String, required: true },
+  playerCards: { type: [String], required: true }, // all 7, dealt order
+  dealerCards: { type: [String], required: true },
+  playerHigh: { type: [String], required: true },
+  playerLow: { type: [String], required: true },
+  dealerHigh: { type: [String], required: true },
+  dealerLow: { type: [String], required: true },
+  status: { type: String, enum: ['won', 'lost', 'refunded'], required: true },
+  result: String, // playerWins | dealerWins | push
+  multiplier: { type: Number, default: 0 },
+  win: { type: Number, default: 0 },
+}, { timestamps: { createdAt: true, updatedAt: false } })
+paiGowBetSchema.index({ user: 1, createdAt: -1 })
+
+// ── Thai Lottery 2D/3D: digit match game
+const thaiLotteryBetSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true, index: true },
+  amount: { type: Number, required: true },
+  mode: { type: String, enum: ['2d', '3d'], required: true },
+  betType: { type: String, enum: ['exact', 'box'], required: true },
+  pick: { type: String, required: true },
+  draw: { type: String, required: true },
+  seed: { type: String, required: true },
+  status: { type: String, enum: ['won', 'lost'], required: true },
+  multiplier: { type: Number, default: 0 },
+  win: { type: Number, default: 0 },
+}, { timestamps: { createdAt: true, updatedAt: false } })
+thaiLotteryBetSchema.index({ user: 1, createdAt: -1 })
+
+// ── Lucky 6/49: pick 6 of 49, 6 main + bonus balls drawn
+const lucky6BetSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true, index: true },
+  amount: { type: Number, required: true },
+  picks: { type: [Number], required: true },
+  drawn: { type: [Number], required: true }, // 6 main + bonus
+  matches: { type: Number, required: true },
+  bonusHit: Boolean,
+  prizeKey: String, // 2+bonus | 3 | 4 | 5 | 5+bonus | 6
+  seed: { type: String, required: true },
+  multiplier: { type: Number, default: 0 },
+  win: { type: Number, default: 0 },
+}, { timestamps: { createdAt: true, updatedAt: false } })
+lucky6BetSchema.index({ user: 1, createdAt: -1 })
+
+// ── Big/Small: three dice, single spot bet (sic bo lite)
+const bigSmallBetSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true, index: true },
+  amount: { type: Number, required: true },
+  betType: { type: String, required: true }, // small | big | odd | even | anyTriple | double | triple | total
+  pick: Number, // for double (1–6) / triple (1–6) / total (4–17)
+  dice: { type: [Number], required: true },
+  total: { type: Number, required: true },
+  seed: { type: String, required: true },
+  status: { type: String, enum: ['won', 'lost'], required: true },
+  multiplier: { type: Number, default: 0 },
+  win: { type: Number, default: 0 },
+}, { timestamps: { createdAt: true, updatedAt: false } })
+bigSmallBetSchema.index({ user: 1, createdAt: -1 })
+
+// ── Roulette: multi-spot bets on a single-zero 37-pocket wheel
+const rouletteBetSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true, index: true },
+  amount: { type: Number, required: true }, // total staked across spots
+  bets: [Schema.Types.Mixed], // [{ type, pick, stake, mult }] locked at spin time
+  pocket: { type: Number, required: true },
+  seed: { type: String, required: true },
+  status: { type: String, enum: ['won', 'partial', 'lost'], required: true },
+  multiplier: { type: Number, default: 0 },
+  win: { type: Number, default: 0 },
+}, { timestamps: { createdAt: true, updatedAt: false } })
+rouletteBetSchema.index({ user: 1, createdAt: -1 })
+
+// ── Money Wheel: single spot bet on a fixed 54-segment wheel
+const moneyWheelBetSchema = new Schema({
+  user: { type: ObjectId, ref: 'User', required: true, index: true },
+  amount: { type: Number, required: true },
+  spot: { type: String, required: true }, // x1 | x2 | x5 | x10 | x20 | joker
+  index: { type: Number, required: true },
+  landedSpot: { type: String, required: true },
+  seed: { type: String, required: true },
+  status: { type: String, enum: ['won', 'lost'], required: true },
+  multiplier: { type: Number, default: 0 },
+  win: { type: Number, default: 0 },
+}, { timestamps: { createdAt: true, updatedAt: false } })
+moneyWheelBetSchema.index({ user: 1, createdAt: -1 })
+
 const adminSchema = new Schema({
   username: { type: String, required: true, unique: true },
   passwordHash: { type: String, required: true },
@@ -485,6 +691,19 @@ export const BlackjackBet = model('BlackjackBet', blackjackBetSchema)
 export const BaccaratBet = model('BaccaratBet', baccaratBetSchema)
 export const ScratchBet = model('ScratchBet', scratchBetSchema)
 export const TeenPattiBet = model('TeenPattiBet', teenPattiBetSchema)
+export const CoinFlipBet = model('CoinFlipBet', coinFlipBetSchema)
+export const HighCardBet = model('HighCardBet', highCardBetSchema)
+export const BalloonPopBet = model('BalloonPopBet', balloonPopBetSchema)
+export const RedDogBet = model('RedDogBet', redDogBetSchema)
+export const CasinoWarBet = model('CasinoWarBet', casinoWarBetSchema)
+export const ThreeCardBet = model('ThreeCardBet', threeCardBetSchema)
+export const CaribbeanStudBet = model('CaribbeanStudBet', caribbeanStudBetSchema)
+export const PaiGowBet = model('PaiGowBet', paiGowBetSchema)
+export const ThaiLotteryBet = model('ThaiLotteryBet', thaiLotteryBetSchema)
+export const Lucky6Bet = model('Lucky6Bet', lucky6BetSchema)
+export const BigSmallBet = model('BigSmallBet', bigSmallBetSchema)
+export const RouletteBet = model('RouletteBet', rouletteBetSchema)
+export const MoneyWheelBet = model('MoneyWheelBet', moneyWheelBetSchema)
 export const Admin = model('Admin', adminSchema)
 export const Withdrawal = model('Withdrawal', withdrawalSchema)
 export const Deposit = model('Deposit', depositSchema)

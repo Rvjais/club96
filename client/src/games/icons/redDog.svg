@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect x="8" y="8" width="112" height="112" rx="12" fill="#7c2d12"/>
+  <rect x="24" y="26" width="38" height="50" rx="6" fill="#fff"/>
+  <rect x="66" y="26" width="38" height="50" rx="6" fill="#fecaca"/>
+  <text x="43" y="60" font-family="Georgia" font-size="22" fill="#111" text-anchor="middle" font-weight="bold">4</text>
+  <text x="85" y="60" font-family="Georgia" font-size="22" fill="#111" text-anchor="middle" font-weight="bold">J</text>
+  <rect x="52" y="86" width="24" height="28" rx="5" fill="#fca5a5" stroke="#fff" stroke-width="2"/>
+  <text x="64" y="107" font-family="Georgia" font-size="16" fill="#fff" text-anchor="middle" font-weight="bold">?</text>
+  <path d="M30 108 l-8 -16 8 -16 8 16z" fill="#f8522d" opacity="0.9"/>
+</svg>

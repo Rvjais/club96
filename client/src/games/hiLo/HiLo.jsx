@@ -109,7 +109,7 @@ export default function HiLo() {
       const res = await api.post('/games/hi-lo/cashout')
       setState(res.data)
       setActive(null)
-      showToast('success', `Cashed out ${money(res.data.bet.win / 100)} (${res.data.bet.multiplier}x)`)
+      showToast('success', `Cashed out ${money(res.data.bet.win)} (${res.data.bet.multiplier}x)`)
     } catch (e) {
       showToast('error', e.response?.data?.error || 'Cashout failed')
     }
@@ -168,7 +168,7 @@ export default function HiLo() {
             </div>
             <div className="hilo-streak-item">
               <span className="hilo-streak-label">POTENTIAL</span>
-              <span className="hilo-streak-value potential">₹{money((active?.amount / 100) * (nextMultiplier ?? 1))}</span>
+              <span className="hilo-streak-value potential">₹{money((active?.amount) * (nextMultiplier ?? 1))}</span>
             </div>
           </div>
 
@@ -276,9 +276,9 @@ export default function HiLo() {
               {state.recent.slice(0, 15).map(b => (
                 <div key={b.id} className="hilo-history-item">
                   <span className="hilo-hist-streak">{b.streak} gems</span>
-                  <span>₹{money(b.amount / 100)}</span>
+                  <span>₹{money(b.amount)}</span>
                   <span className={b.status === 'won' ? 'win' : 'lose'}>
-                    {b.status === 'won' ? `+${money(b.win / 100)} (${b.multiplier}x)` : 'Lost'}
+                    {b.status === 'won' ? `+${money(b.win)} (${b.multiplier}x)` : 'Lost'}
                   </span>
                   <span className="hilo-hist-time">{new Date(b.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>

@@ -1,0 +1,52 @@
+.cs-root { display: flex; flex-direction: column; min-height: 100vh; background: #0b0d12; color: #e8e8e8; }
+.cs-header { display: flex; align-items: center; justify-content: space-between; padding: 16px; border-bottom: 1px solid #1f232a; position: sticky; top: 0; background: rgba(11,13,18,0.95); backdrop-filter: blur(8px); z-index: 10; }
+.cs-title { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 18px; color: #fff; }
+.cs-balance { font-weight: 600; font-size: 16px; }
+
+.cs-main { flex: 1; padding: 16px; padding-bottom: 120px; display: flex; flex-direction: column; gap: 16px; }
+
+.cs-table { background: linear-gradient(170deg, #0b3a56 0%, #072335 100%); border: 1px solid #075985; border-radius: 16px; padding: 20px 12px; display: flex; gap: 10px; }
+.cs-pos { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 0; }
+.cs-label { font-size: 12px; font-weight: 700; letter-spacing: 2px; color: #7dd3fc; }
+.cs-cards { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.cs-hand-name { font-size: 12px; font-weight: 800; color: #38bdf8; text-align: center; }
+.cs-hand-name.dim { color: #94a3b8; }
+.cs-note { font-size: 11px; color: #5d7d94; }
+
+.cs-actions { display: flex; flex-direction: column; gap: 10px; }
+.cs-play { display: flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #22c55e, #15803d); border: none; border-radius: 12px; padding: 16px 10px; color: #fff; font-weight: 800; font-size: 14px; cursor: pointer; }
+.cs-fold { background: linear-gradient(135deg, #ef4444, #b91c1c); border: none; border-radius: 12px; padding: 14px; color: #fff; font-weight: 800; font-size: 14px; cursor: pointer; }
+.cs-actions button:disabled { opacity: 0.55; }
+
+.cs-controls { background: #12151c; border: 1px solid #1f232a; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.cs-stake { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #888; }
+.cs-stake input { background: #0b0d12; border: 1px solid #2a2f3a; border-radius: 10px; padding: 12px 14px; color: #fff; font-size: 16px; outline: none; }
+.cs-stake input:focus { border-color: #0ea5e9; }
+.cs-deal { display: flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #0ea5e9, #0369a1); border: none; border-radius: 12px; padding: 14px; color: #fff; font-weight: 800; font-size: 15px; cursor: pointer; }
+.cs-deal:disabled { opacity: 0.55; }
+
+.cs-banner { text-align: center; font-weight: 800; font-size: 15px; padding: 12px; border-radius: 12px; }
+.cs-banner.is-win { background: #064e3b; color: #6ee7b7; }
+.cs-banner.is-push { background: #1e3a5f; color: #93c5fd; }
+.cs-banner.is-loss { background: #450a0a; color: #fca5a5; }
+
+.cs-rules { background: #12151c; border: 1px solid #1f232a; border-radius: 14px; padding: 12px 16px; }
+.cs-rules summary { cursor: pointer; font-weight: 600; color: #aaa; list-style: none; display: flex; justify-content: space-between; }
+.cs-rules summary::-webkit-details-marker { display: none; }
+.cs-rules summary::after { content: '+'; font-size: 18px; color: #666; }
+.cs-rules[open] summary::after { transform: rotate(45deg); }
+.cs-rules ul { margin: 10px 0 0; padding-left: 18px; color: #bbb; font-size: 13px; line-height: 1.8; }
+
+.cs-history h3 { font-size: 14px; font-weight: 600; color: #888; margin: 0 0 10px; }
+.cs-hist-list { display: flex; flex-direction: column; gap: 6px; }
+.cs-hist-item { display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: 10px; background: #0b0d12; border: 1px solid #1f232a; border-radius: 10px; padding: 8px 12px; font-size: 13px; }
+.cs-hist-hand { font-weight: 700; color: #38bdf8; }
+.cs-hist-item .win { color: #4ade80; font-weight: 700; }
+.cs-hist-item .lose { color: #f87171; font-weight: 700; }
+.cs-hist-time { color: #666; font-size: 11px; }
+.cs-empty { text-align: center; color: #666; padding: 16px; font-size: 14px; }
+
+.cs-toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 100; }
+.cs-toast-success { background: #065f46; color: #6ee7b7; }
+.cs-toast-error { background: #7f1d1d; color: #fca5a5; }
+.cs-toast-info { background: #1e3a5f; color: #93c5fd; }

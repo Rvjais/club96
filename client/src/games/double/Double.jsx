@@ -62,7 +62,7 @@ export default function Double() {
       setSelected(null)
       setLastResult({ color: res.data.history[0]?.result, win: res.data.history[0]?.win })
       showToast(res.data.history[0]?.win > 0 ? 'success' : 'error',
-        res.data.history[0]?.win > 0 ? `Won ${money(res.data.history[0].win / 100)}` : 'Lost')
+        res.data.history[0]?.win > 0 ? `Won ${money(res.data.history[0].win)}` : 'Lost')
     } catch (e) {
       showToast('error', e.response?.data?.error || 'Bet failed')
     }
@@ -101,7 +101,7 @@ export default function Double() {
             <div className="dbl-last-card" style={{ background: COLORS.find(c => c.id === lastResult.color)?.bg }}>
               <span>Last: {COLORS.find(c => c.id === lastResult.color)?.label}</span>
               <span className={lastResult.win > 0 ? 'win' : 'lose'}>
-                {lastResult.win > 0 ? `+${money(lastResult.win / 100)}` : 'Lost'}
+                {lastResult.win > 0 ? `+${money(lastResult.win)}` : 'Lost'}
               </span>
             </div>
           )}
@@ -170,8 +170,8 @@ export default function Double() {
                   <span className="dbl-hist-color" style={{ background: COLORS.find(c => c.id === b.color)?.bg }}>
                     {COLORS.find(c => c.id === b.color)?.label}
                   </span>
-                  <span>{money(b.amount / 100)}</span>
-                  <span className={b.win > 0 ? 'win' : 'lose'}>{b.win > 0 ? `+${money(b.win / 100)}` : 'Lost'}</span>
+                  <span>{money(b.amount)}</span>
+                  <span className={b.win > 0 ? 'win' : 'lose'}>{b.win > 0 ? `+${money(b.win)}` : 'Lost'}</span>
                   <span className="dbl-hist-time">{new Date(b.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
               ))}

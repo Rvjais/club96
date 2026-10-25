@@ -71,7 +71,7 @@ export default function Scratch() {
       const active = res.data.active
       if (active) {
         if (active.win > 0) {
-          showToast('success', `Won ${money(active.win / 100)}! ${active.panels.join(' ')}`)
+          showToast('success', `Won ${money(active.win)}! ${active.panels.join(' ')}`)
         } else {
           showToast('error', 'No match — try again')
         }
@@ -148,7 +148,7 @@ export default function Scratch() {
               {activeCard.win > 0 && (
                 <div className="scratch-win-banner">
                   <Icon name="circleCheck" size={24} strokeWidth={3} />
-                  <span>Won {money(activeCard.win / 100)}! ({activeCard.multiplier}x)</span>
+                  <span>Won {money(activeCard.win)}! ({activeCard.multiplier}x)</span>
                 </div>
               )}
             </div>
@@ -175,9 +175,9 @@ export default function Scratch() {
               {state.recent.slice(0, 15).map(b => (
                 <div key={b.id} className="scratch-history-item">
                   <span className="scratch-hist-panels">{b.panels?.join(' ') || '—'}</span>
-                  <span>₹{money(b.amount / 100)}</span>
+                  <span>₹{money(b.amount)}</span>
                   <span className={b.win > 0 ? 'win' : 'lose'}>
-                    {b.win > 0 ? `+${money(b.win / 100)} (${b.multiplier}x)` : 'Lost'}
+                    {b.win > 0 ? `+${money(b.win)} (${b.multiplier}x)` : 'Lost'}
                   </span>
                   <span className="scratch-hist-time">{new Date(b.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>

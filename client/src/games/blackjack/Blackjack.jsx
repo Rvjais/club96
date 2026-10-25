@@ -216,9 +216,9 @@ export default function Blackjack() {
               {state.recent.slice(0, 15).map(b => (
                 <div key={b.id} className="bj-history-item">
                   <span className="bj-hist-cards">{handLabels(b.playerCards)}</span>
-                  <span>₹{money(b.amount / 100)}</span>
+                  <span>₹{money(b.amount)}</span>
                   <span className={b.win > 0 ? 'win' : 'lose'}>
-                    {b.win > 0 ? `+${money(b.win / 100)} (${b.result})` : 'Lost'}
+                    {b.win > 0 ? `+${money(b.win)} (${b.result})` : 'Lost'}
                   </span>
                   <span className="bj-hist-time">{new Date(b.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>

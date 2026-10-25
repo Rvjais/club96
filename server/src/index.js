@@ -27,6 +27,19 @@ import { blackjackRouter, startBlackjack } from './games/blackjack.js'
 import { baccaratRouter, startBaccarat } from './games/baccarat.js'
 import { scratchRouter, startScratch } from './games/scratch.js'
 import { teenPattiRouter, startTeenPatti } from './games/teenPatti.js'
+import { coinFlipRouter, startCoinFlip } from './games/coinFlip.js'
+import { highCardRouter, startHighCard } from './games/highCard.js'
+import { balloonPopRouter, startBalloonPop } from './games/balloonPop.js'
+import { redDogRouter, startRedDog } from './games/redDog.js'
+import { casinoWarRouter, startCasinoWar } from './games/casinoWar.js'
+import { threeCardRouter, startThreeCard } from './games/threeCard.js'
+import { caribbeanStudRouter, startCaribbeanStud } from './games/caribbeanStud.js'
+import { paiGowRouter, startPaiGow } from './games/paiGow.js'
+import { thaiLotteryRouter, startThaiLottery } from './games/thaiLottery.js'
+import { lucky6Router, startLucky6 } from './games/lucky6.js'
+import { bigSmallRouter, startBigSmall } from './games/bigSmall.js'
+import { rouletteRouter, startRoulette } from './games/roulette.js'
+import { moneyWheelRouter, startMoneyWheel } from './games/moneyWheel.js'
 import { supportRouter } from './routes/support.js'
 import { promotionRouter, startReferrals } from './referral.js'
 import { HttpError } from './wallet.js'
@@ -63,6 +76,19 @@ app.use('/api/games/blackjack', blackjackRouter)
 app.use('/api/games/baccarat', baccaratRouter)
 app.use('/api/games/scratch', scratchRouter)
 app.use('/api/games/teen-patti', teenPattiRouter)
+app.use('/api/games/coin-flip', coinFlipRouter)
+app.use('/api/games/high-card', highCardRouter)
+app.use('/api/games/balloon-pop', balloonPopRouter)
+app.use('/api/games/red-dog', redDogRouter)
+app.use('/api/games/casino-war', casinoWarRouter)
+app.use('/api/games/three-card', threeCardRouter)
+app.use('/api/games/caribbean-stud', caribbeanStudRouter)
+app.use('/api/games/pai-gow', paiGowRouter)
+app.use('/api/games/thai-lottery', thaiLotteryRouter)
+app.use('/api/games/lucky-6', lucky6Router)
+app.use('/api/games/big-small', bigSmallRouter)
+app.use('/api/games/roulette', rouletteRouter)
+app.use('/api/games/money-wheel', moneyWheelRouter)
 app.use('/api/admin', adminRouter)
 app.use('/api', (req, res, next) => next(new HttpError(404, 'Not found')))
 
@@ -99,6 +125,19 @@ await startBlackjack()
 await startBaccarat()
 await startScratch()
 await startTeenPatti()
+await startCoinFlip()
+await startHighCard()
+await startBalloonPop()
+await startRedDog()
+await startCasinoWar()
+await startThreeCard()
+await startCaribbeanStud()
+await startPaiGow()
+await startThaiLottery()
+await startLucky6()
+await startBigSmall()
+await startRoulette()
+await startMoneyWheel()
 startReferrals()
 
 app.listen(PORT, () => console.log(`API listening on http://localhost:${PORT}`))

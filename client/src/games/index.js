@@ -19,8 +19,21 @@ import blackjack from './blackjack'
 import baccarat from './baccarat'
 import scratch from './scratch'
 import teenPatti from './teenPatti'
+import coinFlip from './coinFlip'
+import highCard from './highCard'
+import balloonPop from './balloonPop'
+import redDog from './redDog'
+import casinoWar from './casinoWar'
+import threeCard from './threeCard'
+import caribbeanStud from './caribbeanStud'
+import paiGow from './paiGow'
+import thaiLottery from './thaiLottery'
+import lucky6 from './lucky6'
+import bigSmall from './bigSmall'
+import roulette from './roulette'
+import moneyWheel from './moneyWheel'
 
-export const games = [wingo, aviator, poker, andarBahar, dragonTiger, horseRacing, mines, tower, plinko, wheel, dice, double, hiLo, keno, blackjack, baccarat, scratch, teenPatti]
+export const games = [wingo, aviator, poker, andarBahar, dragonTiger, horseRacing, mines, tower, plinko, wheel, dice, double, hiLo, keno, blackjack, baccarat, scratch, teenPatti, coinFlip, highCard, balloonPop, redDog, casinoWar, threeCard, caribbeanStud, paiGow, thaiLottery, lucky6, bigSmall, roulette, moneyWheel]
 
 // Artwork per game id, for history and stats lists
 export const gameImages = Object.fromEntries(games.map((g) => [g.id, g.image]))

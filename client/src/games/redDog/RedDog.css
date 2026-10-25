@@ -1,0 +1,49 @@
+.rd-root { display: flex; flex-direction: column; min-height: 100vh; background: #0b0d12; color: #e8e8e8; }
+.rd-header { display: flex; align-items: center; justify-content: space-between; padding: 16px; border-bottom: 1px solid #1f232a; position: sticky; top: 0; background: rgba(11,13,18,0.95); backdrop-filter: blur(8px); z-index: 10; }
+.rd-title { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 18px; color: #fff; }
+.rd-balance { font-weight: 600; font-size: 16px; }
+
+.rd-main { flex: 1; padding: 16px; padding-bottom: 120px; display: flex; flex-direction: column; gap: 16px; }
+
+.rd-table { background: linear-gradient(170deg, #40240f 0%, #2a1608 100%); border: 1px solid #6b3a1d; border-radius: 16px; padding: 22px 16px; display: flex; flex-direction: column; gap: 14px; align-items: center; }
+.rd-cards { display: flex; align-items: center; gap: 12px; }
+.rd-middle { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.rd-middle small { font-size: 10px; color: #b98a6b; letter-spacing: 1px; }
+.rd-spread-pill { font-size: 12px; font-weight: 800; color: #fdba74; background: #431407; border: 1px solid #9a3412; border-radius: 10px; padding: 3px 10px; }
+
+.rd-banner { font-weight: 800; font-size: 15px; padding: 12px 22px; border-radius: 12px; }
+.rd-banner.is-win { background: #064e3b; color: #6ee7b7; }
+.rd-banner.is-push { background: #1e3a5f; color: #93c5fd; }
+.rd-banner.is-loss { background: #450a0a; color: #fca5a5; }
+
+.rd-controls { background: #12151c; border: 1px solid #1f232a; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.rd-stake { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #888; }
+.rd-stake input { background: #0b0d12; border: 1px solid #2a2f3a; border-radius: 10px; padding: 12px 14px; color: #fff; font-size: 16px; outline: none; }
+.rd-stake input:focus { border-color: #ea580c; }
+.rd-quick { display: flex; flex-wrap: wrap; gap: 8px; }
+.rd-quick button { background: #1a1d24; border: 1px solid #2a2f3a; border-radius: 8px; padding: 6px 14px; color: #ccc; font-size: 13px; cursor: pointer; }
+.rd-quick button:hover { color: #fff; }
+.rd-deal { display: flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #ea580c, #9a3412); border: none; border-radius: 12px; padding: 14px; color: #fff; font-weight: 800; font-size: 15px; cursor: pointer; }
+.rd-deal:disabled { opacity: 0.55; }
+
+.rd-rules { background: #12151c; border: 1px solid #1f232a; border-radius: 14px; padding: 12px 16px; }
+.rd-rules summary { cursor: pointer; font-weight: 600; color: #aaa; list-style: none; display: flex; justify-content: space-between; }
+.rd-rules summary::-webkit-details-marker { display: none; }
+.rd-rules summary::after { content: '+'; font-size: 18px; color: #666; }
+.rd-rules[open] summary::after { transform: rotate(45deg); }
+.rd-rules ul { margin: 10px 0 0; padding-left: 18px; color: #bbb; font-size: 13px; line-height: 1.8; }
+
+.rd-history h3 { font-size: 14px; font-weight: 600; color: #888; margin: 0 0 10px; }
+.rd-hist-list { display: flex; flex-direction: column; gap: 6px; }
+.rd-hist-item { display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: 10px; background: #0b0d12; border: 1px solid #1f232a; border-radius: 10px; padding: 8px 12px; font-size: 13px; }
+.rd-hist-cards { font-weight: 700; color: #fb923c; }
+.rd-hist-item .win { color: #4ade80; font-weight: 700; }
+.rd-hist-item .lose { color: #f87171; font-weight: 700; }
+.rd-hist-item .push { color: #93c5fd; font-weight: 700; }
+.rd-hist-time { color: #666; font-size: 11px; }
+.rd-empty { text-align: center; color: #666; padding: 16px; font-size: 14px; }
+
+.rd-toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 100; }
+.rd-toast-success { background: #065f46; color: #6ee7b7; }
+.rd-toast-error { background: #7f1d1d; color: #fca5a5; }
+.rd-toast-info { background: #1e3a5f; color: #93c5fd; }

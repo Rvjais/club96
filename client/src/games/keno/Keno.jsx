@@ -244,7 +244,7 @@ export default function Keno() {
                 </div>
                 <div className="keno-pending-meta">
                   <span>{ROOM_LABELS[b.room]}</span>
-                  <span>₹{money(b.amount / 100)}</span>
+                  <span>₹{money(b.amount)}</span>
                   <span className="keno-pending-timer">
                     {state?.serverNow ? formatTimeLeft(b.room, state.serverNow) : '—'}
                   </span>
@@ -316,9 +316,9 @@ export default function Keno() {
                   </div>
                   <div className="keno-hist-meta">
                     <span>{ROOM_LABELS[b.room]}</span>
-                    <span>₹{money(b.amount / 100)}</span>
+                    <span>₹{money(b.amount)}</span>
                     <span className={b.status === 'won' ? 'win' : 'lose'}>
-                      {b.status === 'won' ? `+${money(b.win / 100)} (${b.matches}/{b.picks.length})` : `Lost (${b.matches}/{b.picks.length})`}
+                      {b.status === 'won' ? `+${money(b.win)} (${b.matches}/{b.picks.length})` : `Lost (${b.matches}/{b.picks.length})`}
                     </span>
                     <span className="keno-hist-time">{new Date(b.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>

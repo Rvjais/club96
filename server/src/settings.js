@@ -196,6 +196,19 @@ export const DEFAULTS = {
   baccarat: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000 },
   scratch: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000 },
   teenPatti: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000 },
+  coinFlip: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000 },
+  highCard: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000 },
+  balloonPop: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000 },
+  redDog: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000 },
+  casinoWar: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000 },
+  threeCard: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000 },
+  caribbeanStud: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000 },
+  paiGow: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000 },
+  thaiLottery: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000 },
+  lucky6: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 1000000 },
+  bigSmall: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000 },
+  roulette: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000 },
+  moneyWheel: { enabled: true, minBet: 10, maxBet: 10000, maxWin: 500000 },
 }
 
 export const SITE_SETTINGS = ['platform', 'referral'] // not games
@@ -562,6 +575,13 @@ export function validate(game, input) {
   }
 
   if (game === 'teenPatti') {
+    return limits(input)
+  }
+
+  if (game === 'coinFlip' || game === 'highCard' || game === 'balloonPop' || game === 'redDog'
+    || game === 'casinoWar' || game === 'threeCard' || game === 'caribbeanStud' || game === 'paiGow'
+    || game === 'thaiLottery' || game === 'lucky6' || game === 'bigSmall' || game === 'roulette'
+    || game === 'moneyWheel') {
     return limits(input)
   }
 

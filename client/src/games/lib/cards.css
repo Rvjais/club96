@@ -1,0 +1,24 @@
+.cf-card {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 58px;
+  height: 84px;
+  padding: 6px 7px;
+  border-radius: 9px;
+  background: #fff;
+  border: 1px solid #cfd6e4;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  flex: 0 0 auto;
+}
+.cf-card.cf-sm { width: 44px; height: 64px; padding: 4px 5px; border-radius: 7px; }
+.cf-card.is-red { color: #dc2626; }
+.cf-card.is-black { color: #10131c; }
+.cf-card.cf-dim { opacity: 0.55; }
+.cf-rank { font-size: 17px; font-weight: 800; line-height: 1; }
+.cf-suit { font-size: 20px; line-height: 1; align-self: flex-end; }
+.cf-card.cf-sm .cf-rank { font-size: 13px; }
+.cf-card.cf-sm .cf-suit { font-size: 15px; }
+.cf-back { align-items: center; justify-content: center; background: repeating-linear-gradient(45deg, #1e3a8a 0 6px, #2547b8 6px 12px); border-color: #374b8f; }
+.cf-back .cf-rune { color: rgba(255, 255, 255, 0.75); font-size: 20px; }
+.cf-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }

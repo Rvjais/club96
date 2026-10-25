@@ -56,7 +56,7 @@ export default function Baccarat() {
       setAmount('')
       const r = res.data.recent?.[0]
       const labels = { player: 'Player', banker: 'Banker', tie: 'Tie' }
-      showToast(r.win > 0 ? 'success' : 'error', `${labels[resultLabel(r.result)]} won — ${r.win > 0 ? `+${money(r.win / 100)}` : 'Lost'}`)
+      showToast(r.win > 0 ? 'success' : 'error', `${labels[resultLabel(r.result)]} won — ${r.win > 0 ? `+${money(r.win)}` : 'Lost'}`)
     } catch (e) {
       showToast('error', e.response?.data?.error || 'Bet failed')
     }
@@ -165,9 +165,9 @@ export default function Baccarat() {
               {state.recent.slice(0, 15).map(b => (
                 <div key={b.id} className="bc-history-item">
                   <span className="bc-hist-cards">{handLabels(b.playerCards)} vs {handLabels(b.bankerCards)}</span>
-                  <span>₹{money(b.amount / 100)}</span>
+                  <span>₹{money(b.amount)}</span>
                   <span className={b.win > 0 ? 'win' : 'lose'}>
-                    {b.win > 0 ? `+${money(b.win / 100)} (${b.result})` : 'Lost'}
+                    {b.win > 0 ? `+${money(b.win)} (${b.result})` : 'Lost'}
                   </span>
                   <span className="bc-hist-time">{new Date(b.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>

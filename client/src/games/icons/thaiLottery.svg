@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect x="8" y="8" width="112" height="112" rx="12" fill="#b45309"/>
+  <rect x="24" y="28" width="34" height="46" rx="8" fill="#fff7ed" stroke="#fbbf24" stroke-width="3"/>
+  <rect x="70" y="28" width="34" height="46" rx="8" fill="#fff7ed" stroke="#fbbf24" stroke-width="3"/>
+  <text x="41" y="62" font-family="Consolas" font-size="30" fill="#92400e" text-anchor="middle" font-weight="bold">2</text>
+  <text x="87" y="62" font-family="Consolas" font-size="30" fill="#92400e" text-anchor="middle" font-weight="bold">D</text>
+  <text x="64" y="102" font-family="Arial" font-size="16" fill="#fef3c7" text-anchor="middle" font-weight="bold">THAI LOTTERY</text>
+  <circle cx="98" cy="102" r="10" fill="#fde68a"/>
+</svg>

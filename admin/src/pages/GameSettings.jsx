@@ -21,6 +21,19 @@ import BlackjackSettings from './settings/BlackjackSettings'
 import BaccaratSettings from './settings/BaccaratSettings'
 import ScratchSettings from './settings/ScratchSettings'
 import TeenPattiSettings from './settings/TeenPattiSettings'
+import CoinFlipSettings from './settings/CoinFlipSettings'
+import HighCardSettings from './settings/HighCardSettings'
+import BalloonPopSettings from './settings/BalloonPopSettings'
+import RedDogSettings from './settings/RedDogSettings'
+import CasinoWarSettings from './settings/CasinoWarSettings'
+import ThreeCardSettings from './settings/ThreeCardSettings'
+import CaribbeanStudSettings from './settings/CaribbeanStudSettings'
+import PaiGowSettings from './settings/PaiGowSettings'
+import ThaiLotterySettings from './settings/ThaiLotterySettings'
+import Lucky6Settings from './settings/Lucky6Settings'
+import BigSmallSettings from './settings/BigSmallSettings'
+import RouletteSettings from './settings/RouletteSettings'
+import MoneyWheelSettings from './settings/MoneyWheelSettings'
 
 
 // ── Change log ───────────────────────────────────────────────
@@ -112,6 +125,19 @@ const GAMES = [
   { key: 'baccarat', label: 'Baccarat', icon: 'heart', Card: BaccaratSettings },
   { key: 'scratch', label: 'Scratch Cards', icon: 'gift', Card: ScratchSettings },
   { key: 'teenPatti', label: 'Teen Patti', icon: 'heart', Card: TeenPattiSettings },
+  { key: 'coinFlip', label: 'Coin Flip', icon: 'coins', Card: CoinFlipSettings },
+  { key: 'highCard', label: 'High Card', icon: 'spade', Card: HighCardSettings },
+  { key: 'balloonPop', label: 'Balloon Pop', icon: 'zap', Card: BalloonPopSettings },
+  { key: 'redDog', label: 'Red Dog', icon: 'spade', Card: RedDogSettings },
+  { key: 'casinoWar', label: 'Casino War', icon: 'crown', Card: CasinoWarSettings },
+  { key: 'threeCard', label: '3 Card Poker', icon: 'heart', Card: ThreeCardSettings },
+  { key: 'caribbeanStud', label: 'Caribbean Stud', icon: 'spade', Card: CaribbeanStudSettings },
+  { key: 'paiGow', label: 'Pai Gow', icon: 'layers', Card: PaiGowSettings },
+  { key: 'thaiLottery', label: 'Thai Lottery', icon: 'gift', Card: ThaiLotterySettings },
+  { key: 'lucky6', label: 'Lucky 6/49', icon: 'grid', Card: Lucky6Settings },
+  { key: 'bigSmall', label: 'Big / Small', icon: 'dices', Card: BigSmallSettings },
+  { key: 'roulette', label: 'Roulette', icon: 'wheel', Card: RouletteSettings },
+  { key: 'moneyWheel', label: 'Money Wheel', icon: 'coins', Card: MoneyWheelSettings },
 ]
 const GAME_NAMES = Object.fromEntries(GAMES.map((g) => [g.key, g.label]))
 

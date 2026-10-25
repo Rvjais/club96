@@ -81,7 +81,7 @@ export default function TeenPatti() {
       setState(res.data)
       setActive(null)
       const r = res.data.recent?.[0]
-      showToast(r.win > 0 ? 'success' : 'error', r.result === 'folded' ? 'Folded' : `${r.result} — +${money(r.win / 100)}`)
+      showToast(r.win > 0 ? 'success' : 'error', r.result === 'folded' ? 'Folded' : `${r.result} — +${money(r.win)}`)
     } catch (e) {
       showToast('error', e.response?.data?.error || 'Play failed')
     }
@@ -200,9 +200,9 @@ export default function TeenPatti() {
               {state.recent.slice(0, 15).map(b => (
                 <div key={b.id} className="tp-history-item">
                   <span className="tp-hist-cards">{b.playerCards?.join(' ') || '—'}</span>
-                  <span>₹{money(b.amount / 100)}</span>
+                  <span>₹{money(b.amount)}</span>
                   <span className={b.win > 0 ? 'win' : 'lose'}>
-                    {b.win > 0 ? `+${money(b.win / 100)} (${b.result})` : 'Lost'}
+                    {b.win > 0 ? `+${money(b.win)} (${b.result})` : 'Lost'}
                   </span>
                   <span className="tp-hist-time">{new Date(b.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
